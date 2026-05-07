@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BEYOND‑OS MAX</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+
+<body>
+
+  <!-- SCANLINES -->
+  <div class="scanlines"></div>
+
+  <!-- BOOT SCREEN -->
+  <div id="boot-screen">
+    <div class="boot-text">BEYOND‑OS MAX</div>
+  </div>
+
+  <!-- APP SHELL (hidden until JS loads) -->
+  <div id="app-shell" style="display:none;opacity:0;flex-direction:column;min-height:100vh;">
+
+    <!-- NAVIGATION -->
+    <div class="chart-tabs">
+      <div class="chart-tab" data-route="hud" onclick="navigate('hud')">HUD</div>
+      <div class="chart-tab" data-route="today" onclick="navigate('today')">Today</div>
+      <div class="chart-tab" data-route="nutrition" onclick="navigate('nutrition')">Fuel</div>
+      <div class="chart-tab" data-route="meals" onclick="navigate('meals')">Meals</div>
+      <div class="chart-tab" data-route="prep" onclick="navigate('prep')">Prep</div>
+      <div class="chart-tab" data-route="tools" onclick="navigate('tools')">Tools</div>
+    </div>
+
+    <!-- MAIN APP CONTENT -->
+    <div id="app"></div>
+
+    <!-- TOOLS SCREEN TEMPLATE -->
+    <template id="screen-tools">
+      <div class="panel" style="margin-top:20px;">
+        <div class="hdr-logo glow-faint">TOOLS</div>
+        <div class="sys-status dim">Tools module coming soon.</div>
+      </div>
+    </template>
+
+  </div>
+
+  <!-- JS ENGINE -->
+  <script src="js/app.js"></script>
+
+</body>
+</html>
