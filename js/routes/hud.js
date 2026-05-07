@@ -1,122 +1,88 @@
-export default function renderHUD() {
-  return `
-    <div class="hud-container">
+/**
+ * BEYOND-OS // UNIFIED HUD ENGINE
+ */
 
-      <!-- CALORIES -->
-      <div class="hud-panel" onclick="openInputPanel('calories')">
-        <div class="hud-title">CALORIES</div>
-        <div class="hud-value" id="hud-calories">0</div>
-      </div>
+const HUD_UI = {
+  Stat: ({ label, value, status = '' }) => `
+    <div class="hud-stat">
+      <span class="hud-label">${label}</span>
+      <span class="hud-value ${status}">${value}</span>
+    </div>
+  `,
 
-      <!-- PROTEIN -->
-      <div class="hud-panel" onclick="openInputPanel('protein')">
-        <div class="hud-title">PROTEIN</div>
-        <div class="hud-value" id="hud-protein">0g</div>
-      </div>
+  StatGrid: (stats, marginTop = 'mt-5') => `
+    <div class="hud-grid ${marginTop}">
+      ${stats.map(s => HUD_UI.Stat(s)).join('')}
+    </div>
+  `,
 
-      <!-- RECOVERY -->
-      <div class="hud-panel" onclick="openInputPanel('recovery')">
-        <div class="hud-title">RECOVERY</div>
-        <div class="hud-value" id="hud-recovery">0%</div>
+  ExerciseCard: ({ name, sets, last, target, rest }) => `
+    <div class="hud-card-item">
+      <div class="panel-header">
+        <div>
+          <div class="hud-label-xs">Exercise</div>
+          <div class="panel-title-sm">${name}</div>
+        </div>
+        <span class="badge-outline">${sets} Sets</span>
       </div>
+      <div class="divider"></div>
+      ${HUD_UI.StatGrid([
+        { label: 'Last', value: last },
+        { label: 'Target', value: target, status: 'text-cyan' },
+        { label: 'Rest', value: `${rest}s` }
+      ], 'mt-4')}
+    </div>
+  `,
 
-      <!-- ENERGY -->
-      <div class="hud-panel" onclick="openInputPanel('energy')">
-        <div class="hud-title">ENERGY</div>
-        <div class="hud-value" id="hud-energy">0%</div>
+  Panel: ({ subtitle, title, action, content }) => `
+    <section class="panel animate-fade-up">
+      <div class="panel-header">
+        <div>
+          <p class="panel-subtitle">${subtitle}</p>
+          <h2 class="panel-title">${title}</h2>
+        </div>
+        ${action ? `<button class="btn btn-${action.variant} ${action.animate || ''}">${action.label}</button>` : ''}
       </div>
+      <div class="divider"></div>
+      ${content}
+    </section>
+  `,
+
+  Render: (data) => `
+    <div class="screen-stack animate-stagger">
+      
+      ${HUD_UI.Panel({
+        subtitle: "BEYOND-OS // ACTIVE SESSION",
+        title: "Operator HUD",
+        action: { label: "Sync", variant: "primary" },
+        content: HUD_UI.StatGrid(data.sessionStats)
+      })}
+
+      ${HUD_UI.Panel({
+        subtitle: "TODAY",
+        title: data.workout.name,
+        action: { label: "Begin", variant: "primary", animate: "animate-pulse-red" },
+        content: `
+          <div class="stack-v mt-5">
+            ${data.workout.exercises.map(ex => HUD_UI.ExerciseCard(ex)).join('')}
+          </div>
+        `
+      })}
+
+      ${HUD_UI.Panel({
+        subtitle: "SYSTEM",
+        title: "Core Status",
+        content: HUD_UI.StatGrid(data.systemStatus)
+      })}
+
+      <nav class="nav-tabs animate-fade-up">
+        ${['HUD', 'Today', 'Fuel', 'Meals', 'Prep'].map(t => `
+          <button class="nav-tab ${t === 'HUD' ? 'active' : ''}">${t}</button>
+        `).join('')}
+      </nav>
 
     </div>
-
-    <!-- FULL SCREEN INPUT PANEL -->
-    <div id="input-panel" class="input-panel hidden">
-      <div class="input-header" id="input-title"></div>
-
-      <input 
-        id="input-field" 
-        type="number" 
-        class="input-field"
-        inputmode="numeric"
-      />
-
-      <button class="input-save" onclick="saveInputValue()">SAVE</button>
-      <button class="input-cancel" onclick="closeInputPanel()">CANCEL</button>
-    </div>
-  `;
-}
-
-/* ------------------------------
-   FULL SCREEN INPUT PANEL LOGIC
---------------------------------*/
-
-window.openInputPanel = function (metric) {
-  const panel = document.getElementById("input-panel");
-  const title = document.getElementById("input-title");
-  const field = document.getElementById("input-field");
-
-  window.currentMetric = metric;
-
-  // Set title
-  title.textContent = metric.toUpperCase();
-
-  // Load existing value
-  const saved = localStorage.getItem(metric) || "";
-  field.value = saved.replace("%", "").replace("g", "");
-
-  panel.classList.remove("hidden");
-  panel.classList.add("visible");
+  `
 };
 
-window.closeInputPanel = function () {
-  const panel = document.getElementById("input-panel");
-  panel.classList.remove("visible");
-  panel.classList.add("hidden");
-};
-
-window.saveInputValue = function () {
-  const field = document.getElementById("input-field");
-  let value = field.value.trim();
-
-  if (value === "") return;
-
-  // Format based on metric
-  if (currentMetric === "calories") {
-    value = parseInt(value);
-  }
-
-  if (currentMetric === "protein") {
-    value = parseInt(value) + "g";
-  }
-
-  if (currentMetric === "recovery" || currentMetric === "energy") {
-    value = parseInt(value) + "%";
-  }
-
-  // Save
-  localStorage.setItem(currentMetric, value);
-
-  // Update HUD
-  updateHUDValues();
-
-  // Close panel
-  closeInputPanel();
-};
-
-/* ------------------------------
-   UPDATE HUD FROM STORAGE
---------------------------------*/
-
-window.updateHUDValues = function () {
-  const cals = localStorage.getItem("calories") || 0;
-  const prot = localStorage.getItem("protein") || "0g";
-  const rec = localStorage.getItem("recovery") || "0%";
-  const eng = localStorage.getItem("energy") || "0%";
-
-  document.getElementById("hud-calories").textContent = cals;
-  document.getElementById("hud-protein").textContent = prot;
-  document.getElementById("hud-recovery").textContent = rec;
-  document.getElementById("hud-energy").textContent = eng;
-};
-
-// Run on load
-setTimeout(updateHUDValues, 50);
+export default HUD_UI;
