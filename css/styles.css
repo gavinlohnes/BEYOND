@@ -91,10 +91,10 @@ body {
 .hdr-logo {
   color: #ff1a1a;
   font-size: 20px;
-  letter-spacing: 3px;
+  letter
+letter-spacing: 3px;
   margin-bottom: 10px;
 }
-
 .sys-status {
   color: #aaa;
   font-size: 14px;
@@ -208,17 +208,6 @@ body {
   transform: scale(0.96);
 }
 
-/* ---------------------------------------
-   UTILITY
-----------------------------------------*/
-
-.dim {
-  opacity: 0.6;
-}
-
-.glow-faint {
-  text-shadow: 0 0 8px #ff1a1a55;
-}
 /* ---------------------------------------
    UTILITY
 ----------------------------------------*/
