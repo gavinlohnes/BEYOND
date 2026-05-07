@@ -54,4 +54,71 @@ function navigate(route) {
    SCREEN LOADER
    ============================================================ */
 
-async function load
+async function loadScreen(route) {
+  const app = document.getElementById("app");
+  if (!app) return;
+
+  // Tools screen is built into HTML
+  if (route === "tools") {
+    const tpl = document.getElementById("screen-tools");
+    app.innerHTML = tpl.innerHTML;
+    return;
+  }
+
+  // Load route module
+  const loader = ROUTES[route];
+  if (!loader) {
+    app.innerHTML = `<div class="panel"><div class="sys-status">Unknown route: ${route}</div></div>`;
+    return;
+  }
+
+  const module = await loader();
+
+  // ⭐ FIXED — HUD now loads correctly
+  app.innerHTML = module.default();
+}
+
+/* ============================================================
+   SYSTEM PANEL
+   ============================================================ */
+
+function toggleSystemPanel(show) {
+  const panel = document.getElementById("system-panel");
+  if (!panel) return;
+  panel.style.display = show ? "block" : "none";
+}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+
+function closeModal() {
+  document.getElementById("modal-backdrop").classList.remove("on");
+  document.querySelectorAll(".plate-modal").forEach(m => m.style.display = "none");
+}
+
+/* ============================================================
+   UPTIME CLOCK
+   ============================================================ */
+
+let uptimeSeconds = 0;
+setInterval(() => {
+  uptimeSeconds++;
+  const hrs = String(Math.floor(uptimeSeconds / 3600)).padStart(2, "0");
+  const mins = String(Math.floor((uptimeSeconds % 3600) / 60)).padStart(2, "0");
+  const secs = String(uptimeSeconds % 60).padStart(2, "0");
+  const el = document.getElementById("uptime-readout");
+  if (el) el.textContent = `${hrs}:${mins}:${secs}`;
+}, 1000);
+
+/* ============================================================
+   HUD CLOCK
+   ============================================================ */
+
+setInterval(() => {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  const el = document.getElementById("hud-clock");
+  if (el) el.textContent = `${hh}:${mm}`;
+}, 1000);
