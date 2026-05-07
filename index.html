@@ -1,19 +1,266 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>BEYOND‑OS</title>
-  <link rel="stylesheet" href="./css/styles.css">
+  <meta charset="UTF-8" />
+  <title>BEYOND‑OS · NIGHT SHIFT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
+  <div class="app-shell">
 
-  <!-- Main UI Viewport -->
-  <div id="viewport"></div>
+    <!-- HUD HEADER -->
+    <header class="hud-header">
+      <div class="hud-left">
+        <div class="hud-title">BEYOND‑OS · NIGHT SHIFT</div>
+        <div class="hud-subtitle">FIELD SUIT INTERFACE</div>
+      </div>
 
-  <!-- Modal Root -->
-  <div data-modal-root></div>
+      <div class="hud-center">
+        <div class="threat-badge" id="threatBadge">
+          <span class="threat-label">THREAT INDEX</span>
+          <span class="threat-value" id="threatValue">LOW</span>
+        </div>
+        <div class="pulse-line">
+          <div class="pulse-dot"></div>
+        </div>
+      </div>
 
-  <script type="module" src="./js/main.js"></script>
+      <div class="hud-right">
+        <div class="system-status" id="systemStatus">SYSTEM ACTIVE</div>
+        <div class="timestamp" id="timestamp"></div>
+      </div>
+    </header>
+
+    <!-- TOP TABS -->
+    <nav class="top-tabs">
+      <button class="tab-button active" data-target="screen-hud">HUD</button>
+      <button class="tab-button" data-target="screen-daily">DAILY</button>
+      <button class="tab-button" data-target="screen-action">ACTION</button>
+      <button class="tab-button" data-target="screen-systems">SYSTEMS</button>
+      <button class="tab-button" data-target="screen-env">ENV</button>
+    </nav>
+
+    <!-- SCREENS -->
+    <main class="screen-container">
+      <!-- HUD SCREEN -->
+      <section id="screen-hud" class="screen active">
+
+        <div class="panel panel-grid">
+          <div class="panel-header">
+            <span>OPERATIONAL MATRIX</span>
+          </div>
+          <div class="panel-body">
+            <div class="metric-grid">
+              <div class="metric-card">
+                <div class="metric-label">OPERATIONAL STATUS</div>
+                <div class="metric-value" id="metricOperational">–%</div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-label">LOAD STRAIN</div>
+                <div class="metric-value" id="metricLoadStrain">–%</div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-label">FLUID OPS</div>
+                <div class="metric-value" id="metricFluidOps">–%</div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-label">FIELD CONDITIONS</div>
+                <div class="metric-value" id="metricFieldConditions">–%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span>RHYTHM PHASE</span>
+          </div>
+          <div class="panel-body">
+            <div class="tag" id="rhythmPhase">BUILD</div>
+          </div>
+        </div>
+
+        <div class="panel collapsible" data-collapsible>
+          <div class="panel-header">
+            <span>MISSION HIERARCHY</span>
+            <button class="collapse-toggle">▼</button>
+          </div>
+          <div class="panel-body">
+            <ul class="bullet-list" id="missionList"></ul>
+          </div>
+        </div>
+
+        <div class="panel collapsible" data-collapsible>
+          <div class="panel-header">
+            <span>COMMAND FLAGS</span>
+            <button class="collapse-toggle">▼</button>
+          </div>
+          <div class="panel-body">
+            <ul class="bullet-list" id="flagList"></ul>
+          </div>
+        </div>
+
+        <div class="panel collapsible" data-collapsible>
+          <div class="panel-header">
+            <span>PROTOCOLS</span>
+            <button class="collapse-toggle">▼</button>
+          </div>
+          <div class="panel-body">
+            <ul class="bullet-list" id="protocolList"></ul>
+          </div>
+        </div>
+
+      </section>
+      <!-- DAILY SCREEN -->
+      <section id="screen-daily" class="screen">
+
+        <div class="panel">
+          <div class="panel-header"><span>FASTING PROTOCOL</span></div>
+          <div class="panel-body">
+            <div class="status-line" id="fastingStatus">NO MEAL LOGGED</div>
+            <div class="status-sub" id="fastingNote">// JUST ATE</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span>ENERGY & SLEEPINESS</span></div>
+          <div class="panel-body">
+            <div class="energy-scale-label">Tap current level:</div>
+            <div class="energy-scale" id="energyScale"></div>
+            <div class="energy-status" id="energyStatus">😴 // SLEEPY NOW</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span>SYSTEMS RESET</span></div>
+          <div class="panel-body">
+            <div>Sleep target: <span id="sleepTarget">7 hrs</span></div>
+            <div>Last night: <span id="sleepLast">– hrs</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span>DAILY METRICS</span></div>
+          <div class="panel-body">
+            <div>Body weight: <span id="metricWeight">– lbs</span></div>
+            <div>Calories: <span id="metricCalories">– / –</span></div>
+            <div>Protein: <span id="metricProtein">– / – g</span></div>
+            <div>Steps: <span id="metricSteps">– / –</span></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ACTION SCREEN -->
+      <section id="screen-action" class="screen">
+
+        <div class="panel">
+          <div class="panel-header"><span>TODAY'S SESSION</span></div>
+          <div class="panel-body">
+            <div>Type: <span id="sessionType">–</span></div>
+            <div>Focus: <span id="sessionFocus">–</span></div>
+
+            <div class="movement-block">
+              <div class="movement-label">Next movement:</div>
+              <div class="movement-main" id="sessionMovement">–</div>
+            </div>
+
+            <button class="primary-button" id="logSetButton">// LOG SET</button>
+            <div class="status-sub"><span id="setsLogged">0</span> sets logged</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><span>ANCHOR MEALS</span></div>
+          <div class="panel-body">
+            <div>Meal A: <span id="mealAName">–</span> (<span id="mealAServings">–</span> servings)</div>
+            <div>Meal B: <span id="mealBName">–</span> (<span id="mealBServings">–</span> servings)</div>
+
+            <div class="action-row">
+              <button class="secondary-button" id="startPrepButton">// START PREP</button>
+              <button class="secondary-button" id="completePrepButton">// PREP COMPLETE</button>
+            </div>
+
+            <div class="status-sub" id="prepStatus">Prep not started.</div>
+          </div>
+        </div>
+
+        <div class="panel collapsible" data-collapsible>
+          <div class="panel-header">
+            <span>GROCERY SUMMARY</span>
+            <button class="collapse-toggle">▼</button>
+          </div>
+          <div class="panel-body">
+            <div>Items: <span id="groceryItemsCount">–</span></div>
+            <div>Est. cost: <span id="groceryCost">–</span></div>
+            <button class="secondary-button">// VIEW LIST</button>
+            <ul class="bullet-list" id="groceryList"></ul>
+          </div>
+        </div>
+
+      </section>
+      <!-- SYSTEMS SCREEN -->
+      <section id="screen-systems" class="screen">
+
+        <div class="panel">
+          <div class="panel-header"><span>SUIT SYNC</span></div>
+          <div class="panel-body">
+            <div>Neural Link: <span class="tag tag-good" id="neuralLinkStatus">SYNCED</span></div>
+          </div>
+        </div>
+
+        <div class="panel collapsible" data-collapsible>
+          <div class="panel-header">
+            <span>MISSION MODE</span>
+            <button class="collapse-toggle">▼</button>
+          </div>
+          <div class="panel-body">
+            <div>Current mode: <span id="missionMode">NIGHT SHIFT</span></div>
+            <div class="status-sub">Optimized for late‑shift operations.</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ENVIRONMENT SCREEN -->
+      <section id="screen-env" class="screen">
+
+        <div class="panel">
+          <div class="panel-header"><span>FIELD SENSOR MATRIX</span></div>
+          <div class="panel-body env-grid">
+
+            <div class="env-item">
+              <div class="env-label">STRESS LOAD</div>
+              <div class="env-value" id="envStress">–</div>
+            </div>
+
+            <div class="env-item">
+              <div class="env-label">NOISE FLOOR</div>
+              <div class="env-value" id="envNoise">–</div>
+            </div>
+
+            <div class="env-item">
+              <div class="env-label">TEMP</div>
+              <div class="env-value" id="envTemp">–</div>
+            </div>
+
+            <div class="env-item">
+              <div class="env-label">HUMIDITY</div>
+              <div class="env-value" id="envHumidity">–</div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
