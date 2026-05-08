@@ -9,21 +9,32 @@
 
 <body>
 
+  <!-- HUD GRID BACKDROP -->
   <div id="hud-grid"></div>
 
+  <!-- TOP HUD BAND -->
   <header id="hud-header">
     <div class="hud-title">BBOS</div>
     <div class="hud-sub">Tactical HUD Interface</div>
   </header>
 
+  <!-- MAIN DIAGNOSTICS PANEL -->
   <section id="hud-panel">
     <h2 class="panel-title">System Diagnostics</h2>
 
-    <!-- NEW: Live OS status line -->
+    <!-- Live OS status line -->
     <div id="os-status">OS Status: Initializing…</div>
 
     <button id="testBtn">Run System Check</button>
     <pre id="output"></pre>
+  </section>
+
+  <!-- PROTOCOL PANEL -->
+  <section id="protocol-panel">
+    <h2 class="panel-title">Active Protocol</h2>
+    <div id="protocol-name">None</div>
+    <div id="protocol-progress">Progress: 0%</div>
+    <button id="startProtocolBtn">Start Protocol</button>
   </section>
 
   <script src="app.js"></script>
