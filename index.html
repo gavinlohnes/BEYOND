@@ -3,20 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BEYOND‑OS</title>
+  <title>BBOS Tactical HUD</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <div id="app">
-    <h1>BEYOND‑OS</h1>
-    <p>System initialized.</p>
+  <!-- HUD GRID BACKDROP -->
+  <div id="hud-grid"></div>
 
-    <button id="testBtn">Run Test</button>
+  <!-- TOP HUD BAND -->
+  <header id="hud-header">
+    <div class="hud-title">BBOS</div>
+    <div class="hud-sub">Tactical HUD Interface</div>
+  </header>
 
+  <!-- MAIN PANEL -->
+  <section id="hud-panel">
+    <h2 class="panel-title">System Diagnostics</h2>
+    <button id="testBtn">Run System Check</button>
     <pre id="output"></pre>
-  </div>
+  </section>
 
   <script src="app.js"></script>
 </body>
