@@ -9,18 +9,19 @@
 
 <body>
 
-  <!-- HUD GRID BACKDROP -->
   <div id="hud-grid"></div>
 
-  <!-- TOP HUD BAND -->
   <header id="hud-header">
     <div class="hud-title">BBOS</div>
     <div class="hud-sub">Tactical HUD Interface</div>
   </header>
 
-  <!-- MAIN PANEL -->
   <section id="hud-panel">
     <h2 class="panel-title">System Diagnostics</h2>
+
+    <!-- NEW: Live OS status line -->
+    <div id="os-status">OS Status: Initializing…</div>
+
     <button id="testBtn">Run System Check</button>
     <pre id="output"></pre>
   </section>
