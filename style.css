@@ -1,0 +1,39 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #0d0d0d;
+  color: #e6e6e6;
+  font-family: Arial, sans-serif;
+}
+
+#app {
+  max-width: 600px;
+  margin: 60px auto;
+  padding: 20px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+}
+
+button {
+  background: #ff0033;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 20px;
+}
+
+button:hover {
+  background: #cc0029;
+}
+
+pre {
+  background: #111;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 20px;
+  white-space: pre-wrap;
+}
