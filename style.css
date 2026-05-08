@@ -1,39 +1,90 @@
+/* GLOBAL */
 body {
   margin: 0;
   padding: 0;
-  background: #0d0d0d;
+  background: #000;
   color: #e6e6e6;
-  font-family: Arial, sans-serif;
+  font-family: "Orbitron", Arial, sans-serif;
+  overflow: hidden;
 }
 
-#app {
-  max-width: 600px;
+/* HUD GRID BACKDROP */
+#hud-grid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image:
+    linear-gradient(rgba(255, 0, 0, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+/* TOP HUD BAND */
+#hud-header {
+  width: 100%;
+  padding: 20px;
+  background: rgba(15, 0, 0, 0.8);
+  border-bottom: 2px solid #ff1a1a;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+  text-align: center;
+}
+
+.hud-title {
+  font-size: 42px;
+  color: #ff1a1a;
+  text-shadow: 0 0 12px #ff0000;
+}
+
+.hud-sub {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* MAIN PANEL */
+#hud-panel {
+  width: 600px;
   margin: 60px auto;
   padding: 20px;
-  background: #1a1a1a;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+  background: rgba(10, 0, 0, 0.85);
+  border: 2px solid #ff1a1a;
+  border-radius: 10px;
+  box-shadow: 0 0 25px rgba(255, 0, 0, 0.4);
 }
 
+.panel-title {
+  margin-top: 0;
+  color: #ff1a1a;
+  text-shadow: 0 0 8px #ff0000;
+}
+
+/* BUTTON */
 button {
-  background: #ff0033;
+  background: #ff1a1a;
   color: white;
   border: none;
   padding: 12px 20px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 16px;
-  margin-top: 20px;
+  margin-bottom: 20px;
+  transition: 0.2s ease;
 }
 
 button:hover {
-  background: #cc0029;
+  background: #cc0000;
+  box-shadow: 0 0 10px #ff0000;
 }
 
+/* OUTPUT */
 pre {
   background: #111;
   padding: 15px;
-  border-radius: 8px;
-  margin-top: 20px;
+  border-radius: 6px;
+  border: 1px solid #ff1a1a;
+  box-shadow: inset 0 0 10px rgba(255, 0, 0, 0.2);
   white-space: pre-wrap;
 }
