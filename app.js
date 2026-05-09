@@ -1,54 +1,29 @@
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;background:#020308;color:#f5f5f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
-:root{--accent:#ff1744;--accent-soft:#ff5252;--bg-main:#020308;--bg-panel:#06080d}
-:root[data-theme="nightops"]{--accent:#00e5ff;--accent-soft:#4dd0e1;--bg-main:#020305;--bg-panel:#06080d}
-:root[data-theme="redline"]{--accent:#ff1744;--accent-soft:#ff5252;--bg-main:#080003;--bg-panel:#120006}
-:root[data-theme="stealth"]{--accent:#9fa8da;--accent-soft:#c5cae9;--bg-main:#0a0b0d;--bg-panel:#111317}
-:root[data-theme="overclock"]{--accent:#ffea00;--accent-soft:#fff176;--bg-main:#0d0a00;--bg-panel:#1a1500}
-body{background:radial-gradient(circle at top,#1a1a2e 0,#020308 55%,#000 100%);color:#e0e0e0}
-#bootScreen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;z-index:9999;transition:opacity .6s ease}
-#bootLogo{font-size:32px;letter-spacing:.4em;color:#ff1744;text-transform:uppercase}
-#bootSub{margin-top:12px;font-size:12px;letter-spacing:.2em;color:#888}
-#hudParticles{position:fixed;inset:0;pointer-events:none;z-index:1}
-#hudObjects{position:fixed;inset:0;pointer-events:none;z-index:2}
-#hudSweep{position:fixed;inset:-20%;background:radial-gradient(circle at 0 0,rgba(255,255,255,.08),transparent 60%);mix-blend-mode:screen;opacity:0;pointer-events:none;z-index:3}
-#app{position:relative;z-index:4;width:100%;height:100%;padding:24px;display:flex;flex-direction:column;gap:16px}
-.screen-active{perspective:1200px}
-#topBar{display:flex;align-items:center;justify-content:space-between}
-.status-pill{font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.4)}
-#mainGrid{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch}
-.panel{background:rgba(10,12,18,.45);backdrop-filter:blur(14px) saturate(180%);-webkit-backdrop-filter:blur(14px) saturate(180%);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;transform-style:preserve-3d;box-shadow:0 0 8px rgba(0,0,0,.8);transition:box-shadow .2s ease,transform .2s ease}
-.panel::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.02));mix-blend-mode:overlay;opacity:.15;pointer-events:none}
-.panel::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--px) var(--py),rgba(255,255,255,.08),transparent 60%);mix-blend-mode:soft-light;pointer-events:none}
-.panel-depth{transform:translateZ(40px)}
-.panel-title{font-size:11px;letter-spacing:.18em;color:#b0bec5;text-transform:uppercase;display:flex;align-items:center;gap:6px;margin-bottom:10px}
-.panel-body{display:flex;flex-direction:column;gap:10px}
-.metric{display:flex;flex-direction:column;gap:2px}
-.metric-label{font-size:10px;letter-spacing:.16em;color:#78909c;text-transform:uppercase}
-.metric-value{font-size:16px;color:#fff}
-.nav-button{margin-top:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:8px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:transparent;color:#eceff1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .15s ease,transform .1s ease,box-shadow .15s ease}
-.nav-button:hover{background:rgba(255,255,255,.06);box-shadow:0 0 12px rgba(255,255,255,.18)}
-.nav-button:active{transform:scale(.96)}
-#themeSwitcher{max-width:420px}
-.icon-3d{width:14px;height:14px;margin-right:6px;display:inline-block;background:radial-gradient(circle,var(--accent),transparent);transform-style:preserve-3d;animation:iconSpin 4s linear infinite}
-.glyph{position:absolute;top:-12px;right:-12px;width:40px;height:40px;opacity:.25;transform-style:preserve-3d;animation:glyphFloat 6s ease-in-out infinite;pointer-events:none}
-.glyph-workout{background:radial-gradient(circle,rgba(255,23,68,.6),transparent)}
-.glyph-meals{background:radial-gradient(circle,rgba(0,230,118,.6),transparent)}
-.glyph-grocery{background:radial-gradient(circle,rgba(255,234,0,.6),transparent)}
-.sigil{position:absolute;top:-20px;right:-20px;width:60px;height:60px;border:2px solid var(--accent);border-radius:50%;opacity:.15;transform-style:preserve-3d;animation:sigilSpin 12s linear infinite;pointer-events:none}
-#hudParticles .particle{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(255,255,255,.6);opacity:.7;animation:particleDrift 12s linear infinite}
-#hudObjects .hud-object{position:absolute;width:120px;height:120px;border:2px solid rgba(255,255,255,.05);border-radius:50%;transform-style:preserve-3d;animation:hudObjectDrift 20s linear infinite}
-.panel-hover-activated{box-shadow:0 0 22px var(--accent);transform:scale(1.02)}
-.panel[data-prox="near"]{box-shadow:0 0 18px var(--accent-soft)}
-body[data-speed="fast"] .panel{box-shadow:0 0 22px var(--accent)}
-body[data-speed="slow"] .panel{box-shadow:0 0 8px rgba(255,255,255,.05)}
-:root[data-theme="nightops"] .panel{animation-duration:9s}
-:root[data-theme="redline"] .panel{animation-duration:4s}
-:root[data-theme="stealth"] .panel{animation:none}
-:root[data-theme="overclock"] .panel{animation-duration:6s}
-@keyframes iconSpin{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
-@keyframes glyphFloat{0%{transform:translateZ(20px) rotateX(0deg) rotateY(0deg)}50%{transform:translateZ(40px) rotateX(12deg) rotateY(18deg)}100%{transform:translateZ(20px) rotateX(0deg) rotateY(0deg)}}
-@keyframes sigilSpin{from{transform:rotateY(0deg) rotateX(0deg)}to{transform:rotateY(360deg) rotateX(360deg)}}
-@keyframes particleDrift{0%{transform:translate3d(0,0,0);opacity:.2}50%{opacity:.8}100%{transform:translate3d(-40px,-80px,0);opacity:0}}
-@keyframes hudObjectDrift{0%{transform:translate3d(0,0,0) rotateZ(0deg)}100%{transform:translate3d(-60px,-40px,0) rotateZ(360deg)}}
-@media(max-width:900px){#mainGrid{grid-template-columns:1fr;grid-auto-rows:minmax(0,1fr)}#app{padding:12px}}
+const state={readiness:{current:100},activeScenario:"IDLE",activeTheme:"redline"};
+const themeEngine={apply(t){document.documentElement.setAttribute("data-theme",t);state.activeTheme=t;saveState();soundEngine.auto();applyThemeFilter(t)},auto(){const r=state.readiness.current||100;const h=new Date().getHours();const s=state.activeScenario;if(h<6||h>22)return this.apply("nightops");if(r>=80||s==="HIGH_CAPACITY")return this.apply("redline");if(r<40||s==="LOW_CAPACITY")return this.apply("stealth");return this.apply("overclock")}};
+const soundEngine={current:null,play(id){if(this.current===id)return;["sndNightOps","sndRedline","sndStealth","sndOverclock"].forEach(x=>{const e=document.getElementById(x);if(e)e.pause()});const el=document.getElementById(id);if(!el)return;el.currentTime=0;el.volume=.18;el.play().catch(()=>{});this.current=id},auto(){const t=state.activeTheme;if(t==="nightops")return this.play("sndNightOps");if(t==="redline")return this.play("sndRedline");if(t==="stealth")return this.play("sndStealth");if(t==="overclock")return this.play("sndOverclock")}};
+function applyThemeFilter(t){const el=document.getElementById(soundEngine.current);if(!el)return;if(!el._ctx){el._ctx=new (window.AudioContext||window.webkitAudioContext)();el._source=el._ctx.createMediaElementSource(el);el._filter=el._ctx.createBiquadFilter();el._source.connect(el._filter).connect(el._ctx.destination)}const f=el._filter;if(t==="nightops"){f.type="lowpass";f.frequency.value=600}else if(t==="redline"){f.type="highpass";f.frequency.value=1200}else if(t==="stealth"){f.type="lowpass";f.frequency.value=300}else if(t==="overclock"){f.type="peaking";f.frequency.value=2000;f.gain.value=4}}
+function saveState(){try{localStorage.setItem("beyondState",JSON.stringify(state))}catch(e){}}
+function loadState(){try{const s=localStorage.getItem("beyondState");if(!s)return;Object.assign(state,JSON.parse(s))}catch(e){}}
+function toneUp(){const a=document.getElementById("sndToneUp");if(a){a.currentTime=0;a.play().catch(()=>{})}}
+function toneDown(){const a=document.getElementById("sndToneDown");if(a){a.currentTime=0;a.play().catch(()=>{})}}
+function playScenarioStinger(){const a=document.getElementById("sndScenario");if(a){a.currentTime=0;a.play().catch(()=>{})}}
+function playSpatial(id,x){const el=document.getElementById(id);if(!el)return;const pan=(x/window.innerWidth)*2-1;const ctx=new (window.AudioContext||window.webkitAudioContext)();const src=ctx.createMediaElementSource(el);const p=ctx.createStereoPanner();p.pan.value=pan;src.connect(p).connect(ctx.destination);el.currentTime=0;el.play().catch(()=>{})}
+function playEcho(id,x){playSpatial(id,x);setTimeout(()=>playSpatial(id,x+40),90);setTimeout(()=>playSpatial(id,x-40),180)}
+const subsystemAnchors={workout:.2,meals:0,grocery:.8};
+function playSubsystemCue(id,s){const x=subsystemAnchors[s]*window.innerWidth;playSpatial(id,x)}
+function computeReadiness(){state.readiness.current=Math.max(10,Math.min(100,state.readiness.current));document.getElementById("readinessValue").textContent=state.readiness.current}
+function setScenario(s){state.activeScenario=s;document.getElementById("scenarioValue").textContent=s;playScenarioStinger();themeEngine.auto();saveState()}
+function spawnParticles(){const c=document.getElementById("hudParticles");for(let i=0;i<40;i++){const p=document.createElement("div");p.className="particle";p.style.left=Math.random()*100+"vw";p.style.top=Math.random()*100+"vh";p.style.animationDuration=8+Math.random()*10+"s";c.appendChild(p)}}
+function spawnHUDObjects(){const c=document.getElementById("hudObjects");for(let i=0;i<4;i++){const o=document.createElement("div");o.className="hud-object";o.style.left=Math.random()*100+"vw";o.style.top=Math.random()*100+"vh";o.style.animationDuration=15+Math.random()*20+"s";c.appendChild(o)}}
+let hoverTimer=null;
+function initHover(){document.querySelectorAll(".panel").forEach(p=>{p.addEventListener("mouseenter",()=>{hoverTimer=setTimeout(()=>p.classList.add("panel-hover-activated"),450)});p.addEventListener("mouseleave",()=>{clearTimeout(hoverTimer);p.classList.remove("panel-hover-activated")})})}
+let lastX=0,lastY=0,lastTime=Date.now();
+function initGestures(){document.addEventListener("mousemove",e=>{const now=Date.now();const dt=now-lastTime;const dx=e.clientX-lastX;const dy=e.clientY-lastY;const speed=Math.hypot(dx,dy)/dt;if(speed>1.2){if(Math.abs(dx)>Math.abs(dy)){if(dx>0)gesture("swipe-right");else gesture("swipe-left")}else{if(dy>0)gesture("swipe-down");else gesture("swipe-up")}}document.body.dataset.speed=speed>1.5?"fast":"slow";document.querySelectorAll(".panel").forEach(p=>{const r=p.getBoundingClientRect();const cx=r.left+r.width/2;const cy=r.top+r.height/2;const dist=Math.hypot(e.clientX-cx,e.clientY-cy);p.dataset.prox=dist<120?"near":"far";const dxp=(e.clientX-cx)*.01;const dyp=(e.clientY-cy)*.01;p.style.transform=`translate(${dxp}px,${dyp}px)`;const x=((e.clientX-r.left)/r.width)*100;const y=((e.clientY-r.top)/r.height)*100;p.style.setProperty("--px",x+"%");p.style.setProperty("--py",y+"%")});const amb=document.getElementById(soundEngine.current);if(amb){const cxw=window.innerWidth/2;const cyw=window.innerHeight/2;const dist=Math.hypot(e.clientX-cxw,e.clientY-cyw);const maxDist=Math.hypot(cxw,cyw);amb.volume=.12+(dist/maxDist)*.06}lastX=e.clientX;lastY=e.clientY;lastTime=now})}
+function gesture(t){document.body.dataset.gesture=t;if(t==="swipe-left")navigateTo("today");if(t==="swipe-right")navigateTo("workout");if(t==="swipe-up")openQuickActions();if(t==="swipe-down")closeQuickActions()}
+function navigateTo(m){toneUp()}
+function openQuickActions(){toneUp()}
+function closeQuickActions(){toneDown()}
+function initThemeSwitcher(){document.querySelectorAll('#themeSwitcher button').forEach(b=>{b.addEventListener("click",()=>{themeEngine.apply(b.dataset.theme);toneUp()})})}
+function bootSequence(){const b=document.getElementById("bootScreen");setTimeout(()=>{b.style.opacity=0;setTimeout(()=>b.style.display="none",600)},1200)}
+function initNavButtons(){document.querySelectorAll(".nav-button[data-nav]").forEach(btn=>{btn.addEventListener("click",e=>{const t=btn.dataset.nav;playSpatial("sndToneUp",e.clientX);if(t==="workout")setScenario("HIGH_CAPACITY");if(t==="meals")setScenario("IDLE");if(t==="grocery")setScenario("LOW_CAPACITY")})})}
+window.addEventListener("load",()=>{loadState();spawnParticles();spawnHUDObjects();initHover();initGestures();initThemeSwitcher();initNavButtons();computeReadiness();themeEngine.auto();bootSequence()});
