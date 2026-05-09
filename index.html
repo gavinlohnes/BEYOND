@@ -1,183 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>BEYOND OS V6</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>BEYOND OS</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="style.css">
 </head>
-
-<body data-theme="default" data-animations="on">
-
-<!-- =========================
-     NAVIGATION DRAWER
-========================= -->
-<div id="navDrawer" class="nav-drawer nav-drawer--hidden">
-    <button id="navToggleBtn" class="nav-toggle-btn">≡</button>
-    <div class="nav-drawer-inner">
-        <button id="navTodayBtn" class="nav-item">TODAY</button>
-        <button id="navWeeklyBtn" class="nav-item">WEEKLY</button>
-        <button id="navSettingsBtn" class="nav-item">SETTINGS</button>
-    </div>
+<body>
+<div id="bootScreen">
+  <div id="bootLogo">BEYOND</div>
+  <div id="bootSub">INITIALIZING SUIT INTERFACE...</div>
 </div>
 
-<!-- =========================
-     TODAY SCREEN
-========================= -->
-<section id="todayScreen" class="screen screen-active" data-density="standard">
-    <h1>BEYOND OS</h1>
+<div id="hudParticles"></div>
+<div id="hudObjects"></div>
+<div id="hudSweep"></div>
 
-    <div class="today-actions">
-        <button class="primary-btn" onclick="updateHydration(8)">+8oz Water</button>
-        <button class="primary-btn" onclick="updateProtein(20)">+20g Protein</button>
-        <button class="primary-btn" onclick="updateCalories(250)">+250 Calories</button>
-        <button class="primary-btn" onclick="toggleTrainingSession()">TRAIN</button>
-        <button id="quickAddOpenBtn" class="secondary-btn">QUICK ADD</button>
+<div id="app" class="screen-active">
+  <div id="topBar" class="panel panel-depth">
+    <div class="panel-title">
+      <span class="icon-3d"></span>
+      BEYOND OS
     </div>
+    <div id="statusReadiness" class="status-pill">RDY: <span id="readinessValue">100</span>%</div>
+    <div id="statusScenario" class="status-pill">SCN: <span id="scenarioValue">IDLE</span></div>
+  </div>
 
-    <div id="readinessPanel" class="panel">
-        <div class="panel-title">READINESS</div>
-        <div id="readinessScore" class="readiness-score">0</div>
-        <div class="readiness-bar">
-            <div id="readinessBarFill" class="readiness-bar-fill"></div>
+  <div id="mainGrid">
+    <div id="workoutPanel" class="panel panel-depth">
+      <div class="panel-title">
+        <span class="icon-3d"></span>
+        WORKOUT
+      </div>
+      <div class="glyph glyph-workout"></div>
+      <div class="sigil"></div>
+      <div class="panel-body">
+        <div class="metric">
+          <div class="metric-label">TODAY</div>
+          <div class="metric-value" id="workoutToday">UPPER</div>
         </div>
-    </div>
-
-    <div id="recommendationsPanel" class="panel">
-        <div class="panel-title">RECOMMENDATIONS</div>
-        <div id="recList" class="rec-list"></div>
-    </div>
-
-    <div id="missionPanel" class="panel">
-        <div class="panel-title">MISSIONS</div>
-        <div id="missionList"></div>
-    </div>
-
-    <div id="alertsPanel" class="panel">
-        <div class="panel-title">ALERTS</div>
-        <div id="alertsList"></div>
-    </div>
-</section>
-
-<!-- =========================
-     SETTINGS SCREEN
-========================= -->
-<section id="settingsScreen" class="screen">
-
-    <div class="topbar">
-        <button id="settingsBackBtn" class="topbar-back">BACK</button>
-        <h2>SYSTEM SETTINGS</h2>
-    </div>
-
-    <div class="settings-grid">
-
-        <div class="settings-card">
-            <div class="settings-label">THEME</div>
-            <select id="themeSelector">
-                <option value="default">DEFAULT</option>
-                <option value="stealth">STEALTH</option>
-                <option value="alert">ALERT</option>
-                <option value="overdrive">OVERDRIVE</option>
-            </select>
+        <div class="metric">
+          <div class="metric-label">NEXT</div>
+          <div class="metric-value" id="workoutNext">LOWER</div>
         </div>
+        <button class="nav-button interactive hud-impact" data-nav="workout">ENTER WORKOUT MODE</button>
+      </div>
+    </div>
 
-        <div class="settings-card">
-            <div class="settings-label">HUD DENSITY</div>
-            <select id="hudDensitySelector">
-                <option value="compact">COMPACT</option>
-                <option value="standard" selected>STANDARD</option>
-                <option value="expanded">EXPANDED</option>
-            </select>
+    <div id="mealsPanel" class="panel panel-depth">
+      <div class="panel-title">
+        <span class="icon-3d"></span>
+        MEALS
+      </div>
+      <div class="glyph glyph-meals"></div>
+      <div class="sigil"></div>
+      <div class="panel-body">
+        <div class="metric">
+          <div class="metric-label">ANCHOR A</div>
+          <div class="metric-value" id="mealA">BEEF + RICE</div>
         </div>
-
-        <div class="settings-card">
-            <div class="settings-label">PLAYBOOK</div>
-            <select id="playbookSelector">
-                <option value="CUT">CUT</option>
-                <option value="MAINTAIN">MAINTAIN</option>
-                <option value="BULK">BULK</option>
-                <option value="RECOVERY">RECOVERY</option>
-            </select>
+        <div class="metric">
+          <div class="metric-label">ANCHOR B</div>
+          <div class="metric-value" id="mealB">CHICKEN + PASTA</div>
         </div>
+        <button class="nav-button interactive hud-impact" data-nav="meals">ENTER MEAL MODE</button>
+      </div>
+    </div>
 
-        <div class="settings-card">
-            <div class="settings-label">SCENARIO</div>
-            <select id="scenarioSelector">
-                <option value="">NONE</option>
-                <option value="NIGHTSHIFT">NIGHT SHIFT</option>
-                <option value="TRAVEL">TRAVEL</option>
-                <option value="DELOAD">DELOAD</option>
-            </select>
+    <div id="groceryPanel" class="panel panel-depth">
+      <div class="panel-title">
+        <span class="icon-3d"></span>
+        GROCERY
+      </div>
+      <div class="glyph glyph-grocery"></div>
+      <div class="sigil"></div>
+      <div class="panel-body">
+        <div class="metric">
+          <div class="metric-label">BUDGET</div>
+          <div class="metric-value" id="budgetValue">$120</div>
         </div>
-
-        <div class="settings-card">
-            <div class="settings-label">SYSTEM</div>
-            <button id="animationToggle" class="settings-btn">TOGGLE ANIMATIONS</button>
-            <button id="soundToggle" class="settings-btn">TOGGLE SOUND</button>
+        <div class="metric">
+          <div class="metric-label">ANCHOR COUNT</div>
+          <div class="metric-value" id="anchorCount">2</div>
         </div>
-
-        <div class="settings-card">
-            <div class="settings-label">DATA</div>
-            <button id="resetSystemBtn" class="settings-btn settings-btn-danger">RESET SYSTEM</button>
-        </div>
-
+        <button class="nav-button interactive hud-impact" data-nav="grocery">ENTER GROCERY MODE</button>
+      </div>
     </div>
-</section>
+  </div>
 
-<!-- =========================
-     WEEKLY SUMMARY SCREEN
-========================= -->
-<section id="weeklySummaryScreen" class="screen">
-
-    <div class="topbar">
-        <button id="weeklyBackBtn" class="topbar-back">BACK</button>
-        <h2>WEEKLY SUMMARY</h2>
-    </div>
-
-    <div class="weekly-grid">
-        <div>Consistency: <span id="weeklyConsistency"></span></div>
-        <div>Calories: <span id="weeklyCalories"></span></div>
-        <div>Protein: <span id="weeklyProtein"></span></div>
-        <div>Hydration: <span id="weeklyHydration"></span></div>
-        <div>Sleep: <span id="weeklySleep"></span></div>
-        <div>Training: <span id="weeklyTraining"></span></div>
-    </div>
-
-    <div id="intelligencePanel" class="panel" style="margin-top:20px;">
-        <div class="panel-title">INTELLIGENCE</div>
-
-        <div class="panel-subtitle" style="font-size:12px; margin-top:10px;">STRENGTHS</div>
-        <div id="intelStrengths"></div>
-
-        <div class="panel-subtitle" style="font-size:12px; margin-top:10px;">WEAKNESSES</div>
-        <div id="intelWeaknesses"></div>
-
-        <div class="panel-subtitle" style="font-size:12px; margin-top:10px;">RECOMMENDATIONS</div>
-        <div id="intelRecommendations"></div>
-
-        <div class="panel-subtitle" style="font-size:12px; margin-top:10px;">NEXT WEEK FOCUS</div>
-        <div id="intelNextWeek"></div>
-    </div>
-
-</section>
-
-<!-- =========================
-     QUICK ADD PANEL
-========================= -->
-<div id="quickAddOverlay" class="quick-overlay"></div>
-
-<div id="quickAddPanel" class="quick-panel">
-    <div class="quick-header">
-        <span>QUICK ADD</span>
-        <button id="quickAddCloseBtn" class="quick-close">✕</button>
-    </div>
-    <div class="quick-grid">
-        <button class="quick-btn" data-action="hydration">+8oz Water</button>
-        <button class="quick-btn" data-action="protein">+20g Protein</button>
-        <button class="quick-btn" data-action="calories">+250 Calories</button>
-        <button class="quick-btn" data-action="training">Log Training</button>
-    </div>
+  <div id="themeSwitcher" class="panel">
+    <div class="panel-title">THEME</div>
+    <button class="nav-button interactive hud-impact" data-theme="nightops">Night Ops</button>
+    <button class="nav-button interactive hud-impact" data-theme="redline">Redline</button>
+    <button class="nav-button interactive hud-impact" data-theme="stealth">Stealth</button>
+    <button class="nav-button interactive hud-impact" data-theme="overclock">Overclock</button>
+  </div>
 </div>
 
-<script src="app.js"></script>
+<audio id="sndNightOps" src="" loop preload="auto"></audio>
+<audio id="sndRedline" src="" loop preload="auto"></audio>
+<audio id="sndStealth" src="" loop preload="auto"></audio>
+<audio id="sndOverclock" src="" loop preload="auto"></audio>
+
+<audio id="sndToneUp" src="" preload="auto"></audio>
+<audio id="sndToneDown" src="" preload="auto"></audio>
+<audio id="sndScenario" src="" preload="auto"></audio>
+<audio id="sndCriticalAlert" src="" preload="auto"></audio>
+
+<script src="script.js"></script>
 </body>
 </html>
