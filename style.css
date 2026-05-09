@@ -1,155 +1,33 @@
-// ---------------------------
-// STATE ENGINE
-// ---------------------------
-const state = {
-  calories: { value: 1847, target: 2400, unit: 'kcal', pct: 77 },
-  protein: { value: 148, target: 200, unit: 'g', pct: 74 },
-  hydration: { value: 64, target: 100, unit: 'oz', pct: 64 },
-  readiness: { value: 82, unit: '%', status: 'OPTIMAL' },
-  sleep: { value: 7.2, unit: 'h', status: 'NOMINAL' }
-};
-
-function saveState() {
-  localStorage.setItem("beyondOS", JSON.stringify(state));
+body {
+    margin: 0;
+    padding: 0;
+    background: #000000;
+    color: #ff1a1a;
+    font-family: Arial, sans-serif;
+    text-align: center;
 }
 
-function loadState() {
-  const saved = localStorage.getItem("beyondOS");
-  if (saved) Object.assign(state, JSON.parse(saved));
+#hud {
+    padding: 20px;
 }
 
-// ---------------------------
-// CLOCK ENGINE
-// ---------------------------
-function updateClock() {
-  const now = new Date();
-
-  const days = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
-  const day = days[now.getDay()];
-
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const date = String(now.getDate()).padStart(2, "0");
-  const year = String(now.getFullYear()).slice(2);
-
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-
-  document.querySelector(".bos-sys-label-left").textContent =
-    `${day} // ${month}.${date}.${year}`;
-
-  document.querySelector(".bos-sys-label").textContent =
-    `${hours}:${minutes}`;
+#emblem-main {
+    width: 120px;
+    margin-bottom: 10px;
 }
 
-setInterval(updateClock, 1000);
-updateClock();
-
-// ---------------------------
-// HUD RENDER
-// ---------------------------
-function renderHUD() {
-  const hud = document.getElementById('hud-compact');
-  hud.innerHTML = `
-    <div class="bos-hud-seg">
-      <div class="bos-hud-label">Calories</div>
-      <div class="bos-hud-value">${state.calories.value}</div>
-      <div class="bos-hud-unit">/ ${state.calories.target} ${state.calories.unit}</div>
-      <div class="bos-hud-bar-wrap">
-        <div class="bos-hud-bar" style="width:${state.calories.pct}%"></div>
-      </div>
-    </div>
-    <div class="bos-hud-seg">
-      <div class="bos-hud-label">Hydration</div>
-      <div class="bos-hud-value">${state.hydration.value}</div>
-      <div class="bos-hud-unit">/ ${state.hydration.target} ${state.hydration.unit}</div>
-      <div class="bos-hud-bar-wrap">
-        <div class="bos-hud-bar" style="width:${state.hydration.pct}%"></div>
-      </div>
-    </div>
-    <div class="bos-hud-seg">
-      <div class="bos-hud-label">Readiness</div>
-      <div class="bos-hud-value">${state.readiness.value}%</div>
-      <div class="bos-hud-unit">${state.readiness.status}</div>
-      <div class="bos-hud-bar-wrap">
-        <div class="bos-hud-bar" style="width:${state.readiness.value}%"></div>
-      </div>
-    </div>
-    <div class="bos-hud-seg">
-      <div class="bos-hud-label">Sleep</div>
-      <div class="bos-hud-value">${state.sleep.value}h</div>
-      <div class="bos-hud-unit">${state.sleep.status}</div>
-      <div class="bos-hud-bar-wrap">
-        <div class="bos-hud-bar" style="width:90%"></div>
-      </div>
-    </div>
-  `;
+#grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding: 20px;
 }
 
-// ---------------------------
-// METRIC GRID RENDER
-// ---------------------------
-function renderMetricGrid() {
-  const grid = document.getElementById('metric-grid');
-  grid.innerHTML = `
-    <div class="bos-tile">
-      <div class="bos-tile-label">Calories</div>
-      <div class="bos-tile-value">${state.calories.value}</div>
-      <div class="bos-tile-unit">${state.calories.unit} consumed</div>
-      <div class="bos-tile-pct">${state.calories.pct}%</div>
-    </div>
-    <div class="bos-tile">
-      <div class="bos-tile-label">Protein</div>
-      <div class="bos-tile-value">${state.protein.value}g</div>
-      <div class="bos-tile-unit">of ${state.protein.target}g target</div>
-      <div class="bos-tile-pct">${state.protein.pct}%</div>
-    </div>
-    <div class="bos-tile">
-      <div class="bos-tile-label">Hydration</div>
-      <div class="bos-tile-value">${state.hydration.value}${state.hydration.unit}</div>
-      <div class="bos-tile-unit">of ${state.hydration.target}${state.hydration.unit} target</div>
-      <div class="bos-tile-pct">${state.hydration.pct}%</div>
-    </div>
-    <div class="bos-tile">
-      <div class="bos-tile-label">Training Load</div>
-      <div class="bos-tile-value">HIGH</div>
-      <div class="bos-tile-unit">acute load: 1.2</div>
-      <div class="bos-tile-pct">ATL</div>
-    </div>
-  `;
+.tile {
+    background: #111;
+    border: 2px solid #ff1a1a;
+    padding: 20px;
+    color: #ff1a1a;
+    font-size: 18px;
+    border-radius: 8px;
 }
-
-// ---------------------------
-// BUTTONS
-// ---------------------------
-function wireActions() {
-  document.getElementById('btn-add').addEventListener('click', () => {
-    alert("ADD pressed — Quick Add panel coming in v2.0");
-  });
-
-  document.getElementById('btn-reset').addEventListener('click', () => {
-    if (confirm("Reset today's data?")) {
-      state.calories.value = 0;
-      state.protein.value = 0;
-      state.hydration.value = 0;
-      saveState();
-      renderHUD();
-      renderMetricGrid();
-    }
-  });
-
-  document.getElementById('btn-quick').addEventListener('click', () => {
-    alert("QUICK pressed — fast logging coming in v2.0");
-  });
-}
-
-// ---------------------------
-// INIT
-// ---------------------------
-function init() {
-  loadState();
-  renderHUD();
-  renderMetricGrid();
-  wireActions();
-}
-
-document.addEventListener('DOMContentLoaded', init);
