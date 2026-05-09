@@ -2,294 +2,136 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BEYOND OS – V3 HUD</title>
+    <title>BEYOND OS V5</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
 
-    <!-- TODAY SCREEN (DEFAULT) -->
-    <section id="todayScreen" class="screen screen-active">
+<body data-theme="default" data-animations="on">
 
-        <header class="today-header">
-            <h1>BEYOND OS</h1>
-            <p class="today-subtitle">TACTICAL DAILY HUD</p>
-        </header>
+<!-- =========================
+     NAVIGATION DRAWER
+========================= -->
+<div id="navDrawer" class="nav-drawer nav-drawer--hidden">
+    <button id="navToggleBtn" class="nav-toggle-btn">≡</button>
+    <div class="nav-drawer-inner">
+        <button id="navTodayBtn" class="nav-item">TODAY</button>
+        <button id="navWeeklyBtn" class="nav-item">WEEKLY</button>
+        <button id="navSettingsBtn" class="nav-item">SETTINGS</button>
+    </div>
+</div>
 
-        <!-- COMPACT HUD (TAP TO OPEN FULL HUD) -->
-        <div id="compactHUD" class="compact-hud">
-            <div class="compact-row">
-                <div class="compact-metric">
-                    <span class="compact-label">CAL</span>
-                    <span id="compactCalories" class="compact-value">0</span>
-                </div>
-                <div class="compact-metric">
-                    <span class="compact-label">H2O</span>
-                    <span id="compactHydration" class="compact-value">0</span>
-                </div>
-            </div>
+<!-- =========================
+     TODAY SCREEN
+========================= -->
+<section id="todayScreen" class="screen screen-active" data-density="standard">
+    <h1>BEYOND OS</h1>
 
-            <div class="compact-row">
-                <div class="compact-metric">
-                    <span class="compact-label">READINESS</span>
-                    <span id="compactReadiness" class="compact-value">0%</span>
-                </div>
-                <div class="compact-metric">
-                    <span class="compact-label">SLEEP</span>
-                    <span id="compactSleep" class="compact-value">0h</span>
-                </div>
-            </div>
+    <div class="today-actions">
+        <button class="primary-btn" onclick="updateHydration(8)">+8oz Water</button>
+        <button class="primary-btn" onclick="updateProtein(20)">+20g Protein</button>
+        <button class="primary-btn" onclick="updateCalories(250)">+250 Calories</button>
+        <button class="primary-btn" onclick="toggleTrainingSession()">TRAIN</button>
+        <button id="quickAddOpenBtn" class="secondary-btn">QUICK ADD</button>
+    </div>
 
-            <div class="compact-footer">
-                <span class="compact-hint">TAP FOR FULL HUD</span>
-            </div>
-        </div>
-
-        <!-- TODAY SCREEN ACTION ROW -->
-        <div class="bos-actions-row">
-            <button class="bos-btn bos-btn--primary" id="btn-open-weekly">📊 WEEKLY</button>
-        </div>
-
-    </section>
-
-    <!-- ADD button -->
-    <button id="quickAddBtn" class="quick-add-trigger">+ ADD</button>
-
-    <!-- QUICK ADD OVERLAY -->
-    <div id="quickAddOverlay" class="quick-add-overlay"></div>
-
-    <!-- QUICK ADD PANEL -->
-    <div id="quickAddPanel" class="quick-add-panel">
-        <div class="quick-add-header">
-            <span>QUICK ADD</span>
-            <button id="closeQuickAdd" class="quick-close-btn">✕</button>
-        </div>
-
-        <div class="quick-actions">
-            <button class="quick-action-btn" data-action="hydration">
-                +8oz Hydration
-            </button>
-
-            <button class="quick-action-btn" data-action="protein">
-                +20g Protein
-            </button>
-
-            <button class="quick-action-btn" data-action="calories">
-                +250 Calories
-            </button>
-
-            <button class="quick-action-btn" data-action="training">
-                Log Training Session
-            </button>
+    <div id="readinessPanel" class="panel">
+        <div class="panel-title">READINESS</div>
+        <div id="readinessScore" class="readiness-score">0</div>
+        <div class="readiness-bar">
+            <div id="readinessBarFill" class="readiness-bar-fill"></div>
         </div>
     </div>
 
-    <!-- FULL HUD SCREEN -->
-    <section id="hudFullScreen" class="screen hud-full-screen">
+    <div id="recommendationsPanel" class="panel">
+        <div class="panel-title">RECOMMENDATIONS</div>
+        <div id="recList" class="rec-list"></div>
+    </div>
+</section>
 
-        <div class="hud-full-topbar">
-            <button id="backToToday" class="hud-back-btn">
-                BACK
-            </button>
+<!-- =========================
+     SETTINGS SCREEN
+========================= -->
+<section id="settingsScreen" class="screen">
 
-            <h2>HUD FULL</h2>
-        </div>
-
-        <div class="hud-full-grid">
-
-            <div class="hud-metric-card">
-                <div class="hud-label">CALORIES</div>
-                <div id="hudCaloriesValue" class="hud-big-value">0</div>
-                <div class="hud-unit">kcal</div>
-
-                <div class="hud-bar">
-                    <div id="hudCaloriesBar" class="hud-bar-fill"></div>
-                </div>
-            </div>
-
-            <div class="hud-metric-card">
-                <div class="hud-label">HYDRATION</div>
-                <div id="hudHydrationValue" class="hud-big-value">0</div>
-                <div class="hud-unit">oz</div>
-
-                <div class="hud-bar">
-                    <div id="hudHydrationBar" class="hud-bar-fill"></div>
-                </div>
-            </div>
-
-            <div class="hud-metric-card">
-                <div class="hud-label">READINESS</div>
-                <div id="hudReadinessValue" class="hud-big-value">0</div>
-                <div class="hud-unit">%</div>
-
-                <div class="hud-bar">
-                    <div id="hudReadinessBar" class="hud-bar-fill"></div>
-                </div>
-            </div>
-
-            <div class="hud-metric-card">
-                <div class="hud-label">SLEEP</div>
-                <div id="hudSleepValue" class="hud-big-value">0</div>
-                <div class="hud-unit">hrs</div>
-
-                <div class="hud-bar">
-                    <div id="hudSleepBar" class="hud-bar-fill"></div>
-                </div>
-            </div>
-
-        </div>
-    </section>
-
-    <!-- ============================================================ -->
-    <!-- BEYOND OS v3.0 — WEEKLY SUMMARY SCREEN                       -->
-    <!-- ============================================================ -->
-    <div id="screen-weekly" class="bos-screen bos-screen--hidden">
-      <div class="bos-corner tl"></div>
-      <div class="bos-corner tr"></div>
-      <div class="bos-corner bl"></div>
-      <div class="bos-corner br"></div>
-
-      <!-- Weekly Header -->
-      <div class="bos-weekly-header">
-        <button class="bos-btn bos-btn--back" id="btn-weekly-back">◀ BACK</button>
-        <div class="bos-weekly-title">
-          <div class="bos-weekly-title-label">BEYOND OS</div>
-          <div class="bos-weekly-title-sub">// WEEKLY SUMMARY</div>
-        </div>
-        <div class="bos-weekly-week-label" id="weekly-week-label">WEEK —</div>
-      </div>
-
-      <!-- Rolling Average Grid -->
-      <div class="bos-section-label">// 7-DAY ROLLING AVERAGES</div>
-      <div class="bos-weekly-grid">
-
-        <div class="bos-weekly-tile">
-          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
-          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
-          <div class="bos-weekly-tile-label">AVG CALORIES</div>
-          <div class="bos-weekly-tile-value" id="wavg-calories">—</div>
-          <div class="bos-weekly-tile-unit">kcal / day</div>
-          <div class="bos-weekly-flag" id="wflag-calories">—</div>
-        </div>
-
-        <div class="bos-weekly-tile">
-          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
-          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
-          <div class="bos-weekly-tile-label">AVG PROTEIN</div>
-          <div class="bos-weekly-tile-value" id="wavg-protein">—</div>
-          <div class="bos-weekly-tile-unit">g / day</div>
-          <div class="bos-weekly-flag" id="wflag-protein">—</div>
-        </div>
-
-        <div class="bos-weekly-tile">
-          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
-          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
-          <div class="bos-weekly-tile-label">AVG HYDRATION</div>
-          <div class="bos-weekly-tile-value" id="wavg-hydration">—</div>
-          <div class="bos-weekly-tile-unit">oz / day</div>
-          <div class="bos-weekly-flag" id="wflag-hydration">—</div>
-        </div>
-
-        <div class="bos-weekly-tile">
-          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
-          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
-          <div class="bos-weekly-tile-label">AVG SLEEP</div>
-          <div class="bos-weekly-tile-value" id="wavg-sleep">—</div>
-          <div class="bos-weekly-tile-unit">hrs / night</div>
-          <div class="bos-weekly-flag" id="wflag-sleep">—</div>
-        </div>
-
-        <div class="bos-weekly-tile">
-          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
-          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
-          <div class="bos-weekly-tile-label">AVG READINESS</div>
-          <div class="bos-weekly-tile-value" id="wavg-readiness">—</div>
-          <div class="bos-weekly-tile-unit">score</div>
-          <div class="bos-weekly-flag" id="wflag-readiness">—</div>
-        </div>
-
-        <div class="bos-weekly-tile">
-          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
-          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
-          <div class="bos-weekly-tile-label">AVG TRAINING LOAD</div>
-          <div class="bos-weekly-tile-value" id="wavg-training">—</div>
-          <div class="bos-weekly-tile-unit">vol lbs / day</div>
-          <div class="bos-weekly-flag" id="wflag-training">—</div>
-        </div>
-
-      </div>
-
-      <!-- Flag Summary -->
-      <div class="bos-section-label">// SYSTEM FLAGS</div>
-      <div class="bos-flag-panel">
-        <div class="bos-flag-row">
-          <div class="bos-flag-name">SLEEP</div>
-          <div class="bos-flag-status" id="flagstatus-sleep">—</div>
-        </div>
-        <div class="bos-flag-row">
-          <div class="bos-flag-name">PROTEIN</div>
-          <div class="bos-flag-status" id="flagstatus-protein">—</div>
-        </div>
-        <div class="bos-flag-row">
-          <div class="bos-flag-name">HYDRATION</div>
-          <div class="bos-flag-status" id="flagstatus-hydration">—</div>
-        </div>
-        <div class="bos-flag-row">
-          <div class="bos-flag-name">READINESS</div>
-          <div class="bos-flag-status" id="flagstatus-readiness">—</div>
-        </div>
-      </div>
-
-      <!-- Trend Sparklines -->
-      <div class="bos-section-label">// 7-DAY TREND — CALORIES</div>
-      <div class="bos-sparkline-wrap">
-        <canvas id="spark-calories" class="bos-sparkline" width="640" height="60"></canvas>
-      </div>
-      <div class="bos-section-label">// 7-DAY TREND — SLEEP</div>
-      <div class="bos-sparkline-wrap">
-        <canvas id="spark-sleep" class="bos-sparkline" width="640" height="60"></canvas>
-      </div>
-
-      <!-- Data Count -->
-      <div class="bos-weekly-datacount" id="weekly-datacount">DATA POINTS: 0 / 7</div>
-
-      <!-- Weekly Close Button -->
-      <div class="bos-weekly-close-row">
-        <button class="bos-btn bos-btn--close-week" id="btn-close-week">
-          ⬛ CLOSE WEEK — RESET
-        </button>
-      </div>
-
-      <div class="bos-status-bar">
-        <span>TREND ENGINE: ACTIVE</span>
-        <span>LOGIC: DETERMINISTIC</span>
-        <span>AI: NONE</span>
-      </div>
+    <div class="topbar">
+        <button id="settingsBackBtn" class="topbar-back">BACK</button>
+        <h2>SYSTEM SETTINGS</h2>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- BEYOND OS v3.0 — WEEK CLOSE CONFIRMATION MODAL              -->
-    <!-- ============================================================ -->
-    <div id="modal-week-close" class="bos-modal-overlay bos-modal-overlay--hidden">
-      <div class="bos-modal">
-        <div class="bos-corner tl"></div>
-        <div class="bos-corner tr"></div>
-        <div class="bos-corner bl"></div>
-        <div class="bos-corner br"></div>
-        <div class="bos-modal-icon">■</div>
-        <div class="bos-modal-title">WEEK CLOSED</div>
-        <div class="bos-modal-sub">NEW WEEK STARTED</div>
-        <div class="bos-modal-divider"></div>
-        <div class="bos-modal-detail" id="modal-close-detail">
-          TRENDS ARCHIVED // DAILY STATE RESET<br>
-          ALL COUNTERS ZEROED
+    <div class="settings-grid">
+
+        <div class="settings-card">
+            <div class="settings-label">THEME</div>
+            <select id="themeSelector">
+                <option value="default">DEFAULT</option>
+                <option value="stealth">STEALTH</option>
+                <option value="alert">ALERT</option>
+                <option value="overdrive">OVERDRIVE</option>
+            </select>
         </div>
-        <button class="bos-btn bos-btn--modal-confirm" id="btn-modal-confirm">
-          ✓ CONFIRMED — PROCEED
-        </button>
-      </div>
+
+        <div class="settings-card">
+            <div class="settings-label">HUD DENSITY</div>
+            <select id="hudDensitySelector">
+                <option value="compact">COMPACT</option>
+                <option value="standard" selected>STANDARD</option>
+                <option value="expanded">EXPANDED</option>
+            </select>
+        </div>
+
+        <div class="settings-card">
+            <div class="settings-label">SYSTEM</div>
+            <button id="animationToggle" class="settings-btn">TOGGLE ANIMATIONS</button>
+            <button id="soundToggle" class="settings-btn">TOGGLE SOUND</button>
+        </div>
+
+        <div class="settings-card">
+            <div class="settings-label">DATA</div>
+            <button id="resetSystemBtn" class="settings-btn settings-btn-danger">RESET SYSTEM</button>
+        </div>
+
+    </div>
+</section>
+
+<!-- =========================
+     WEEKLY SUMMARY SCREEN
+========================= -->
+<section id="weeklySummaryScreen" class="screen">
+
+    <div class="topbar">
+        <button id="weeklyBackBtn" class="topbar-back">BACK</button>
+        <h2>WEEKLY SUMMARY</h2>
     </div>
 
-    <script src="app.js"></script>
+    <div class="weekly-grid">
+        <div>Consistency: <span id="weeklyConsistency"></span></div>
+        <div>Calories: <span id="weeklyCalories"></span></div>
+        <div>Protein: <span id="weeklyProtein"></span></div>
+        <div>Hydration: <span id="weeklyHydration"></span></div>
+        <div>Sleep: <span id="weeklySleep"></span></div>
+        <div>Training: <span id="weeklyTraining"></span></div>
+    </div>
+
+</section>
+
+<!-- =========================
+     QUICK ADD PANEL
+========================= -->
+<div id="quickAddOverlay" class="quick-overlay"></div>
+
+<div id="quickAddPanel" class="quick-panel">
+    <div class="quick-header">
+        <span>QUICK ADD</span>
+        <button id="quickAddCloseBtn" class="quick-close">✕</button>
+    </div>
+    <div class="quick-grid">
+        <button class="quick-btn" data-action="hydration">+8oz Water</button>
+        <button class="quick-btn" data-action="protein">+20g Protein</button>
+        <button class="quick-btn" data-action="calories">+250 Calories</button>
+        <button class="quick-btn" data-action="training">Log Training</button>
+    </div>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
