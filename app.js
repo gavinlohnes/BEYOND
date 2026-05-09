@@ -1,13 +1,25 @@
-console.log("BBOS Tactical HUD Loaded — Wave 5 Active");
+console.log("BBOS Tactical HUD Loaded — Wave 6 Active");
 
 /* ============================
    OS STATE
 ============================ */
 const OS = {
-  phase: 5,
+  phase: 6,
   status: "Running",
   ticks: 0,
   lastUpdate: null
+};
+
+/* ============================
+   SUIT STATE (WAVE 6)
+============================ */
+const Suit = {
+  mode: "standard",
+  alerts: [],
+  parallax: { x: 0, y: 0 },
+  geometryPulse: 0,
+  geometryPulseDir: 1,
+  shake: 0
 };
 
 /* ============================
@@ -46,7 +58,6 @@ const Systems = {
   }
 };
 
-/* Keep last values for trend calculation */
 const lastSystemValues = {
   fatigue: Systems.fatigue.value,
   hydration: Systems.hydration.value,
@@ -61,7 +72,7 @@ const lastSystemValues = {
 const Protocols = [
   {
     name: "Baseline Stabilization",
-    duration: 30, // seconds
+    duration: 30,
     progress: 0,
     active: false
   },
@@ -75,18 +86,17 @@ const Protocols = [
 
 let activeProtocol = null;
 
-/* Start a protocol */
 function startProtocol() {
   if (activeProtocol) return;
 
-  activeProtocol = Protocols[0]; // default protocol
+  activeProtocol = Protocols[0];
   activeProtocol.active = true;
   activeProtocol.progress = 0;
 
   updateProtocolHUD();
+  pushSuitAlert("PROTOCOL STARTED");
 }
 
-/* Update protocol progress */
 function updateProtocol() {
   if (!activeProtocol) return;
 
@@ -99,7 +109,6 @@ function updateProtocol() {
   updateProtocolHUD();
 }
 
-/* Complete protocol */
 function completeProtocol() {
   if (!activeProtocol) return;
 
@@ -108,9 +117,10 @@ function completeProtocol() {
 
   document.getElementById("protocol-name").textContent = "None";
   document.getElementById("protocol-progress").textContent = "Progress: 0%";
+
+  pushSuitAlert("PROTOCOL COMPLETE");
 }
 
-/* Update HUD for protocol */
 function updateProtocolHUD() {
   if (!activeProtocol) return;
 
@@ -128,64 +138,54 @@ function updateProtocolHUD() {
 /* ============================
    SYSTEMS LOGIC (WAVE 5)
 ============================ */
-
-/* Demo update: simple deterministic drift to show movement */
 function updateRawSystems() {
-  // Fatigue: slowly rises with time, capped
   Systems.fatigue.value = clamp(Systems.fatigue.value + 0.3, 0, 100);
-
-  // Hydration: slowly falls with time
   Systems.hydration.value = clamp(Systems.hydration.value - 0.2, 0, 100);
 
-  // Load: small oscillation based on ticks
   const loadBase = 30 + 10 * Math.sin(OS.ticks / 20);
   Systems.load.value = clamp(loadBase, 0, 100);
 }
 
-/* Derived: readiness from fatigue, hydration, load */
 function computeReadiness() {
   const f = Systems.fatigue.value;
   const h = Systems.hydration.value;
   const l = Systems.load.value;
 
   let readiness = 100;
-  readiness -= f * 0.5;          // fatigue hurts readiness
-  readiness -= l * 0.3;          // load hurts readiness
+  readiness -= f * 0.5;
+  readiness -= l * 0.3;
   if (h > 50) {
-    readiness += (h - 50) * 0.4; // extra hydration helps
+    readiness += (h - 50) * 0.4;
   }
 
   Systems.readiness.value = clamp(readiness, 0, 100);
 }
 
-/* Derived: stability from volatility of core systems */
 function computeStability() {
   const df = Math.abs(Systems.fatigue.value - lastSystemValues.fatigue);
   const dh = Math.abs(Systems.hydration.value - lastSystemValues.hydration);
   const dl = Math.abs(Systems.load.value - lastSystemValues.load);
 
-  const volatility = df + dh + dl; // simple measure
+  const volatility = df + dh + dl;
 
   let stability = Systems.stability.value;
 
   if (volatility < 0.5) {
-    stability += 0.5; // very stable
+    stability += 0.5;
   } else if (volatility < 2) {
-    stability += 0.1; // mildly stable
+    stability += 0.1;
   } else {
-    stability -= 0.7; // unstable
+    stability -= 0.7;
   }
 
   Systems.stability.value = clamp(stability, 0, 100);
 }
 
-/* Status + trend classification */
 function updateSystemStatusAndTrends() {
   for (const key of Object.keys(Systems)) {
     const sys = Systems[key];
     const last = lastSystemValues[key];
 
-    // Trend
     if (sys.value > last + 0.3) {
       sys.trend = "up";
     } else if (sys.value < last - 0.3) {
@@ -194,7 +194,6 @@ function updateSystemStatusAndTrends() {
       sys.trend = "stable";
     }
 
-    // Status thresholds
     if (key === "fatigue") {
       if (sys.value < 40) sys.status = "ok";
       else if (sys.value < 70) sys.status = "warning";
@@ -213,8 +212,18 @@ function updateSystemStatusAndTrends() {
       else sys.status = "critical";
     }
 
-    // Save last value
     lastSystemValues[key] = sys.value;
+  }
+
+  // Simple alert triggers based on critical states
+  if (Systems.hydration.status === "critical") {
+    pushSuitAlert("LOW HYDRATION");
+  }
+  if (Systems.fatigue.status === "critical") {
+    pushSuitAlert("HIGH FATIGUE");
+  }
+  if (Systems.stability.status === "critical") {
+    pushSuitAlert("STABILITY DROP");
   }
 }
 
@@ -295,9 +304,82 @@ function renderSystems() {
   }
 }
 
-/* Utility */
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
+/* ============================
+   SUIT VISOR LOGIC (WAVE 6)
+============================ */
+function updateSuitModeLabel() {
+  const label = document.getElementById("suit-mode-label");
+  let text = "MODE: STANDARD";
+
+  if (Suit.mode === "combat") text = "MODE: COMBAT";
+  else if (Suit.mode === "stealth") text = "MODE: STEALTH";
+  else if (Suit.mode === "diagnostic") text = "MODE: DIAGNOSTIC";
+
+  label.textContent = text;
+}
+
+function pushSuitAlert(message) {
+  // avoid spamming identical alerts every tick
+  if (Suit.alerts.length && Suit.alerts[Suit.alerts.length - 1] === message) {
+    return;
+  }
+  Suit.alerts.push(message);
+  renderSuitAlerts();
+}
+
+function renderSuitAlerts() {
+  const container = document.getElementById("suit-alerts");
+  container.innerHTML = "";
+
+  const recent = Suit.alerts.slice(-3); // last 3 alerts
+
+  recent.forEach((msg, idx) => {
+    const alertEl = document.createElement("div");
+    alertEl.className = "suit-alert";
+    alertEl.textContent = msg;
+
+    container.appendChild(alertEl);
+
+    // animate in
+    requestAnimationFrame(() => {
+      alertEl.classList.add("show");
+    });
+
+    // auto remove after 1.5s
+    setTimeout(() => {
+      alertEl.classList.remove("show");
+    }, 1500 + idx * 100);
+  });
+}
+
+function updateSuitParallax() {
+  const parallaxLayer = document.getElementById("suit-geometry-parallax");
+  const shakeX = Suit.mode === "combat" ? Suit.shake : 0;
+  const shakeY = Suit.mode === "combat" ? -Suit.shake : 0;
+
+  parallaxLayer.style.transform =
+    `translate(${Suit.parallax.x + shakeX}px, ${Suit.parallax.y + shakeY}px)`;
+}
+
+/* Mouse-based parallax */
+document.addEventListener("mousemove", (e) => {
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+
+  const dx = (e.clientX - cx) / cx;
+  const dy = (e.clientY - cy) / cy;
+
+  Suit.parallax.x = clamp(dx * 3, -3, 3);
+  Suit.parallax.y = clamp(dy * 3, -3, 3);
+});
+
+/* Simple combat shake demo: pulse every few ticks if in combat */
+function updateSuitShake() {
+  if (Suit.mode !== "combat") {
+    Suit.shake = 0;
+    return;
+  }
+  Suit.shake = OS.ticks % 4 === 0 ? 1 : 0;
 }
 
 /* ============================
@@ -310,12 +392,15 @@ function heartbeat() {
   updateOSStatus();
   updateProtocol();
 
-  // Wave 5 systems pipeline
   updateRawSystems();
   computeReadiness();
   computeStability();
   updateSystemStatusAndTrends();
   renderSystems();
+
+  updateSuitShake();
+  updateSuitParallax();
+  updateSuitModeLabel();
 }
 
 setInterval(heartbeat, 1000);
@@ -331,6 +416,13 @@ function updateOSStatus() {
 }
 
 /* ============================
+   UTILS
+============================ */
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+/* ============================
    BUTTONS
 ============================ */
 document.getElementById("testBtn").addEventListener("click", () => {
@@ -341,7 +433,7 @@ document.getElementById("testBtn").addEventListener("click", () => {
     phase: OS.phase,
     ticks: OS.ticks,
     timestamp: new Date().toLocaleTimeString(),
-    message: "Wave 5 operational. Systems dashboard online."
+    message: "Wave 6 operational. Suit visor online."
   };
 
   output.textContent = JSON.stringify(result, null, 2);
