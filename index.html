@@ -8,15 +8,18 @@
 </head>
 <body>
 
+<!-- BOOT SCREEN -->
 <div id="bootScreen">
   <div id="bootLogo">BEYOND</div>
   <div id="bootSub">INITIALIZING SUIT INTERFACE...</div>
 </div>
 
+<!-- ATMOSPHERE LAYERS -->
 <div id="hudParticles"></div>
 <div id="hudObjects"></div>
 <div id="hudSweep"></div>
 
+<!-- APP ROOT -->
 <div id="app" class="screen-active">
 
   <div id="topBar" class="panel panel-depth">
@@ -30,6 +33,7 @@
 
   <div id="mainGrid">
 
+    <!-- WORKOUT PANEL -->
     <div id="workoutPanel" class="panel panel-depth">
       <div class="panel-title"><span class="icon-3d"></span>WORKOUT</div>
       <div class="glyph glyph-workout"></div>
@@ -47,6 +51,7 @@
       </div>
     </div>
 
+    <!-- MEALS PANEL -->
     <div id="mealsPanel" class="panel panel-depth">
       <div class="panel-title"><span class="icon-3d"></span>MEALS</div>
       <div class="glyph glyph-meals"></div>
@@ -64,6 +69,7 @@
       </div>
     </div>
 
+    <!-- GROCERY PANEL -->
     <div id="groceryPanel" class="panel panel-depth">
       <div class="panel-title"><span class="icon-3d"></span>GROCERY</div>
       <div class="glyph glyph-grocery"></div>
@@ -83,6 +89,7 @@
 
   </div>
 
+  <!-- THEME SWITCHER -->
   <div id="themeSwitcher" class="panel">
     <div class="panel-title">THEME</div>
     <button class="nav-button" data-theme="nightops">Night Ops</button>
@@ -93,7 +100,7 @@
 
 </div>
 
-<!-- AUDIO (paste your base64 into these) -->
+<!-- AUDIO (empty for now — you will add base64 later) -->
 <audio id="sndNightOps" src="" loop preload="auto"></audio>
 <audio id="sndRedline" src="" loop preload="auto"></audio>
 <audio id="sndStealth" src="" loop preload="auto"></audio>
@@ -104,6 +111,8 @@
 <audio id="sndScenario" src="" preload="auto"></audio>
 <audio id="sndCriticalAlert" src="" preload="auto"></audio>
 
+<!-- CORRECT JS FILE -->
 <script src="script.js"></script>
+
 </body>
 </html>
