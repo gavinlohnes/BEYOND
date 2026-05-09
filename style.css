@@ -1,324 +1,155 @@
-:root {
-  --red: #ff1a1a;
-  --red-soft: #b30000;
-  --bg-base: #000000;
-  --bg-panel: #0a0a0a;
-  --bg-tile: #111111;
-  --text-soft: #ffffff44;
-  --text-mid: #ffffff88;
-  --glow-red: #ff1a1a55;
+// ---------------------------
+// STATE ENGINE
+// ---------------------------
+const state = {
+  calories: { value: 1847, target: 2400, unit: 'kcal', pct: 77 },
+  protein: { value: 148, target: 200, unit: 'g', pct: 74 },
+  hydration: { value: 64, target: 100, unit: 'oz', pct: 64 },
+  readiness: { value: 82, unit: '%', status: 'OPTIMAL' },
+  sleep: { value: 7.2, unit: 'h', status: 'NOMINAL' }
+};
+
+function saveState() {
+  localStorage.setItem("beyondOS", JSON.stringify(state));
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+function loadState() {
+  const saved = localStorage.getItem("beyondOS");
+  if (saved) Object.assign(state, JSON.parse(saved));
 }
 
-body {
-  background: #000;
-  color: #fff;
-  font-family: 'Share Tech Mono', 'Courier New', monospace;
+// ---------------------------
+// CLOCK ENGINE
+// ---------------------------
+function updateClock() {
+  const now = new Date();
+
+  const days = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+  const day = days[now.getDay()];
+
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const date = String(now.getDate()).padStart(2, "0");
+  const year = String(now.getFullYear()).slice(2);
+
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  document.querySelector(".bos-sys-label-left").textContent =
+    `${day} // ${month}.${date}.${year}`;
+
+  document.querySelector(".bos-sys-label").textContent =
+    `${hours}:${minutes}`;
 }
 
-/* TODAY SCREEN ROOT */
+setInterval(updateClock, 1000);
+updateClock();
 
-.bos-root {
-  background: var(--bg-base);
-  color: #fff;
-  border: 2px solid var(--red);
-  box-shadow: 0 0 12px var(--glow-red), inset 0 0 4px #ff1a1a22;
-  position: relative;
-  overflow: hidden;
-  max-width: 480px;
-  margin: 16px auto;
+// ---------------------------
+// HUD RENDER
+// ---------------------------
+function renderHUD() {
+  const hud = document.getElementById('hud-compact');
+  hud.innerHTML = `
+    <div class="bos-hud-seg">
+      <div class="bos-hud-label">Calories</div>
+      <div class="bos-hud-value">${state.calories.value}</div>
+      <div class="bos-hud-unit">/ ${state.calories.target} ${state.calories.unit}</div>
+      <div class="bos-hud-bar-wrap">
+        <div class="bos-hud-bar" style="width:${state.calories.pct}%"></div>
+      </div>
+    </div>
+    <div class="bos-hud-seg">
+      <div class="bos-hud-label">Hydration</div>
+      <div class="bos-hud-value">${state.hydration.value}</div>
+      <div class="bos-hud-unit">/ ${state.hydration.target} ${state.hydration.unit}</div>
+      <div class="bos-hud-bar-wrap">
+        <div class="bos-hud-bar" style="width:${state.hydration.pct}%"></div>
+      </div>
+    </div>
+    <div class="bos-hud-seg">
+      <div class="bos-hud-label">Readiness</div>
+      <div class="bos-hud-value">${state.readiness.value}%</div>
+      <div class="bos-hud-unit">${state.readiness.status}</div>
+      <div class="bos-hud-bar-wrap">
+        <div class="bos-hud-bar" style="width:${state.readiness.value}%"></div>
+      </div>
+    </div>
+    <div class="bos-hud-seg">
+      <div class="bos-hud-label">Sleep</div>
+      <div class="bos-hud-value">${state.sleep.value}h</div>
+      <div class="bos-hud-unit">${state.sleep.status}</div>
+      <div class="bos-hud-bar-wrap">
+        <div class="bos-hud-bar" style="width:90%"></div>
+      </div>
+    </div>
+  `;
 }
 
-/* Corners */
-
-.bos-corner {
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border-color: var(--red);
-  border-style: solid;
-  z-index: 10;
-}
-.bos-corner.tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
-.bos-corner.tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
-.bos-corner.bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
-.bos-corner.br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
-
-/* Emblem row */
-
-.bos-emblem-row {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px 0 8px;
-  border-bottom: 1px solid #ff1a1a44;
-  position: relative;
-  background: var(--bg-base);
-}
-
-.bos-emblem-wrap {
-  width: 56px;
-  height: 56px;
-  filter: drop-shadow(0 0 8px var(--red)) drop-shadow(0 0 16px #b3000066);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+// ---------------------------
+// METRIC GRID RENDER
+// ---------------------------
+function renderMetricGrid() {
+  const grid = document.getElementById('metric-grid');
+  grid.innerHTML = `
+    <div class="bos-tile">
+      <div class="bos-tile-label">Calories</div>
+      <div class="bos-tile-value">${state.calories.value}</div>
+      <div class="bos-tile-unit">${state.calories.unit} consumed</div>
+      <div class="bos-tile-pct">${state.calories.pct}%</div>
+    </div>
+    <div class="bos-tile">
+      <div class="bos-tile-label">Protein</div>
+      <div class="bos-tile-value">${state.protein.value}g</div>
+      <div class="bos-tile-unit">of ${state.protein.target}g target</div>
+      <div class="bos-tile-pct">${state.protein.pct}%</div>
+    </div>
+    <div class="bos-tile">
+      <div class="bos-tile-label">Hydration</div>
+      <div class="bos-tile-value">${state.hydration.value}${state.hydration.unit}</div>
+      <div class="bos-tile-unit">of ${state.hydration.target}${state.hydration.unit} target</div>
+      <div class="bos-tile-pct">${state.hydration.pct}%</div>
+    </div>
+    <div class="bos-tile">
+      <div class="bos-tile-label">Training Load</div>
+      <div class="bos-tile-value">HIGH</div>
+      <div class="bos-tile-unit">acute load: 1.2</div>
+      <div class="bos-tile-pct">ATL</div>
+    </div>
+  `;
 }
 
-.bos-emblem-wrap img {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-  display: block;
+// ---------------------------
+// BUTTONS
+// ---------------------------
+function wireActions() {
+  document.getElementById('btn-add').addEventListener('click', () => {
+    alert("ADD pressed — Quick Add panel coming in v2.0");
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (confirm("Reset today's data?")) {
+      state.calories.value = 0;
+      state.protein.value = 0;
+      state.hydration.value = 0;
+      saveState();
+      renderHUD();
+      renderMetricGrid();
+    }
+  });
+
+  document.getElementById('btn-quick').addEventListener('click', () => {
+    alert("QUICK pressed — fast logging coming in v2.0");
+  });
 }
 
-.bos-sys-label {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 9px;
-  color: var(--red);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  opacity: 0.8;
+// ---------------------------
+// INIT
+// ---------------------------
+function init() {
+  loadState();
+  renderHUD();
+  renderMetricGrid();
+  wireActions();
 }
 
-.bos-sys-label-left {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 9px;
-  color: #ff1a1a66;
-  letter-spacing: 2px;
-}
-
-/* HUD compact */
-
-.bos-hud {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-bottom: 1px solid #ff1a1a44;
-  background: var(--bg-base);
-}
-
-.bos-hud-seg {
-  padding: 8px 10px;
-  border-right: 1px solid #ff1a1a33;
-  text-align: center;
-}
-.bos-hud-seg:last-child { border-right: none; }
-
-.bos-hud-label {
-  font-size: 9px;
-  color: var(--text-mid);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-bottom: 2px;
-}
-
-.bos-hud-value {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--red);
-  text-shadow: 0 0 6px #ff1a1a99;
-  line-height: 1;
-}
-
-.bos-hud-unit {
-  font-size: 8px;
-  color: var(--text-soft);
-  margin-top: 1px;
-}
-
-.bos-hud-bar-wrap {
-  height: 3px;
-  background: #1a0000;
-  margin-top: 4px;
-}
-.bos-hud-bar {
-  height: 3px;
-  background: var(--red);
-  box-shadow: 0 0 4px var(--red);
-}
-
-/* Section label */
-
-.bos-section-label {
-  font-size: 9px;
-  color: var(--red);
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  padding: 6px 12px 4px;
-  border-bottom: 1px solid #ff1a1a22;
-  opacity: 0.7;
-}
-
-/* Metric grid */
-
-.bos-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 8px;
-  background: var(--bg-base);
-}
-
-.bos-tile {
-  background: var(--bg-tile);
-  border: 2px solid var(--red);
-  box-shadow: 0 0 6px #ff1a1a44, inset 0 0 8px #ff1a1a11;
-  padding: 10px 12px;
-  position: relative;
-}
-
-.bos-tile-corner {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-color: #ff1a1a88;
-  border-style: solid;
-}
-.bos-tile-corner.tl { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
-.bos-tile-corner.tr { top: -1px; right: -1px; border-width: 1px 1px 0 0; }
-.bos-tile-corner.bl { bottom: -1px; left: -1px; border-width: 0 0 1px 1px; }
-.bos-tile-corner.br { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
-
-.bos-tile-label {
-  font-size: 9px;
-  color: #ffffff66;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 4px;
-}
-
-.bos-tile-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--red);
-  text-shadow: 0 0 10px #ff1a1aaa;
-  line-height: 1;
-  font-family: 'Rajdhani', sans-serif;
-}
-
-.bos-tile-unit {
-  font-size: 10px;
-  color: var(--text-soft);
-  margin-top: 2px;
-}
-
-.bos-tile-pct {
-  font-size: 10px;
-  color: #b30000;
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  letter-spacing: 1px;
-}
-
-/* Panels */
-
-.bos-panel {
-  margin: 0 8px 6px;
-  border: 1px solid #ff1a1a44;
-  background: var(--bg-panel);
-}
-
-.bos-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 7px 12px;
-  border-bottom: 1px solid #ff1a1a22;
-  background: #050505;
-}
-
-.bos-panel-title {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: #fff;
-}
-
-.bos-panel-badge {
-  font-size: 9px;
-  color: var(--red);
-  letter-spacing: 1px;
-  border: 1px solid #ff1a1a44;
-  padding: 1px 6px;
-}
-
-.bos-panel-body {
-  padding: 8px 12px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.bos-panel-stat {
-  text-align: center;
-}
-
-.bos-panel-stat-label {
-  font-size: 8px;
-  color: var(--text-soft);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.bos-panel-stat-val {
-  font-size: 14px;
-  color: var(--red);
-  text-shadow: 0 0 4px #ff1a1a66;
-}
-
-/* Actions */
-
-.bos-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 8px;
-  border-top: 1px solid #ff1a1a44;
-  margin-top: 4px;
-  background: var(--bg-base);
-}
-
-.bos-btn {
-  background: #0a0a0a;
-  border: 1px solid var(--red);
-  color: var(--red);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  padding: 8px 4px;
-  text-align: center;
-  box-shadow: 0 0 4px #ff1a1a44;
-  cursor: pointer;
-}
-.bos-btn.primary {
-  background: #1a0000;
-  border: 2px solid var(--red);
-  box-shadow: 0 0 8px #ff1a1a66;
-  color: #fff;
-}
-
-/* Status bar */
-
-.bos-status-bar {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 12px;
-  border-top: 1px solid #ff1a1a22;
-  font-size: 8px;
-  color: #ff1a1a44;
-  letter-spacing: 2px;
-  background: var(--bg-base);
-}
+document.addEventListener('DOMContentLoaded', init);
