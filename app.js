@@ -1,10 +1,10 @@
-console.log("BBOS Tactical HUD Loaded — Wave 6 Active");
+console.log("BEYOND Tactical HUD Loaded — Wave 7 Active");
 
 /* ============================
    OS STATE
 ============================ */
 const OS = {
-  phase: 6,
+  phase: 7,
   status: "Running",
   ticks: 0,
   lastUpdate: null
@@ -26,36 +26,11 @@ const Suit = {
    SYSTEMS MODEL (WAVE 5)
 ============================ */
 const Systems = {
-  fatigue: {
-    name: "FATIGUE",
-    value: 20,
-    trend: "stable",
-    status: "ok"
-  },
-  hydration: {
-    name: "HYDRATION",
-    value: 75,
-    trend: "stable",
-    status: "ok"
-  },
-  load: {
-    name: "LOAD",
-    value: 30,
-    trend: "stable",
-    status: "ok"
-  },
-  readiness: {
-    name: "READINESS",
-    value: 80,
-    trend: "stable",
-    status: "ok"
-  },
-  stability: {
-    name: "STABILITY",
-    value: 80,
-    trend: "stable",
-    status: "ok"
-  }
+  fatigue: { name: "FATIGUE", value: 20, trend: "stable", status: "ok" },
+  hydration: { name: "HYDRATION", value: 75, trend: "stable", status: "ok" },
+  load: { name: "LOAD", value: 30, trend: "stable", status: "ok" },
+  readiness: { name: "READINESS", value: 80, trend: "stable", status: "ok" },
+  stability: { name: "STABILITY", value: 80, trend: "stable", status: "ok" }
 };
 
 const lastSystemValues = {
@@ -215,7 +190,6 @@ function updateSystemStatusAndTrends() {
     lastSystemValues[key] = sys.value;
   }
 
-  // Simple alert triggers based on critical states
   if (Systems.hydration.status === "critical") {
     pushSuitAlert("LOW HYDRATION");
   }
@@ -305,6 +279,139 @@ function renderSystems() {
 }
 
 /* ============================
+   MISSION GRAPH ENGINE (WAVE 7)
+============================ */
+const Missions = [
+  {
+    id: "anchor_meal_prep",
+    name: "Anchor Meal Prep",
+    intensity: "medium",
+    duration: 45,
+    tags: ["nutrition", "prep"],
+    requirements: {
+      minReadiness: 50,
+      maxFatigue: 70
+    }
+  },
+  {
+    id: "light_recovery",
+    name: "Light Recovery Block",
+    intensity: "low",
+    duration: 20,
+    tags: ["recovery"],
+    requirements: {
+      minReadiness: 20,
+      maxFatigue: 90
+    }
+  },
+  {
+    id: "admin_sweep",
+    name: "Admin Sweep",
+    intensity: "low",
+    duration: 25,
+    tags: ["admin"],
+    requirements: {
+      minReadiness: 30,
+      maxFatigue: 80
+    }
+  },
+  {
+    id: "training_block",
+    name: "Training Block",
+    intensity: "high",
+    duration: 40,
+    tags: ["training"],
+    requirements: {
+      minReadiness: 70,
+      maxFatigue: 60
+    }
+  }
+];
+
+let activeMission = null;
+
+function getAvailableMissions() {
+  const r = Systems.readiness.value;
+  const f = Systems.fatigue.value;
+
+  return Missions.filter(m => {
+    return r >= m.requirements.minReadiness &&
+           f <= m.requirements.maxFatigue;
+  });
+}
+
+function renderMissionBar() {
+  const suggestionsContainer = document.getElementById("mission-suggestions");
+  const currentTitle = document.getElementById("mission-current-title");
+  const currentMeta = document.getElementById("mission-current-meta");
+
+  suggestionsContainer.innerHTML = "";
+
+  if (activeMission) {
+    currentTitle.textContent = activeMission.name.toUpperCase();
+    currentMeta.textContent =
+      `Duration: ${activeMission.duration} min | Intensity: ${activeMission.intensity.toUpperCase()}`;
+  } else {
+    currentTitle.textContent = "NO MISSION ACTIVE";
+    currentMeta.textContent = "Select a mission from suggestions.";
+  }
+
+  const available = getAvailableMissions().slice(0, 3);
+
+  available.forEach(m => {
+    const btn = document.createElement("div");
+    btn.className = "mission-suggestion";
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "mission-name";
+    nameSpan.textContent = m.name;
+
+    const metaSpan = document.createElement("span");
+    metaSpan.className = "mission-meta";
+    metaSpan.textContent =
+      `${m.duration} min | ${m.intensity.toUpperCase()}`;
+
+    btn.appendChild(nameSpan);
+    btn.appendChild(metaSpan);
+
+    btn.addEventListener("click", () => {
+      startMission(m);
+    });
+
+    suggestionsContainer.appendChild(btn);
+  });
+
+  if (available.length === 0) {
+    const none = document.createElement("div");
+    none.className = "mission-suggestion";
+    none.textContent = "NO SUITABLE MISSIONS";
+    suggestionsContainer.appendChild(none);
+  }
+}
+
+function startMission(mission) {
+  activeMission = {
+    ...mission,
+    startedAtTick: OS.ticks
+  };
+  pushSuitAlert("MISSION STARTED");
+  renderMissionBar();
+}
+
+function updateMissionProgress() {
+  if (!activeMission) return;
+
+  const elapsedTicks = OS.ticks - activeMission.startedAtTick;
+  const elapsedMinutes = elapsedTicks; // 1 tick = 1 "minute" in sim
+
+  if (elapsedMinutes >= activeMission.duration) {
+    pushSuitAlert("MISSION COMPLETE");
+    activeMission = null;
+    renderMissionBar();
+  }
+}
+
+/* ============================
    SUIT VISOR LOGIC (WAVE 6)
 ============================ */
 function updateSuitModeLabel() {
@@ -319,7 +426,6 @@ function updateSuitModeLabel() {
 }
 
 function pushSuitAlert(message) {
-  // avoid spamming identical alerts every tick
   if (Suit.alerts.length && Suit.alerts[Suit.alerts.length - 1] === message) {
     return;
   }
@@ -331,7 +437,7 @@ function renderSuitAlerts() {
   const container = document.getElementById("suit-alerts");
   container.innerHTML = "";
 
-  const recent = Suit.alerts.slice(-3); // last 3 alerts
+  const recent = Suit.alerts.slice(-3);
 
   recent.forEach((msg, idx) => {
     const alertEl = document.createElement("div");
@@ -340,12 +446,10 @@ function renderSuitAlerts() {
 
     container.appendChild(alertEl);
 
-    // animate in
     requestAnimationFrame(() => {
       alertEl.classList.add("show");
     });
 
-    // auto remove after 1.5s
     setTimeout(() => {
       alertEl.classList.remove("show");
     }, 1500 + idx * 100);
@@ -361,7 +465,6 @@ function updateSuitParallax() {
     `translate(${Suit.parallax.x + shakeX}px, ${Suit.parallax.y + shakeY}px)`;
 }
 
-/* Mouse-based parallax */
 document.addEventListener("mousemove", (e) => {
   const cx = window.innerWidth / 2;
   const cy = window.innerHeight / 2;
@@ -373,7 +476,6 @@ document.addEventListener("mousemove", (e) => {
   Suit.parallax.y = clamp(dy * 3, -3, 3);
 });
 
-/* Simple combat shake demo: pulse every few ticks if in combat */
 function updateSuitShake() {
   if (Suit.mode !== "combat") {
     Suit.shake = 0;
@@ -397,6 +499,9 @@ function heartbeat() {
   computeStability();
   updateSystemStatusAndTrends();
   renderSystems();
+
+  updateMissionProgress();
+  renderMissionBar();
 
   updateSuitShake();
   updateSuitParallax();
@@ -433,7 +538,7 @@ document.getElementById("testBtn").addEventListener("click", () => {
     phase: OS.phase,
     ticks: OS.ticks,
     timestamp: new Date().toLocaleTimeString(),
-    message: "Wave 6 operational. Suit visor online."
+    message: "Wave 7 operational. BEYOND visor + mission engine online."
   };
 
   output.textContent = JSON.stringify(result, null, 2);
