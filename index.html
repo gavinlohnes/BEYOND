@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BBOS Tactical HUD</title>
+  <title>BEYOND Tactical HUD</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -46,8 +46,8 @@
 
   <!-- TOP HUD BAND -->
   <header id="hud-header">
-    <div class="hud-title">BBOS</div>
-    <div class="hud-sub">Tactical HUD Interface</div>
+    <div class="hud-title">BEYOND</div>
+    <div class="hud-sub">Tactical Suit OS</div>
   </header>
 
   <!-- MAIN DIAGNOSTICS PANEL -->
@@ -72,6 +72,19 @@
   <section id="systems-panel">
     <h2 class="panel-title">Systems Status</h2>
     <div id="systems-container"></div>
+  </section>
+
+  <!-- MISSION BAR (WAVE 7) -->
+  <section id="mission-panel">
+    <div id="mission-bar">
+      <div id="mission-current">
+        <div id="mission-current-title">NO MISSION ACTIVE</div>
+        <div id="mission-current-meta">Select a mission from suggestions.</div>
+      </div>
+      <div id="mission-suggestions">
+        <!-- suggestions injected here -->
+      </div>
+    </div>
   </section>
 
   <script src="app.js"></script>
