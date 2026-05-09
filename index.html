@@ -12,6 +12,38 @@
   <!-- HUD GRID BACKDROP -->
   <div id="hud-grid"></div>
 
+  <!-- SUIT VISOR OVERLAY (WAVE 6) -->
+  <div id="suit-overlay">
+    <!-- Static geometry layer -->
+    <div id="suit-geometry-static">
+      <div class="corner-bracket corner-top-left"></div>
+      <div class="corner-bracket corner-top-right"></div>
+      <div class="corner-bracket corner-bottom-left"></div>
+      <div class="corner-bracket corner-bottom-right"></div>
+
+      <div class="diag-line diag-left"></div>
+      <div class="diag-line diag-right"></div>
+    </div>
+
+    <!-- Parallax geometry layer -->
+    <div id="suit-geometry-parallax">
+      <div class="offset-rect rect-1"></div>
+      <div class="offset-rect rect-2"></div>
+
+      <div class="split-bar bar-1"></div>
+      <div class="split-bar bar-2"></div>
+
+      <div class="micro-text micro-1">SYS: 04A7 | MODE: STND | VECTOR: 0021</div>
+      <div class="micro-text micro-2">SIG: -92% | THRT: 00 | PWR: 88%</div>
+    </div>
+
+    <!-- Alerts + mode layer -->
+    <div id="suit-geometry-top">
+      <div id="suit-mode-label">MODE: STANDARD</div>
+      <div id="suit-alerts"></div>
+    </div>
+  </div>
+
   <!-- TOP HUD BAND -->
   <header id="hud-header">
     <div class="hud-title">BBOS</div>
@@ -22,7 +54,6 @@
   <section id="hud-panel">
     <h2 class="panel-title">System Diagnostics</h2>
 
-    <!-- Live OS status line -->
     <div id="os-status">OS Status: Initializing…</div>
 
     <button id="testBtn">Run System Check</button>
@@ -37,12 +68,10 @@
     <button id="startProtocolBtn">Start Protocol</button>
   </section>
 
-  <!-- SYSTEMS DASHBOARD (WAVE 5) -->
+  <!-- SYSTEMS DASHBOARD -->
   <section id="systems-panel">
     <h2 class="panel-title">Systems Status</h2>
-    <div id="systems-container">
-      <!-- Systems will be rendered here dynamically -->
-    </div>
+    <div id="systems-container"></div>
   </section>
 
   <script src="app.js"></script>
