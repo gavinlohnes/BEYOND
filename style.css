@@ -23,7 +23,247 @@ body {
   pointer-events: none;
 }
 
-/* TOP HUD BAND */
+/* SUIT VISOR OVERLAY (WAVE 6) */
+#suit-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Static geometry layer */
+#suit-geometry-static,
+#suit-geometry-parallax,
+#suit-geometry-top {
+  position: absolute;
+  inset: 0;
+}
+
+/* Corner brackets */
+.corner-bracket {
+  position: absolute;
+  width: 60px;
+  height: 40px;
+  border-color: #ff1a1a;
+  border-style: solid;
+  border-width: 0;
+}
+
+.corner-top-left {
+  top: 10px;
+  left: 10px;
+  border-top-width: 2px;
+  border-left-width: 2px;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.corner-top-right {
+  top: 10px;
+  right: 10px;
+  border-top-width: 2px;
+  border-right-width: 2px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+.corner-bottom-left {
+  bottom: 10px;
+  left: 10px;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.corner-bottom-right {
+  bottom: 10px;
+  right: 10px;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+  clip-path: polygon(0 100%, 100% 0, 100% 100%);
+}
+
+/* Double-line diagonals */
+.diag-line {
+  position: absolute;
+  width: 120px;
+  height: 1px;
+}
+
+.diag-left::before,
+.diag-left::after,
+.diag-right::before,
+.diag-right::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: #ff1a1a;
+}
+
+.diag-left {
+  top: 25%;
+  left: 5%;
+  transform: rotate(-45deg);
+}
+
+.diag-left::after {
+  top: 4px;
+}
+
+.diag-right {
+  top: 25%;
+  right: 5%;
+  transform: rotate(45deg);
+}
+
+.diag-right::after {
+  top: 4px;
+}
+
+/* Parallax geometry */
+#suit-geometry-parallax {
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.offset-rect {
+  position: absolute;
+  border: 1px solid #ff1a1a;
+  background: rgba(10, 0, 0, 0.7);
+}
+
+.rect-1 {
+  top: 18%;
+  left: 18%;
+  width: 120px;
+  height: 40px;
+  clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+}
+
+.rect-2 {
+  top: 60%;
+  right: 16%;
+  width: 140px;
+  height: 36px;
+  clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* Split bars */
+.split-bar {
+  position: absolute;
+  height: 4px;
+  background: transparent;
+}
+
+.split-bar::before,
+.split-bar::after {
+  content: "";
+  position: absolute;
+  height: 100%;
+  background: #ff1a1a;
+}
+
+.bar-1 {
+  top: 35%;
+  left: 25%;
+  width: 120px;
+}
+
+.bar-1::before {
+  width: 40%;
+  clip-path: polygon(0 0, 100% 0, 90% 100%, 0 100%);
+}
+
+.bar-1::after {
+  left: 60%;
+  width: 40%;
+  clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.bar-2 {
+  bottom: 22%;
+  right: 22%;
+  width: 110px;
+}
+
+.bar-2::before {
+  width: 50%;
+}
+
+.bar-2::after {
+  left: 60%;
+  width: 30%;
+}
+
+/* Micro-text */
+.micro-text {
+  position: absolute;
+  font-size: 8px;
+  color: #ff1a1a;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.micro-1 {
+  top: 20%;
+  left: 20%;
+}
+
+.micro-2 {
+  bottom: 24%;
+  right: 20%;
+}
+
+/* Top layer: mode + alerts */
+#suit-geometry-top {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+#suit-mode-label {
+  align-self: center;
+  margin-top: 8px;
+  padding: 4px 10px;
+  font-size: 10px;
+  color: #ff1a1a;
+  border: 1px solid #ff1a1a;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+  background: rgba(10, 0, 0, 0.8);
+}
+
+#suit-alerts {
+  position: absolute;
+  bottom: 10%;
+  left: 5%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Alert banners */
+.suit-alert {
+  position: relative;
+  padding: 4px 12px;
+  font-size: 10px;
+  color: #000;
+  background: #ff1a1a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid #ff1a1a;
+  clip-path: polygon(0 0, 90% 0, 100% 50%, 90% 100%, 0 100%);
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.12s linear, transform 0.12s linear;
+}
+
+.suit-alert.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* MAIN HUD */
 #hud-header {
   width: 100%;
   padding: 20px;
@@ -95,7 +335,7 @@ body {
   color: #ff8080;
 }
 
-/* SYSTEMS PANEL (WAVE 5) */
+/* SYSTEMS PANEL */
 #systems-panel {
   width: 600px;
   margin: 0 auto 40px auto;
