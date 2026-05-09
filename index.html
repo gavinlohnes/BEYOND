@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BEYOND OS – V2 HUD</title>
+    <title>BEYOND OS – V3 HUD</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -43,6 +43,11 @@
             <div class="compact-footer">
                 <span class="compact-hint">TAP FOR FULL HUD</span>
             </div>
+        </div>
+
+        <!-- TODAY SCREEN ACTION ROW -->
+        <div class="bos-actions-row">
+            <button class="bos-btn bos-btn--primary" id="btn-open-weekly">📊 WEEKLY</button>
         </div>
 
     </section>
@@ -134,6 +139,156 @@
 
         </div>
     </section>
+
+    <!-- ============================================================ -->
+    <!-- BEYOND OS v3.0 — WEEKLY SUMMARY SCREEN                       -->
+    <!-- ============================================================ -->
+    <div id="screen-weekly" class="bos-screen bos-screen--hidden">
+      <div class="bos-corner tl"></div>
+      <div class="bos-corner tr"></div>
+      <div class="bos-corner bl"></div>
+      <div class="bos-corner br"></div>
+
+      <!-- Weekly Header -->
+      <div class="bos-weekly-header">
+        <button class="bos-btn bos-btn--back" id="btn-weekly-back">◀ BACK</button>
+        <div class="bos-weekly-title">
+          <div class="bos-weekly-title-label">BEYOND OS</div>
+          <div class="bos-weekly-title-sub">// WEEKLY SUMMARY</div>
+        </div>
+        <div class="bos-weekly-week-label" id="weekly-week-label">WEEK —</div>
+      </div>
+
+      <!-- Rolling Average Grid -->
+      <div class="bos-section-label">// 7-DAY ROLLING AVERAGES</div>
+      <div class="bos-weekly-grid">
+
+        <div class="bos-weekly-tile">
+          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
+          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
+          <div class="bos-weekly-tile-label">AVG CALORIES</div>
+          <div class="bos-weekly-tile-value" id="wavg-calories">—</div>
+          <div class="bos-weekly-tile-unit">kcal / day</div>
+          <div class="bos-weekly-flag" id="wflag-calories">—</div>
+        </div>
+
+        <div class="bos-weekly-tile">
+          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
+          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
+          <div class="bos-weekly-tile-label">AVG PROTEIN</div>
+          <div class="bos-weekly-tile-value" id="wavg-protein">—</div>
+          <div class="bos-weekly-tile-unit">g / day</div>
+          <div class="bos-weekly-flag" id="wflag-protein">—</div>
+        </div>
+
+        <div class="bos-weekly-tile">
+          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
+          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
+          <div class="bos-weekly-tile-label">AVG HYDRATION</div>
+          <div class="bos-weekly-tile-value" id="wavg-hydration">—</div>
+          <div class="bos-weekly-tile-unit">oz / day</div>
+          <div class="bos-weekly-flag" id="wflag-hydration">—</div>
+        </div>
+
+        <div class="bos-weekly-tile">
+          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
+          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
+          <div class="bos-weekly-tile-label">AVG SLEEP</div>
+          <div class="bos-weekly-tile-value" id="wavg-sleep">—</div>
+          <div class="bos-weekly-tile-unit">hrs / night</div>
+          <div class="bos-weekly-flag" id="wflag-sleep">—</div>
+        </div>
+
+        <div class="bos-weekly-tile">
+          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
+          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
+          <div class="bos-weekly-tile-label">AVG READINESS</div>
+          <div class="bos-weekly-tile-value" id="wavg-readiness">—</div>
+          <div class="bos-weekly-tile-unit">score</div>
+          <div class="bos-weekly-flag" id="wflag-readiness">—</div>
+        </div>
+
+        <div class="bos-weekly-tile">
+          <div class="bos-tile-corner tl"></div><div class="bos-tile-corner tr"></div>
+          <div class="bos-tile-corner bl"></div><div class="bos-tile-corner br"></div>
+          <div class="bos-weekly-tile-label">AVG TRAINING LOAD</div>
+          <div class="bos-weekly-tile-value" id="wavg-training">—</div>
+          <div class="bos-weekly-tile-unit">vol lbs / day</div>
+          <div class="bos-weekly-flag" id="wflag-training">—</div>
+        </div>
+
+      </div>
+
+      <!-- Flag Summary -->
+      <div class="bos-section-label">// SYSTEM FLAGS</div>
+      <div class="bos-flag-panel">
+        <div class="bos-flag-row">
+          <div class="bos-flag-name">SLEEP</div>
+          <div class="bos-flag-status" id="flagstatus-sleep">—</div>
+        </div>
+        <div class="bos-flag-row">
+          <div class="bos-flag-name">PROTEIN</div>
+          <div class="bos-flag-status" id="flagstatus-protein">—</div>
+        </div>
+        <div class="bos-flag-row">
+          <div class="bos-flag-name">HYDRATION</div>
+          <div class="bos-flag-status" id="flagstatus-hydration">—</div>
+        </div>
+        <div class="bos-flag-row">
+          <div class="bos-flag-name">READINESS</div>
+          <div class="bos-flag-status" id="flagstatus-readiness">—</div>
+        </div>
+      </div>
+
+      <!-- Trend Sparklines -->
+      <div class="bos-section-label">// 7-DAY TREND — CALORIES</div>
+      <div class="bos-sparkline-wrap">
+        <canvas id="spark-calories" class="bos-sparkline" width="640" height="60"></canvas>
+      </div>
+      <div class="bos-section-label">// 7-DAY TREND — SLEEP</div>
+      <div class="bos-sparkline-wrap">
+        <canvas id="spark-sleep" class="bos-sparkline" width="640" height="60"></canvas>
+      </div>
+
+      <!-- Data Count -->
+      <div class="bos-weekly-datacount" id="weekly-datacount">DATA POINTS: 0 / 7</div>
+
+      <!-- Weekly Close Button -->
+      <div class="bos-weekly-close-row">
+        <button class="bos-btn bos-btn--close-week" id="btn-close-week">
+          ⬛ CLOSE WEEK — RESET
+        </button>
+      </div>
+
+      <div class="bos-status-bar">
+        <span>TREND ENGINE: ACTIVE</span>
+        <span>LOGIC: DETERMINISTIC</span>
+        <span>AI: NONE</span>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- BEYOND OS v3.0 — WEEK CLOSE CONFIRMATION MODAL              -->
+    <!-- ============================================================ -->
+    <div id="modal-week-close" class="bos-modal-overlay bos-modal-overlay--hidden">
+      <div class="bos-modal">
+        <div class="bos-corner tl"></div>
+        <div class="bos-corner tr"></div>
+        <div class="bos-corner bl"></div>
+        <div class="bos-corner br"></div>
+        <div class="bos-modal-icon">■</div>
+        <div class="bos-modal-title">WEEK CLOSED</div>
+        <div class="bos-modal-sub">NEW WEEK STARTED</div>
+        <div class="bos-modal-divider"></div>
+        <div class="bos-modal-detail" id="modal-close-detail">
+          TRENDS ARCHIVED // DAILY STATE RESET<br>
+          ALL COUNTERS ZEROED
+        </div>
+        <button class="bos-btn bos-btn--modal-confirm" id="btn-modal-confirm">
+          ✓ CONFIRMED — PROCEED
+        </button>
+      </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
