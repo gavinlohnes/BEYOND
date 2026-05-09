@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BEYOND OS V5</title>
+    <title>BEYOND OS V6</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -46,6 +46,16 @@
         <div class="panel-title">RECOMMENDATIONS</div>
         <div id="recList" class="rec-list"></div>
     </div>
+
+    <div id="missionPanel" class="panel">
+        <div class="panel-title">MISSIONS</div>
+        <div id="missionList"></div>
+    </div>
+
+    <div id="alertsPanel" class="panel">
+        <div class="panel-title">ALERTS</div>
+        <div id="alertsList"></div>
+    </div>
 </section>
 
 <!-- =========================
@@ -80,6 +90,26 @@
         </div>
 
         <div class="settings-card">
+            <div class="settings-label">PLAYBOOK</div>
+            <select id="playbookSelector">
+                <option value="CUT">CUT</option>
+                <option value="MAINTAIN">MAINTAIN</option>
+                <option value="BULK">BULK</option>
+                <option value="RECOVERY">RECOVERY</option>
+            </select>
+        </div>
+
+        <div class="settings-card">
+            <div class="settings-label">SCENARIO</div>
+            <select id="scenarioSelector">
+                <option value="">NONE</option>
+                <option value="NIGHTSHIFT">NIGHT SHIFT</option>
+                <option value="TRAVEL">TRAVEL</option>
+                <option value="DELOAD">DELOAD</option>
+            </select>
+        </div>
+
+        <div class="settings-card">
             <div class="settings-label">SYSTEM</div>
             <button id="animationToggle" class="settings-btn">TOGGLE ANIMATIONS</button>
             <button id="soundToggle" class="settings-btn">TOGGLE SOUND</button>
@@ -110,6 +140,22 @@
         <div>Hydration: <span id="weeklyHydration"></span></div>
         <div>Sleep: <span id="weeklySleep"></span></div>
         <div>Training: <span id="weeklyTraining"></span></div>
+    </div>
+
+    <div id="intelligencePanel" class="panel" style="margin-top:20px;">
+        <div class="panel-title">INTELLIGENCE</div>
+
+        <div class="panel-subtitle" style="font-size:12px; margin-top:10px;">STRENGTHS</div>
+        <div id="intelStrengths"></div>
+
+        <div class="panel-subtitle" style="font-size:12px; margin-top:10px;">WEAKNESSES</div>
+        <div id="intelWeaknesses"></div>
+
+        <div class="panel-subtitle" style="font-size:12px; margin-top:10px;">RECOMMENDATIONS</div>
+        <div id="intelRecommendations"></div>
+
+        <div class="panel-subtitle" style="font-size:12px; margin-top:10px;">NEXT WEEK FOCUS</div>
+        <div id="intelNextWeek"></div>
     </div>
 
 </section>
