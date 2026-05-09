@@ -1,295 +1,383 @@
-body {
-    margin:0;
-    font-family:Arial, sans-serif;
-    background:#000;
-    color:#fff;
+/* =========================
+   BEYOND OS V5 CORE STATE
+========================= */
+
+let state = {
+    calories:0,
+    protein:0,
+    hydration:0,
+    sleep:6,
+    training:false,
+
+    settings:{
+        theme:"default",
+        hudDensity:"standard",
+        animations:true,
+        soundFX:false
+    },
+
+    weeklySummary:{},
+    recommendations:[],
+    readiness:{ current:0 }
+};
+
+/* =========================
+   LOCAL STORAGE
+========================= */
+
+function saveState(){
+    localStorage.setItem("beyondOS", JSON.stringify(state));
+}
+
+function loadState(){
+    const s = localStorage.getItem("beyondOS");
+    if(!s) return;
+    try{
+        const parsed = JSON.parse(s);
+
+        // Shallow merge to keep compatibility
+        state = Object.assign({}, state, parsed);
+        state.settings = Object.assign({}, state.settings, parsed.settings || {});
+        state.weeklySummary = parsed.weeklySummary || {};
+        state.recommendations = parsed.recommendations || [];
+        state.readiness = Object.assign({}, state.readiness, parsed.readiness || {});
+    } catch(e){
+        console.warn("Failed to parse saved state", e);
+    }
+}
+
+loadState();
+
+/* =========================
+   SOUND FX (V5)
+========================= */
+
+function playClick(){
+    if(!state.settings.soundFX) return;
+    // Placeholder: simple beep using Web Audio would go here.
+    // Kept as a no-op to stay deterministic and silent by default.
 }
 
 /* =========================
-   SCREEN SYSTEM
+   QUICK ADD SYSTEM
 ========================= */
-.screen {
-    display:none;
-    padding:20px;
+
+function updateCalories(v){
+    state.calories += v;
+    saveState();
+    renderHUD();
+    playClick();
 }
 
-.screen-active {
-    display:block;
+function updateProtein(v){
+    state.protein += v;
+    saveState();
+    renderHUD();
+    playClick();
+}
+
+function updateHydration(v){
+    state.hydration += v;
+    saveState();
+    renderHUD();
+    playClick();
+}
+
+function toggleTrainingSession(){
+    state.training = !state.training;
+    saveState();
+    renderHUD();
+    playClick();
 }
 
 /* =========================
-   NAV
+   NAVIGATION
 ========================= */
-.nav-drawer {
-    position:fixed;
-    top:10px;
-    right:10px;
-    z-index:1000;
+
+function switchScreen(id){
+    document.querySelectorAll(".screen")
+        .forEach(s => s.classList.remove("screen-active"));
+
+    const target = document.getElementById(id);
+    if(target) target.classList.add("screen-active");
 }
 
-.nav-toggle-btn {
-    background:#111;
-    color:#fff;
-    border:1px solid #ff1a1a;
-    padding:6px 10px;
-    cursor:pointer;
-}
+function initNavigation(){
+    const navDrawer = document.getElementById("navDrawer");
+    const navToggleBtn = document.getElementById("navToggleBtn");
 
-.nav-drawer-inner {
-    margin-top:8px;
-    background:#111;
-    border:1px solid #ff1a1a;
-    padding:8px;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-    transform:translateY(-10px);
-    opacity:0;
-    pointer-events:none;
-    transition:transform .2s ease, opacity .2s ease;
-}
+    navToggleBtn?.addEventListener("click", () => {
+        navDrawer.classList.toggle("nav-drawer--open");
+        navDrawer.classList.toggle("nav-drawer--hidden");
+        playClick();
+    });
 
-.nav-drawer--open .nav-drawer-inner {
-    transform:translateY(0);
-    opacity:1;
-    pointer-events:auto;
-}
+    document.getElementById("navTodayBtn")
+        ?.addEventListener("click", () => {
+            switchScreen("todayScreen");
+            playClick();
+        });
 
-.nav-item {
-    background:#000;
-    color:#fff;
-    border:1px solid #ff1a1a;
-    padding:6px 10px;
-    cursor:pointer;
-    text-align:left;
+    document.getElementById("navSettingsBtn")
+        ?.addEventListener("click", () => {
+            syncSettingsUI();
+            switchScreen("settingsScreen");
+            playClick();
+        });
+
+    document.getElementById("navWeeklyBtn")
+        ?.addEventListener("click", () => {
+            renderWeekly();
+            switchScreen("weeklySummaryScreen");
+            playClick();
+        });
+
+    document.getElementById("settingsBackBtn")
+        ?.addEventListener("click", () => {
+            switchScreen("todayScreen");
+            playClick();
+        });
+
+    document.getElementById("weeklyBackBtn")
+        ?.addEventListener("click", () => {
+            switchScreen("todayScreen");
+            playClick();
+        });
 }
 
 /* =========================
-   THEMES
+   THEME + SETTINGS ENGINE
 ========================= */
-:root {
-    --accent:#ff1a1a;
+
+function applyTheme(){
+    document.body.dataset.theme = state.settings.theme || "default";
 }
 
-body[data-theme="default"] { --accent:#ff1a1a; }
-body[data-theme="stealth"] { --accent:#666; }
-body[data-theme="alert"] { --accent:#ff2a2a; }
-body[data-theme="overdrive"] { --accent:#ff0000; filter:brightness(1.1); }
-
-/* =========================
-   TODAY
-========================= */
-h1 {
-    margin-top:0;
-    letter-spacing:3px;
+function applyAnimations(){
+    document.body.dataset.animations = state.settings.animations ? "on" : "off";
 }
 
-.today-actions {
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:16px;
+function applyHudDensity(){
+    const today = document.getElementById("todayScreen");
+    if(!today) return;
+    today.dataset.density = state.settings.hudDensity || "standard";
 }
 
-.primary-btn,
-.secondary-btn {
-    background:#111;
-    color:#fff;
-    border:1px solid var(--accent);
-    padding:8px 12px;
-    cursor:pointer;
-    font-size:12px;
+function syncSettingsUI(){
+    const themeSel = document.getElementById("themeSelector");
+    const densitySel = document.getElementById("hudDensitySelector");
+
+    if(themeSel) themeSel.value = state.settings.theme || "default";
+    if(densitySel) densitySel.value = state.settings.hudDensity || "standard";
 }
 
-.secondary-btn {
-    border-style:dashed;
-}
+function initSettingsEngine(){
+    const themeSel = document.getElementById("themeSelector");
+    const densitySel = document.getElementById("hudDensitySelector");
+    const animToggle = document.getElementById("animationToggle");
+    const soundToggle = document.getElementById("soundToggle");
+    const resetBtn = document.getElementById("resetSystemBtn");
 
-/* HUD density */
-#todayScreen[data-density="compact"] {
-    font-size:12px;
-}
+    themeSel?.addEventListener("change", e => {
+        state.settings.theme = e.target.value;
+        applyTheme();
+        saveState();
+        playClick();
+    });
 
-#todayScreen[data-density="standard"] {
-    font-size:14px;
-}
+    densitySel?.addEventListener("change", e => {
+        state.settings.hudDensity = e.target.value;
+        applyHudDensity();
+        saveState();
+        playClick();
+    });
 
-#todayScreen[data-density="expanded"] {
-    font-size:16px;
-}
+    animToggle?.addEventListener("click", () => {
+        state.settings.animations = !state.settings.animations;
+        applyAnimations();
+        saveState();
+        playClick();
+    });
 
-/* =========================
-   PANELS
-========================= */
-.panel {
-    border:1px solid var(--accent);
-    padding:10px;
-    margin-top:10px;
-    background:#050505;
-}
+    soundToggle?.addEventListener("click", () => {
+        state.settings.soundFX = !state.settings.soundFX;
+        saveState();
+        playClick();
+    });
 
-.panel-title {
-    font-size:12px;
-    letter-spacing:2px;
-    margin-bottom:6px;
-}
-
-/* READINESS */
-.readiness-score {
-    font-size:24px;
-    margin-bottom:6px;
-}
-
-.readiness-bar {
-    width:100%;
-    height:8px;
-    background:#222;
-    border:1px solid #400000;
-    overflow:hidden;
-}
-
-.readiness-bar-fill {
-    height:100%;
-    width:0%;
-    background:var(--accent);
-    transition:width .25s ease;
-}
-
-/* RECOMMENDATIONS */
-.rec-list div {
-    font-size:12px;
-    margin:4px 0;
+    resetBtn?.addEventListener("click", () => {
+        if(!confirm("RESET SYSTEM? This will clear all local data.")) return;
+        localStorage.removeItem("beyondOS");
+        location.reload();
+    });
 }
 
 /* =========================
-   QUICK ADD
+   QUICK ADD PANEL (V5)
 ========================= */
-.quick-overlay {
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.6);
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .2s ease;
-    z-index:900;
-}
 
-.quick-panel {
-    position:fixed;
-    left:0;
-    right:0;
-    bottom:0;
-    background:#111;
-    border-top:2px solid var(--accent);
-    transform:translateY(100%);
-    transition:transform .25s ease;
-    z-index:901;
-    padding:12px;
-}
+function initQuickAdd(){
+    const overlay = document.getElementById("quickAddOverlay");
+    const panel = document.getElementById("quickAddPanel");
+    const openBtn = document.getElementById("quickAddOpenBtn");
+    const closeBtn = document.getElementById("quickAddCloseBtn");
 
-.quick-header {
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:10px;
-}
+    function openPanel(){
+        overlay.classList.add("active");
+        panel.classList.add("active");
+        playClick();
+    }
 
-.quick-close {
-    background:none;
-    border:none;
-    color:#fff;
-    font-size:18px;
-    cursor:pointer;
-}
+    function closePanel(){
+        overlay.classList.remove("active");
+        panel.classList.remove("active");
+        playClick();
+    }
 
-.quick-grid {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-}
+    openBtn?.addEventListener("click", openPanel);
+    closeBtn?.addEventListener("click", closePanel);
+    overlay?.addEventListener("click", closePanel);
 
-.quick-btn {
-    background:#000;
-    color:#fff;
-    border:1px solid var(--accent);
-    padding:10px;
-    cursor:pointer;
-    font-size:12px;
-}
-
-/* Active states */
-.quick-overlay.active {
-    opacity:1;
-    pointer-events:auto;
-}
-
-.quick-panel.active {
-    transform:translateY(0);
+    document.querySelectorAll(".quick-btn")
+        .forEach(btn => {
+            btn.addEventListener("click", () => {
+                const action = btn.dataset.action;
+                if(action === "hydration") updateHydration(8);
+                if(action === "protein") updateProtein(20);
+                if(action === "calories") updateCalories(250);
+                if(action === "training") toggleTrainingSession();
+                renderHUD();
+            });
+        });
 }
 
 /* =========================
-   TOPBAR / SETTINGS / WEEKLY
+   READINESS ENGINE
 ========================= */
-.topbar {
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin-bottom:16px;
+
+function calculateReadiness(){
+    let score =
+        (state.sleep * 5) +
+        (state.hydration * 0.5) +
+        (state.protein * 0.2);
+
+    score = Math.max(0, Math.min(100, score));
+    state.readiness.current = score;
+    return score;
 }
 
-.topbar-back {
-    background:#111;
-    color:#fff;
-    border:1px solid var(--accent);
-    padding:6px 10px;
-    cursor:pointer;
-}
+function renderReadiness(){
+    const score = calculateReadiness();
 
-.settings-grid {
-    display:grid;
-    grid-template-columns:1fr;
-    gap:10px;
-}
+    const scoreEl = document.getElementById("readinessScore");
+    const barEl = document.getElementById("readinessBarFill");
 
-.settings-card {
-    border:1px solid var(--accent);
-    padding:10px;
-    background:#050505;
-}
-
-.settings-label {
-    font-size:12px;
-    margin-bottom:6px;
-}
-
-.settings-btn {
-    display:block;
-    margin-top:6px;
-    background:#111;
-    color:#fff;
-    border:1px solid var(--accent);
-    padding:6px 10px;
-    cursor:pointer;
-    font-size:12px;
-}
-
-.settings-btn-danger {
-    border-color:#ff2a2a;
-    color:#ff2a2a;
-}
-
-/* WEEKLY */
-.weekly-grid {
-    margin-top:10px;
-}
-
-.weekly-grid div {
-    margin:6px 0;
+    if(scoreEl) scoreEl.innerText = score;
+    if(barEl) barEl.style.width = score + "%";
 }
 
 /* =========================
-   ANIMATION TOGGLE
+   RECOMMENDATIONS ENGINE
 ========================= */
-body[data-animations="off"] * {
-    transition:none !important;
+
+function generateRecommendations(){
+    state.recommendations = [];
+
+    if(state.hydration < 40)
+        state.recommendations.push("Hydration LOW — add 16–24oz over next 2 hours.");
+
+    if(state.protein < 80)
+        state.recommendations.push("Protein LOW — add 20–40g before end of day.");
+
+    if(state.sleep < 6)
+        state.recommendations.push("Sleep DEFICIT — target 7–8h tonight.");
+
+    if(state.training && state.readiness.current < 40)
+        state.recommendations.push("Readiness LOW — consider lighter training or recovery focus.");
 }
+
+function renderRecommendations(){
+    generateRecommendations();
+
+    const el = document.getElementById("recList");
+    if(!el) return;
+
+    el.innerHTML = "";
+
+    if(state.recommendations.length === 0){
+        const div = document.createElement("div");
+        div.textContent = "SYSTEM STABLE // NO ACTIVE RECOMMENDATIONS";
+        el.appendChild(div);
+        return;
+    }
+
+    state.recommendations.forEach(r => {
+        const div = document.createElement("div");
+        div.textContent = r;
+        el.appendChild(div);
+    });
+}
+
+/* =========================
+   WEEKLY ENGINE
+========================= */
+
+function calculateWeekly(){
+    state.weeklySummary = {
+        calories: state.calories,
+        protein: state.protein,
+        hydration: state.hydration,
+        sleep: state.sleep,
+        training: state.training ? 1 : 0,
+        consistency: calculateReadiness()
+    };
+}
+
+function renderWeekly(){
+    calculateWeekly();
+
+    document.getElementById("weeklyConsistency").innerText =
+        state.weeklySummary.consistency ?? 0;
+
+    document.getElementById("weeklyCalories").innerText =
+        state.weeklySummary.calories ?? 0;
+
+    document.getElementById("weeklyProtein").innerText =
+        state.weeklySummary.protein ?? 0;
+
+    document.getElementById("weeklyHydration").innerText =
+        state.weeklySummary.hydration ?? 0;
+
+    document.getElementById("weeklySleep").innerText =
+        state.weeklySummary.sleep ?? 0;
+
+    document.getElementById("weeklyTraining").innerText =
+        state.weeklySummary.training ?? 0;
+}
+
+/* =========================
+   MASTER RENDER LOOP
+========================= */
+
+function renderHUD(){
+    renderReadiness();
+    renderRecommendations();
+    applyTheme();
+    applyHudDensity();
+    applyAnimations();
+    saveState();
+}
+
+/* =========================
+   BOOTSTRAP
+========================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+    applyTheme();
+    applyHudDensity();
+    applyAnimations();
+    initNavigation();
+    initSettingsEngine();
+    initQuickAdd();
+    renderHUD();
+});
