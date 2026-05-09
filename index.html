@@ -1,119 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>BEYOND OS v1.1</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEYOND OS</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <div id="app">
-    <main class="bos-root">
-      <div class="bos-corner tl"></div>
-      <div class="bos-corner tr"></div>
-      <div class="bos-corner bl"></div>
-      <div class="bos-corner br"></div>
+    <div id="hud">
+        <img id="emblem-main" src="assets/emblem.png" alt="Batman Beyond Emblem">
+        <h1>BEYOND OS</h1>
+    </div>
 
-      <!-- Emblem row -->
-      <div class="bos-emblem-row">
-        <div class="bos-sys-label-left">SAT // 09.05.26</div>
-        <div class="bos-emblem-wrap">
-          <img src="assets/emblem.png" alt="Batman Beyond emblem" id="emblem-main" />
-        </div>
-        <div class="bos-sys-label">00:00</div>
-      </div>
+    <div id="grid">
+        <button class="tile">Profile</button>
+        <button class="tile">Systems</button>
+        <button class="tile">Comms</button>
+        <button class="tile">Navigation</button>
+        <button class="tile">Diagnostics</button>
+        <button class="tile">Settings</button>
+    </div>
 
-      <!-- HUD -->
-      <div class="bos-hud" id="hud-compact"></div>
-
-      <!-- Metrics -->
-      <div class="bos-section-label">// METRICS</div>
-      <div class="bos-grid" id="metric-grid"></div>
-
-      <!-- Panels -->
-      <div class="bos-section-label">// PANELS</div>
-      <section id="panels">
-        <div class="bos-panel" data-panel="training">
-          <div class="bos-panel-header">
-            <div class="bos-panel-title">Training</div>
-            <div class="bos-panel-badge">ACTIVE ▶</div>
-          </div>
-          <div class="bos-panel-body">
-            <div class="bos-panel-stat">
-              <div class="bos-panel-stat-label">Session</div>
-              <div class="bos-panel-stat-val" id="training-session">PUSH</div>
-            </div>
-            <div class="bos-panel-stat">
-              <div class="bos-panel-stat-label">Volume</div>
-              <div class="bos-panel-stat-val" id="training-volume">14,200</div>
-            </div>
-            <div class="bos-panel-stat">
-              <div class="bos-panel-stat-label">Sets</div>
-              <div class="bos-panel-stat-val" id="training-sets">22</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bos-panel" data-panel="nutrition">
-          <div class="bos-panel-header">
-            <div class="bos-panel-title">Nutrition</div>
-            <div class="bos-panel-badge">ON TARGET</div>
-          </div>
-          <div class="bos-panel-body">
-            <div class="bos-panel-stat">
-              <div class="bos-panel-stat-label">Meals</div>
-              <div class="bos-panel-stat-val" id="nutrition-meals">3/4</div>
-            </div>
-            <div class="bos-panel-stat">
-              <div class="bos-panel-stat-label">Deficit</div>
-              <div class="bos-panel-stat-val" id="nutrition-deficit">553</div>
-            </div>
-            <div class="bos-panel-stat">
-              <div class="bos-panel-stat-label">Fasting</div>
-              <div class="bos-panel-stat-val" id="nutrition-fasting">16:8</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bos-panel" data-panel="hydration">
-          <div class="bos-panel-header">
-            <div class="bos-panel-title">Hydration</div>
-            <div class="bos-panel-badge">NOMINAL</div>
-          </div>
-          <div class="bos-panel-body">
-            <div class="bos-panel-stat">
-              <div class="bos-panel-stat-label">Current</div>
-              <div class="bos-panel-stat-val" id="hydration-current">64oz</div>
-            </div>
-            <div class="bos-panel-stat">
-              <div class="bos-panel-stat-label">Remaining</div>
-              <div class="bos-panel-stat-val" id="hydration-remaining">36oz</div>
-            </div>
-            <div class="bos-panel-stat">
-              <div class="bos-panel-stat-label">Status</div>
-              <div class="bos-panel-stat-val" id="hydration-status">64%</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Actions -->
-      <div class="bos-actions">
-        <button class="bos-btn primary" id="btn-add">+ ADD</button>
-        <button class="bos-btn" id="btn-reset">RESET</button>
-        <button class="bos-btn" id="btn-quick">QUICK</button>
-      </div>
-
-      <!-- Status bar -->
-      <div class="bos-status-bar">
-        <span>SYS: NOMINAL</span>
-        <span>DUTY: ON</span>
-        <span>SYNC: LIVE</span>
-      </div>
-    </main>
-  </div>
-
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
