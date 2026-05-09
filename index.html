@@ -3,24 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BEYOND OS</title>
+    <title>BEYOND OS – V2 HUD</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <div id="hud">
-        <img id="emblem-main" src="assets/emblem.png" alt="Batman Beyond Emblem">
-        <h1>BEYOND OS</h1>
+
+    <!-- TODAY SCREEN (DEFAULT) -->
+    <section id="todayScreen" class="screen screen-active">
+
+        <header class="today-header">
+            <h1>BEYOND OS</h1>
+            <p class="today-subtitle">TACTICAL DAILY HUD</p>
+        </header>
+
+        <!-- COMPACT HUD (TAP TO OPEN FULL HUD) -->
+        <div id="compactHUD" class="compact-hud">
+            <div class="compact-row">
+                <div class="compact-metric">
+                    <span class="compact-label">CAL</span>
+                    <span id="compactCalories" class="compact-value">0</span>
+                </div>
+                <div class="compact-metric">
+                    <span class="compact-label">H2O</span>
+                    <span id="compactHydration" class="compact-value">0</span>
+                </div>
+            </div>
+
+            <div class="compact-row">
+                <div class="compact-metric">
+                    <span class="compact-label">READINESS</span>
+                    <span id="compactReadiness" class="compact-value">0%</span>
+                </div>
+                <div class="compact-metric">
+                    <span class="compact-label">SLEEP</span>
+                    <span id="compactSleep" class="compact-value">0h</span>
+                </div>
+            </div>
+
+            <div class="compact-footer">
+                <span class="compact-hint">TAP FOR FULL HUD</span>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- ADD button -->
+    <button id="quickAddBtn" class="quick-add-trigger">+ ADD</button>
+
+    <!-- QUICK ADD OVERLAY -->
+    <div id="quickAddOverlay" class="quick-add-overlay"></div>
+
+    <!-- QUICK ADD PANEL -->
+    <div id="quickAddPanel" class="quick-add-panel">
+        <div class="quick-add-header">
+            <span>QUICK ADD</span>
+            <button id="closeQuickAdd" class="quick-close-btn">✕</button>
+        </div>
+
+        <div class="quick-actions">
+            <button class="quick-action-btn" data-action="hydration">
+                +8oz Hydration
+            </button>
+
+            <button class="quick-action-btn" data-action="protein">
+                +20g Protein
+            </button>
+
+            <button class="quick-action-btn" data-action="calories">
+                +250 Calories
+            </button>
+
+            <button class="quick-action-btn" data-action="training">
+                Log Training Session
+            </button>
+        </div>
     </div>
 
-    <div id="grid">
-        <button class="tile">Profile</button>
-        <button class="tile">Systems</button>
-        <button class="tile">Comms</button>
-        <button class="tile">Navigation</button>
-        <button class="tile">Diagnostics</button>
-        <button class="tile">Settings</button>
-    </div>
+    <!-- FULL HUD SCREEN -->
+    <section id="hudFullScreen" class="screen hud-full-screen">
+
+        <div class="hud-full-topbar">
+            <button id="backToToday" class="hud-back-btn">
+                BACK
+            </button>
+
+            <h2>HUD FULL</h2>
+        </div>
+
+        <div class="hud-full-grid">
+
+            <div class="hud-metric-card">
+                <div class="hud-label">CALORIES</div>
+                <div id="hudCaloriesValue" class="hud-big-value">0</div>
+                <div class="hud-unit">kcal</div>
+
+                <div class="hud-bar">
+                    <div id="hudCaloriesBar" class="hud-bar-fill"></div>
+                </div>
+            </div>
+
+            <div class="hud-metric-card">
+                <div class="hud-label">HYDRATION</div>
+                <div id="hudHydrationValue" class="hud-big-value">0</div>
+                <div class="hud-unit">oz</div>
+
+                <div class="hud-bar">
+                    <div id="hudHydrationBar" class="hud-bar-fill"></div>
+                </div>
+            </div>
+
+            <div class="hud-metric-card">
+                <div class="hud-label">READINESS</div>
+                <div id="hudReadinessValue" class="hud-big-value">0</div>
+                <div class="hud-unit">%</div>
+
+                <div class="hud-bar">
+                    <div id="hudReadinessBar" class="hud-bar-fill"></div>
+                </div>
+            </div>
+
+            <div class="hud-metric-card">
+                <div class="hud-label">SLEEP</div>
+                <div id="hudSleepValue" class="hud-big-value">0</div>
+                <div class="hud-unit">hrs</div>
+
+                <div class="hud-bar">
+                    <div id="hudSleepBar" class="hud-bar-fill"></div>
+                </div>
+            </div>
+
+        </div>
+    </section>
 
     <script src="app.js"></script>
 </body>
