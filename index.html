@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
 <div id="bootScreen">
   <div id="bootLogo">BEYOND</div>
   <div id="bootSub">INITIALIZING SUIT INTERFACE...</div>
@@ -17,21 +18,20 @@
 <div id="hudSweep"></div>
 
 <div id="app" class="screen-active">
+
   <div id="topBar" class="panel panel-depth">
     <div class="panel-title">
       <span class="icon-3d"></span>
       BEYOND OS
     </div>
-    <div id="statusReadiness" class="status-pill">RDY: <span id="readinessValue">100</span>%</div>
-    <div id="statusScenario" class="status-pill">SCN: <span id="scenarioValue">IDLE</span></div>
+    <div class="status-pill">RDY: <span id="readinessValue">100</span>%</div>
+    <div class="status-pill">SCN: <span id="scenarioValue">IDLE</span></div>
   </div>
 
   <div id="mainGrid">
+
     <div id="workoutPanel" class="panel panel-depth">
-      <div class="panel-title">
-        <span class="icon-3d"></span>
-        WORKOUT
-      </div>
+      <div class="panel-title"><span class="icon-3d"></span>WORKOUT</div>
       <div class="glyph glyph-workout"></div>
       <div class="sigil"></div>
       <div class="panel-body">
@@ -48,10 +48,7 @@
     </div>
 
     <div id="mealsPanel" class="panel panel-depth">
-      <div class="panel-title">
-        <span class="icon-3d"></span>
-        MEALS
-      </div>
+      <div class="panel-title"><span class="icon-3d"></span>MEALS</div>
       <div class="glyph glyph-meals"></div>
       <div class="sigil"></div>
       <div class="panel-body">
@@ -68,10 +65,7 @@
     </div>
 
     <div id="groceryPanel" class="panel panel-depth">
-      <div class="panel-title">
-        <span class="icon-3d"></span>
-        GROCERY
-      </div>
+      <div class="panel-title"><span class="icon-3d"></span>GROCERY</div>
       <div class="glyph glyph-grocery"></div>
       <div class="sigil"></div>
       <div class="panel-body">
@@ -86,6 +80,7 @@
         <button class="nav-button interactive hud-impact" data-nav="grocery">ENTER GROCERY MODE</button>
       </div>
     </div>
+
   </div>
 
   <div id="themeSwitcher" class="panel">
@@ -95,8 +90,10 @@
     <button class="nav-button interactive hud-impact" data-theme="stealth">Stealth</button>
     <button class="nav-button interactive hud-impact" data-theme="overclock">Overclock</button>
   </div>
+
 </div>
 
+<!-- FULL‑QUALITY INLINE AUDIO GOES HERE -->
 <audio id="sndNightOps" src="" loop preload="auto"></audio>
 <audio id="sndRedline" src="" loop preload="auto"></audio>
 <audio id="sndStealth" src="" loop preload="auto"></audio>
