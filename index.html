@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>BEYOND OS v1.0</title>
+  <title>BEYOND OS v1.1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="app">
-    <!-- Today Screen -->
     <main class="bos-root">
       <div class="bos-corner tl"></div>
       <div class="bos-corner tr"></div>
@@ -22,24 +21,19 @@
         <div class="bos-emblem-wrap">
           <img src="assets/emblem.png" alt="Batman Beyond emblem" id="emblem-main" />
         </div>
-        <div class="bos-sys-label">BEYOND OS v1.0</div>
+        <div class="bos-sys-label">00:00</div>
       </div>
 
-      <!-- HUD (compact version of HUD bar) -->
-      <div class="bos-hud" id="hud-compact">
-        <!-- Filled by app.js -->
-      </div>
+      <!-- HUD -->
+      <div class="bos-hud" id="hud-compact"></div>
 
-      <!-- Metrics grid -->
+      <!-- Metrics -->
       <div class="bos-section-label">// METRICS</div>
-      <div class="bos-grid" id="metric-grid">
-        <!-- Filled by app.js -->
-      </div>
+      <div class="bos-grid" id="metric-grid"></div>
 
       <!-- Panels -->
       <div class="bos-section-label">// PANELS</div>
       <section id="panels">
-        <!-- Training -->
         <div class="bos-panel" data-panel="training">
           <div class="bos-panel-header">
             <div class="bos-panel-title">Training</div>
@@ -61,7 +55,6 @@
           </div>
         </div>
 
-        <!-- Nutrition -->
         <div class="bos-panel" data-panel="nutrition">
           <div class="bos-panel-header">
             <div class="bos-panel-title">Nutrition</div>
@@ -83,7 +76,6 @@
           </div>
         </div>
 
-        <!-- Hydration -->
         <div class="bos-panel" data-panel="hydration">
           <div class="bos-panel-header">
             <div class="bos-panel-title">Hydration</div>
