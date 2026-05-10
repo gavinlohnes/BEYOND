@@ -1,16 +1,72 @@
-const state={readiness:{current:100},activeScenario:"IDLE",activeTheme:"redline"};
-const themeEngine={apply(t){document.documentElement.setAttribute("data-theme",t);state.activeTheme=t;saveState();soundEngine.auto();applyThemeFilter(t)},auto(){const r=state.readiness.current||100;const h=new Date().getHours();const s=state.activeScenario;if(h<6||h>22)return this.apply("nightops");if(r>=80||s==="HIGH_CAPACITY")return this.apply("redline");if(r<40||s==="LOW_CAPACITY")return this.apply("stealth");return this.apply("overclock")}};
-const soundEngine={current:null,play(id){if(this.current===id)return;["sndNightOps","sndRedline","sndStealth","sndOverclock"].forEach(x=>{const e=document.getElementById(x);if(e)e.pause()});const el=document.getElementById(id);if(!el)return;el.currentTime=0;el.volume=.18;el.play().catch(()=>{});this.current=id},auto(){const t=state.activeTheme;if(t==="nightops")return this.play("sndNightOps");if(t==="redline")return this.play("sndRedline");if(t==="stealth")return this.play("sndStealth");if(t==="overclock")return this.play("sndOverclock")}};
-function applyThemeFilter(t){const el=document.getElementById(soundEngine.current);if(!el)return;if(!el._ctx){el._ctx=new (window.AudioContext||window.webkitAudioContext)();el._source=el._ctx.createMediaElementSource(el);el._filter=el._ctx.createBiquadFilter();el._source.connect(el._filter).connect(el._ctx.destination)}const f=el._filter;if(t==="nightops"){f.type="lowpass";f.frequency.value=600}else if(t==="redline"){f.type="highpass";f.frequency.value=1200}else if(t==="stealth"){f.type="lowpass";f.frequency.value=300}else if(t==="overclock"){f.type="peaking";f.frequency.value=2000;f.gain.value=4}}
-function saveState(){try{localStorage.setItem("beyondState",JSON.stringify(state))}catch(e){}}
-function loadState(){try{const s=localStorage.getItem("beyondState");if(!s)return;Object.assign(state,JSON.parse(s))}catch(e){}}
-function toneUp(){const a=document.getElementById("sndToneUp");if(a){a.currentTime=0;a.play().catch(()=>{})}}
-function toneDown(){const a=document.getElementById("sndToneDown");if(a){a.currentTime=0;a.play().catch(()=>{})}}
-function playScenarioStinger(){const a=document.getElementById("sndScenario");if(a){a.currentTime=0;a.play().catch(()=>{})}}
-function playSpatial(id,x){const el=document.getElementById(id);if(!el)return;const pan=(x/window.innerWidth)*2-1;const ctx=new (window.AudioContext||window.webkitAudioContext)();const src=ctx.createMediaElementSource(el);const p=ctx.createStereoPanner();p.pan.value=pan;src.connect(p).connect(ctx.destination);el.currentTime=0;el.play().catch(()=>{})}
-function playEcho(id,x){playSpatial(id,x);setTimeout(()=>playSpatial(id,x+40),90);setTimeout(()=>playSpatial(id,x-40),180)}
-const subsystemAnchors={workout:.2,meals:0,grocery:.8};
-function playSubsystemCue(id,s){const x=subsystemAnchors[s]*window.innerWidth;playSpatial(id,x)}
-function computeReadiness(){state.readiness.current=Math.max(10,Math.min(100,state.readiness.current));document.getElementById("readinessValue").textContent=state.readiness.current}
-function setScenario(s){state.activeScenario=s;document.getElementById("scenarioValue").textContent=s;playScenarioStinger();themeEngine.auto();saveState()}
-function spawnParticles(){const c=document.getElementById("hudParticles");for(let i=0;i<40;i++){
+/* ============================================================
+   BEYOND OS — Final Clean Running Version
+   ============================================================ */
+
+const state = {
+  readiness: 100,
+  activeScenario: "IDLE",
+  activeTheme: "redline"
+};
+
+/* Persistence */
+function saveState() {
+  try { localStorage.setItem("beyondState", JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem("beyondState");
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved.readiness && typeof saved.readiness === "object") {
+      saved.readiness = saved.readiness.current || 100;
+    }
+    Object.assign(state, saved);
+  } catch(e) {}
+}
+
+/* Theme Engine */
+const themeEngine = {
+  apply(t) {
+    document.documentElement.setAttribute("data-theme", t);
+    state.activeTheme = t;
+    saveState();
+    soundEngine.auto();
+  },
+  auto() {
+    const h = new Date().getHours();
+    if (h < 6 || h > 22) return this.apply("nightops");
+    if (state.readiness >= 80 || state.activeScenario === "HIGH_CAPACITY") return this.apply("redline");
+    if (state.readiness < 40 || state.activeScenario === "LOW_CAPACITY") return this.apply("stealth");
+    return this.apply("overclock");
+  }
+};
+
+/* Sound Engine */
+const soundEngine = {
+  current: null,
+  play(id) {
+    if (this.current === id) return;
+    document.querySelectorAll('audio[id^="snd"]').forEach(el => el.pause());
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.currentTime = 0;
+    el.volume = 0.18;
+    el.play().catch(() => {});
+    this.current = id;
+  },
+  auto() {
+    const map = {
+      nightops: "sndNightOps",
+      redline: "sndRedline",
+      stealth: "sndStealth",
+      overclock: "sndOverclock"
+    };
+    this.play(map[state.activeTheme]);
+  }
+};
+
+/* Tone Helpers */
+function toneUp() {
+  const a = document.getElementById("sndToneUp");
+  if (a) { a.currentTime = 0;
