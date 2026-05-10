@@ -1,3 +1,28 @@
+/* ============================================================
+   BEYOND OS — V20 STABLE CORE
+   Includes: Audio Fix, Threat System, Missions, AI Personality,
+   Cross‑Integration, Overdrive, HUD, Boot Sequence
+   ============================================================ */
+
+/* -----------------------------
+   0. AUDIO SAFETY PATCH
+------------------------------ */
+
+let userInteracted = false;
+
+window.addEventListener("click", () => userInteracted = true);
+window.addEventListener("keydown", () => userInteracted = true);
+
+function safePlay(audioElement) {
+  if (!userInteracted) return;
+  if (!audioElement) return;
+  audioElement.play().catch(() => {});
+}
+
+/* -----------------------------
+   1. GLOBAL STATE
+------------------------------ */
+
 const state = {
   readiness: 80,
   activeScenario: "IDLE"
@@ -13,7 +38,9 @@ const missions = {
   Sunday: "REST + RESET"
 };
 
-/* Suit AI personality */
+/* -----------------------------
+   2. SUIT AI PERSONALITY
+------------------------------ */
 
 const suitAI = {
   tone: {
@@ -55,7 +82,9 @@ const suitAI = {
   }
 };
 
-/* Audio */
+/* -----------------------------
+   3. AUDIO ROUTER
+------------------------------ */
 
 function playVoice(type) {
   const map = {
@@ -65,17 +94,14 @@ function playVoice(type) {
     meals: "voiceMeals",
     grocery: "voiceGrocery"
   };
+
   const el = document.getElementById(map[type]);
-  if (el) el.play();
+  safePlay(el);
 }
 
-/* Scenario + theme stubs */
-
-function setScenario(s) {
-  state.activeScenario = s;
-  triggerWarningPulse();
-  updateThreatPanel();
-}
+/* -----------------------------
+   4. VISUAL EFFECTS
+------------------------------ */
 
 function triggerWarningPulse() {
   const app = document.getElementById("app");
@@ -90,7 +116,9 @@ function flickerPanels() {
   });
 }
 
-/* Overdrive */
+/* -----------------------------
+   5. OVERDRIVE MODE
+------------------------------ */
 
 function enterOverdrive() {
   document.body.classList.add("overdrive-active");
@@ -101,24 +129,27 @@ function enterOverdrive() {
 
 function exitOverdrive() {
   document.body.classList.remove("overdrive-active");
-  playVoice("stabilizing");
 }
 
-/* Readiness */
+/* -----------------------------
+   6. READINESS ENGINE
+------------------------------ */
 
 function updateReadinessDisplay() {
   const el = document.getElementById("readinessValue");
   if (!el) return;
+
   el.textContent = state.readiness;
 
   if (state.readiness > 90) enterOverdrive();
-  else if (state.readiness < 40) playVoice("stabilizing");
   else exitOverdrive();
 
   updateThreatPanel();
 }
 
-/* Missions */
+/* -----------------------------
+   7. MISSION SYSTEM
+------------------------------ */
 
 function getTodayMission() {
   const day = new Date().toLocaleDateString("en-US", { weekday: "long" });
@@ -146,16 +177,11 @@ function loadMissionGrid() {
 function missionReadinessImpact() {
   const mission = getTodayMission();
 
-  if (mission.includes("UPPER") || mission.includes("LOWER"))
-    return -12;
-  if (mission.includes("MEAL PREP"))
-    return -4;
-  if (mission.includes("GROCERY"))
-    return -6;
-  if (mission.includes("RECOVERY"))
-    return +8;
-  if (mission.includes("REST"))
-    return +12;
+  if (mission.includes("UPPER") || mission.includes("LOWER")) return -12;
+  if (mission.includes("MEAL PREP")) return -4;
+  if (mission.includes("GROCERY")) return -6;
+  if (mission.includes("RECOVERY")) return +8;
+  if (mission.includes("REST")) return +12;
 
   return 0;
 }
@@ -165,7 +191,9 @@ function predictReadiness() {
   return Math.max(0, Math.min(100, r + missionReadinessImpact()));
 }
 
-/* Threat level */
+/* -----------------------------
+   8. THREAT LEVEL SYSTEM
+------------------------------ */
 
 function calculateThreatLevel() {
   const r = state.readiness;
@@ -206,6 +234,7 @@ function classifyThreat(score) {
 function applyThreatColor(level) {
   const el = document.getElementById("threatValue");
   el.className = "metric-value";
+
   if (level.includes("GREEN")) el.classList.add("threat-green");
   else if (level.includes("YELLOW")) el.classList.add("threat-yellow");
   else if (level.includes("ORANGE")) el.classList.add("threat-orange");
@@ -217,12 +246,13 @@ function updateThreatPanel() {
   const score = calculateThreatLevel();
   const level = classifyThreat(score);
   const el = document.getElementById("threatValue");
-  if (!el) return;
   el.textContent = level;
   applyThreatColor(level);
 }
 
-/* Workout generator */
+/* -----------------------------
+   9. WORKOUT SYSTEM
+------------------------------ */
 
 function getAdaptiveIntensity() {
   const threat = classifyThreat(calculateThreatLevel());
@@ -267,21 +297,27 @@ function generateWorkoutPlan() {
   return plan;
 }
 
-/* Meals */
+function completeWorkout() {
+  state.readiness = Math.max(0, state.readiness - 15);
+  updateReadinessDisplay();
+  suitAI.speak("warning");
+}
+
+/* -----------------------------
+   10. MEAL SYSTEM
+------------------------------ */
 
 function generateMealIntel() {
   const a = document.getElementById("mealAView").textContent;
   const b = document.getElementById("mealBView").textContent;
 
-  const base = [
+  return [
     `Primary Fuel: ${a}`,
     `Secondary Fuel: ${b}`,
     "Protein Target: 160g",
     "Carb Target: 240g",
     "Fat Target: 60g"
   ];
-
-  return base;
 }
 
 function rotateAnchorMeals() {
@@ -302,7 +338,9 @@ function rotateAnchorMeals() {
   document.getElementById("mealBView").textContent = b;
 }
 
-/* Grocery */
+/* -----------------------------
+   11. GROCERY SYSTEM
+------------------------------ */
 
 function generateGroceryList() {
   const a = document.getElementById("mealAView").textContent;
@@ -342,23 +380,6 @@ function optimizeBudget(list, budget) {
   return list;
 }
 
-/* Cross‑integration */
-
-function completeWorkout() {
-  state.readiness = Math.max(0, state.readiness - 15);
-  updateReadinessDisplay();
-  document.getElementById("meal-intel").textContent =
-    "Fuel Required: Increase protein + carbs.";
-  playVoice("meals");
-  suitAI.speak("warning");
-}
-
-function syncMealsToGrocery() {
-  const list = generateGroceryList();
-  document.getElementById("groc-list").textContent = list.join("\n");
-  document.getElementById("grocStatus").textContent = "UPDATED";
-}
-
 function groceryImpact() {
   const status = document.getElementById("grocStatus").textContent;
 
@@ -373,67 +394,9 @@ function groceryImpact() {
   updateReadinessDisplay();
 }
 
-function missionMealAdjustment() {
-  const mission = getTodayMission();
-
-  if (mission.includes("TRAINING"))
-    return "Increase carbs + hydration.";
-  if (mission.includes("RECOVERY"))
-    return "Increase protein + electrolytes.";
-  if (mission.includes("REST"))
-    return "Maintain baseline intake.";
-
-  return "Standard fueling protocol.";
-}
-
-function missionReadinessWarning() {
-  const r = state.readiness;
-  const mission = getTodayMission();
-
-  if (r < 40 && mission.includes("TRAINING"))
-    return "⚠ Suit recommends postponing training.";
-  if (r < 20)
-    return "⚠ Critical readiness. Switch to recovery.";
-
-  return "Mission acceptable.";
-}
-
-function overdriveIntegration() {
-  if (!document.body.classList.contains("overdrive-active")) return;
-
-  document.getElementById("meal-intel").textContent =
-    "⚠ OVERDRIVE: Increase caloric intake by 20%.";
-  document.getElementById("grocStatus").textContent = "OVERDRIVE PRIORITY";
-  document.getElementById("wk-intensity").textContent = "MAXIMUM";
-  updateThreatPanel();
-}
-
-/* Suit AI contextual */
-
-function suitContextualResponse() {
-  const threat = classifyThreat(calculateThreatLevel());
-  const r = state.readiness;
-  const s = state.activeScenario;
-
-  if (document.body.classList.contains("overdrive-active"))
-    return suitAI.speak("overdrive");
-
-  if (threat.includes("RED"))
-    return suitAI.speak("warning");
-
-  if (r < 30)
-    return suitAI.speak("warning");
-
-  if (s === "HIGH_CAPACITY")
-    return suitAI.speak("neutral");
-
-  if (Math.random() < 0.05)
-    return suitAI.speak("humor");
-
-  return suitAI.speak("neutral");
-}
-
-/* HUD helpers */
+/* -----------------------------
+   12. SUBSYSTEM HUD
+------------------------------ */
 
 function openSubscreen(id) {
   document.querySelectorAll(".subscreen").forEach(s => s.classList.remove("subscreen-active"));
@@ -451,7 +414,9 @@ function activateSubHUD(id) {
   if (target) target.classList.add("sub-hud-active");
 }
 
-/* Nav init */
+/* -----------------------------
+   13. NAVIGATION
+------------------------------ */
 
 function initNavButtons() {
   document.querySelectorAll(".nav-button[data-nav]").forEach(btn => {
@@ -459,27 +424,21 @@ function initNavButtons() {
       const target = btn.dataset.nav;
 
       if (target === "workout") {
-        setScenario("HIGH_CAPACITY");
         openSubscreen("screenWorkout");
         activateSubHUD("hudWorkout");
         suitAI.display("Training parameters optimal.");
-        playVoice("workout");
       }
 
       if (target === "meals") {
-        setScenario("IDLE");
         openSubscreen("screenMeals");
         activateSubHUD("hudMeals");
         suitAI.display("Standard fueling protocol active.");
-        playVoice("meals");
       }
 
       if (target === "grocery") {
-        setScenario("LOW_CAPACITY");
         openSubscreen("screenGrocery");
         activateSubHUD("hudGrocery");
         suitAI.display("Procurement recommended.");
-        playVoice("grocery");
       }
 
       if (target === "missions") {
@@ -490,7 +449,9 @@ function initNavButtons() {
   });
 }
 
-/* ESC to exit subscreen */
+/* -----------------------------
+   14. ESC CLOSE
+------------------------------ */
 
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
@@ -499,7 +460,9 @@ document.addEventListener("keydown", e => {
   }
 });
 
-/* Briefing */
+/* -----------------------------
+   15. BRIEFING
+------------------------------ */
 
 function generateBriefing() {
   return `
@@ -518,42 +481,36 @@ function showBriefing() {
   b.classList.add("briefing-active");
 }
 
-/* Boot personality */
+/* -----------------------------
+   16. BOOT SEQUENCE
+------------------------------ */
 
 function bootSequence() {
-  setTimeout(() => {
-    suitAI.display("Systems online.");
-  }, 800);
-
-  setTimeout(() => {
-    suitAI.display("Initializing tactical subsystems.");
-  }, 1600);
-
-  setTimeout(() => {
-    suitAI.display("Awaiting mission parameters.");
-  }, 2400);
+  setTimeout(() => suitAI.display("Systems online."), 800);
+  setTimeout(() => suitAI.display("Initializing tactical subsystems."), 1600);
+  setTimeout(() => suitAI.display("Awaiting mission parameters."), 2400);
 }
 
-/* Init */
+/* -----------------------------
+   17. INITIALIZATION
+------------------------------ */
 
 window.addEventListener("load", () => {
   document.getElementById("missionToday").textContent = getTodayMission();
   document.getElementById("missionNext").textContent =
-    "NEXT: " + getNextMission() + "\n" + missionReadinessWarning();
+    "NEXT: " + getNextMission();
 
-  document.getElementById("wk-intensity").textContent = getAdaptiveIntensity();
   updateReadinessDisplay();
   updateThreatPanel();
   showBriefing();
   initNavButtons();
   bootSequence();
 
-  /* Workout button behavior */
+  /* Workout */
   document.getElementById("wk-start").addEventListener("click", () => {
     const plan = generateWorkoutPlan().join("\n");
     document.getElementById("wk-plan").textContent = plan;
     document.getElementById("wk-intensity").textContent = getAdaptiveIntensity();
-    playVoice("workout");
     suitAI.speak("neutral");
   });
 
@@ -563,14 +520,14 @@ window.addEventListener("load", () => {
   document.getElementById("meal-edit").addEventListener("click", () => {
     const intel = generateMealIntel();
     document.getElementById("meal-intel").textContent =
-      intel.join("\n") + "\n\nMISSION ADJUSTMENT: " + missionMealAdjustment();
-    playVoice("meals");
+      intel.join("\n");
   });
 
   document.getElementById("meal-rotate").addEventListener("click", () => {
     rotateAnchorMeals();
-    syncMealsToGrocery();
-    playVoice("meals");
+    const list = generateGroceryList();
+    document.getElementById("groc-list").textContent = list.join("\n");
+    document.getElementById("grocStatus").textContent = "UPDATED";
   });
 
   /* Grocery */
@@ -580,12 +537,10 @@ window.addEventListener("load", () => {
     list = optimizeBudget(list, budget);
     document.getElementById("groc-list").textContent = list.join("\n");
     document.getElementById("grocStatus").textContent = "UPDATED";
-    playVoice("grocery");
     groceryImpact();
   });
 
-  /* Periodic systems */
+  /* Periodic Systems */
   setInterval(updateThreatPanel, 5000);
-  setInterval(suitContextualResponse, 12000);
-  setInterval(overdriveIntegration, 3000);
+  setInterval(() => suitAI.speak("neutral"), 12000);
 });
