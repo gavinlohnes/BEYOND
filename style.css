@@ -7,7 +7,7 @@
 html, body {
   width: 100%;
   height: 100%;
-  background: #020308;
+  background: #000;
   color: #f5f5f5;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow-x: hidden;
@@ -15,18 +15,32 @@ html, body {
 }
 
 :root {
-  --accent:      #ff1744;
-  --accent-soft: #ff5252;
-  --bg-main:     #020308;
-  --bg-panel:    #06080d;
+  --accent: #ff0000;
+  --accent-soft: #ff4d4d;
+  --bg-main: #000000;
+  --bg-panel: #0a0000;
 }
+
 :root[data-theme="nightops"]  { --accent: #00e5ff; --accent-soft: #4dd0e1; --bg-main: #020305; --bg-panel: #06080d; }
-:root[data-theme="redline"]   { --accent: #ff1744; --accent-soft: #ff5252; --bg-main: #080003; --bg-panel: #120006; }
+:root[data-theme="redline"]   { --accent: #ff0000; --accent-soft: #ff4d4d; --bg-main: #000000; --bg-panel: #0a0000; }
 :root[data-theme="stealth"]   { --accent: #9fa8da; --accent-soft: #c5cae9; --bg-main: #0a0b0d; --bg-panel: #111317; }
 :root[data-theme="overclock"] { --accent: #ffea00; --accent-soft: #fff176; --bg-main: #0d0a00; --bg-panel: #1a1500; }
 
 body {
-  background: radial-gradient(circle at top, #1a1a2e 0%, #020308 55%, #000 100%);
+  background: #000;
+}
+
+/* HUD GRID */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255,0,0,0.06) 1px, transparent 1px),
+    linear-gradient(rgba(255,0,0,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Boot Screen */
@@ -94,8 +108,8 @@ body {
 .status-pill {
   font-size: 11px;
   padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 0;
+  border: 1px solid rgba(255,0,0,0.35);
   background: rgba(0,0,0,0.4);
   white-space: nowrap;
 }
@@ -108,40 +122,69 @@ body {
   gap: 16px;
 }
 
-/* Panels */
+/* PANELS — FULL BEYOND STYLE */
 .panel {
-  background: rgba(10,12,18,0.45);
+  background: var(--bg-panel);
   backdrop-filter: blur(14px) saturate(180%);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
+  border: 1px solid rgba(255,0,0,0.35);
+  border-radius: 0;
   padding: 14px 16px;
   position: relative;
   overflow: hidden;
   transform-style: preserve-3d;
-  box-shadow: 0 0 8px rgba(0,0,0,0.8);
+  box-shadow: 0 0 8px rgba(0,0,0,0.9);
   transition: all 0.2s ease;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    0 100%
+  );
 }
-.panel::before, .panel::after {
+
+.panel::before,
+.panel::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
+
 .panel::before {
-  background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02));
-  mix-blend-mode: overlay;
-  opacity: 0.15;
+  background: linear-gradient(
+    135deg,
+    rgba(255,0,0,0.25),
+    rgba(255,0,0,0.05)
+  );
+  mix-blend-mode: screen;
+  opacity: 0.35;
 }
+
 .panel::after {
-  background: radial-gradient(circle at var(--px, 50%) var(--py, 50%), rgba(255,255,255,0.08), transparent 60%);
-  mix-blend-mode: soft-light;
+  background: radial-gradient(
+    circle at var(--px, 50%) var(--py, 50%),
+    rgba(255,0,0,0.35),
+    transparent 60%
+  );
+  mix-blend-mode: screen;
+  opacity: 0.6;
 }
-.panel-depth { transform: translateZ(40px); }
+
+.panel-hover-activated {
+  box-shadow: 0 0 26px #ff0000 !important;
+  border-color: #ff0000 !important;
+  transform: scale(1.02) !important;
+}
+
+.panel[data-prox="near"] {
+  box-shadow: 0 0 18px rgba(255,0,0,0.8);
+}
 
 .panel-title {
   font-size: 11px;
   letter-spacing: 0.18em;
-  color: #b0bec5;
+  color: #ff4d4d;
   text-transform: uppercase;
   display: flex;
   align-items: center;
@@ -159,7 +202,7 @@ body {
 .metric-label {
   font-size: 10px;
   letter-spacing: 0.16em;
-  color: #78909c;
+  color: #ff4d4d;
   text-transform: uppercase;
 }
 .metric-value {
@@ -173,16 +216,16 @@ body {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   padding: 8px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 0;
+  border: 1px solid rgba(255,0,0,0.35);
   background: transparent;
   color: #eceff1;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 .nav-button:hover {
-  background: rgba(255,255,255,0.06);
-  box-shadow: 0 0 12px rgba(255,255,255,0.18);
+  background: rgba(255,0,0,0.12);
+  box-shadow: 0 0 12px rgba(255,0,0,0.4);
 }
 .nav-button:active {
   transform: scale(0.96);
@@ -210,12 +253,10 @@ body {
   width: 40px;
   height: 40px;
   opacity: 0.25;
-  border-radius: 50%;
+  background: rgba(255,0,0,0.4);
+  clip-path: polygon(0 0, 100% 0, 100% 60%, 60% 100%, 0 100%);
   animation: glyphFloat 6s ease-in-out infinite;
 }
-.glyph-workout { background: radial-gradient(circle, rgba(255,23,68,0.6), transparent); }
-.glyph-meals   { background: radial-gradient(circle, rgba(0,230,118,0.6), transparent); }
-.glyph-grocery { background: radial-gradient(circle, rgba(255,234,0,0.6), transparent); }
 
 /* Sigil */
 .sigil {
@@ -225,8 +266,9 @@ body {
   width: 60px;
   height: 60px;
   border: 2px solid var(--accent);
-  border-radius: 50%;
+  border-radius: 0;
   opacity: 0.15;
+  clip-path: polygon(0 0, 100% 0, 100% 60%, 60% 100%, 0 100%);
   animation: sigilSpin 12s linear infinite;
 }
 
@@ -235,8 +277,8 @@ body {
   position: absolute;
   width: 2px;
   height: 2px;
-  background: rgba(255,255,255,0.6);
-  border-radius: 50%;
+  background: rgba(255,0,0,0.6);
+  border-radius: 0;
   animation: particleDrift 12s linear infinite;
 }
 
@@ -245,18 +287,10 @@ body {
   position: absolute;
   width: 120px;
   height: 120px;
-  border: 2px solid rgba(255,255,255,0.05);
-  border-radius: 50%;
+  border: 2px solid rgba(255,0,0,0.15);
+  border-radius: 0;
+  clip-path: polygon(0 0, 100% 0, 100% 60%, 60% 100%, 0 100%);
   animation: hudObjectDrift 20s linear infinite;
-}
-
-/* Hover & Interaction */
-.panel-hover-activated {
-  box-shadow: 0 0 22px var(--accent) !important;
-  transform: scale(1.02) !important;
-}
-.panel[data-prox="near"] {
-  box-shadow: 0 0 18px var(--accent-soft);
 }
 
 /* Keyframes */
