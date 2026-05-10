@@ -8,18 +8,18 @@
 </head>
 <body>
 
-<!-- BOOT SCREEN -->
+<!-- Boot Screen -->
 <div id="bootScreen">
   <div id="bootLogo">BEYOND</div>
   <div id="bootSub">INITIALIZING SUIT INTERFACE...</div>
 </div>
 
-<!-- ATMOSPHERE LAYERS -->
+<!-- HUD Layers -->
 <div id="hudParticles"></div>
 <div id="hudObjects"></div>
 <div id="hudSweep"></div>
 
-<!-- APP ROOT -->
+<!-- Main App -->
 <div id="app" class="screen-active">
 
   <div id="topBar" class="panel panel-depth">
@@ -27,13 +27,15 @@
       <span class="icon-3d"></span>
       BEYOND OS
     </div>
-    <div class="status-pill">RDY: <span id="readinessValue">100</span>%</div>
-    <div class="status-pill">SCN: <span id="scenarioValue">IDLE</span></div>
+    <div class="topbar-status">
+      <div class="status-pill">RDY: <span id="readinessValue">100</span>%</div>
+      <div class="status-pill">SCN: <span id="scenarioValue">IDLE</span></div>
+    </div>
   </div>
 
   <div id="mainGrid">
 
-    <!-- WORKOUT PANEL -->
+    <!-- Workout Panel -->
     <div id="workoutPanel" class="panel panel-depth">
       <div class="panel-title"><span class="icon-3d"></span>WORKOUT</div>
       <div class="glyph glyph-workout"></div>
@@ -47,11 +49,11 @@
           <div class="metric-label">NEXT</div>
           <div class="metric-value" id="workoutNext">LOWER</div>
         </div>
-        <button class="nav-button" data-nav="workout">ENTER WORKOUT MODE</button>
+        <button class="nav-button interactive hud-impact" data-nav="workout">ENTER WORKOUT MODE</button>
       </div>
     </div>
 
-    <!-- MEALS PANEL -->
+    <!-- Meals Panel -->
     <div id="mealsPanel" class="panel panel-depth">
       <div class="panel-title"><span class="icon-3d"></span>MEALS</div>
       <div class="glyph glyph-meals"></div>
@@ -65,11 +67,11 @@
           <div class="metric-label">ANCHOR B</div>
           <div class="metric-value" id="mealB">CHICKEN + PASTA</div>
         </div>
-        <button class="nav-button" data-nav="meals">ENTER MEAL MODE</button>
+        <button class="nav-button interactive hud-impact" data-nav="meals">ENTER MEAL MODE</button>
       </div>
     </div>
 
-    <!-- GROCERY PANEL -->
+    <!-- Grocery Panel -->
     <div id="groceryPanel" class="panel panel-depth">
       <div class="panel-title"><span class="icon-3d"></span>GROCERY</div>
       <div class="glyph glyph-grocery"></div>
@@ -83,36 +85,34 @@
           <div class="metric-label">ANCHOR COUNT</div>
           <div class="metric-value" id="anchorCount">2</div>
         </div>
-        <button class="nav-button" data-nav="grocery">ENTER GROCERY MODE</button>
+        <button class="nav-button interactive hud-impact" data-nav="grocery">ENTER GROCERY MODE</button>
       </div>
     </div>
 
   </div>
 
-  <!-- THEME SWITCHER -->
+  <!-- Theme Switcher -->
   <div id="themeSwitcher" class="panel">
     <div class="panel-title">THEME</div>
-    <button class="nav-button" data-theme="nightops">Night Ops</button>
-    <button class="nav-button" data-theme="redline">Redline</button>
-    <button class="nav-button" data-theme="stealth">Stealth</button>
-    <button class="nav-button" data-theme="overclock">Overclock</button>
+    <div class="theme-buttons">
+      <button class="nav-button interactive" data-theme="nightops">Night Ops</button>
+      <button class="nav-button interactive" data-theme="redline">Redline</button>
+      <button class="nav-button interactive" data-theme="stealth">Stealth</button>
+      <button class="nav-button interactive" data-theme="overclock">Overclock</button>
+    </div>
   </div>
 
 </div>
 
-<!-- AUDIO (empty for now — you will add base64 later) -->
-<audio id="sndNightOps" src="" loop preload="auto"></audio>
-<audio id="sndRedline" src="" loop preload="auto"></audio>
-<audio id="sndStealth" src="" loop preload="auto"></audio>
-<audio id="sndOverclock" src="" loop preload="auto"></audio>
+<!-- Audio -->
+<audio id="sndNightOps"    src="" loop preload="auto"></audio>
+<audio id="sndRedline"     src="" loop preload="auto"></audio>
+<audio id="sndStealth"     src="" loop preload="auto"></audio>
+<audio id="sndOverclock"   src="" loop preload="auto"></audio>
+<audio id="sndToneUp"      src="" preload="auto"></audio>
+<audio id="sndToneDown"    src="" preload="auto"></audio>
+<audio id="sndScenario"    src="" preload="auto"></audio>
 
-<audio id="sndToneUp" src="" preload="auto"></audio>
-<audio id="sndToneDown" src="" preload="auto"></audio>
-<audio id="sndScenario" src="" preload="auto"></audio>
-<audio id="sndCriticalAlert" src="" preload="auto"></audio>
-
-<!-- CORRECT JS FILE -->
 <script src="script.js"></script>
-
 </body>
 </html>
