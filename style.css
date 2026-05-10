@@ -1,12 +1,16 @@
+/* ============================================================
+   BEYOND OS — V20 STABLE CORE
+   Unified Style Sheet
+============================================================ */
+
 :root {
   --bg: #050505;
   --accent: #ff0000;
   --accent-soft: rgba(255,0,0,0.6);
+  --anim-scale: 1;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -17,7 +21,6 @@ body {
 }
 
 /* Panels */
-
 #app {
   position: relative;
   padding: 20px;
@@ -33,6 +36,8 @@ body {
   padding: 12px 14px;
   position: relative;
   overflow: hidden;
+  transition: transform calc(0.2s * var(--anim-scale)) ease-out,
+              box-shadow calc(0.2s * var(--anim-scale)) ease-out;
 }
 
 .panel-depth {
@@ -40,7 +45,7 @@ body {
 }
 
 .panel-title {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Orbitron';
   font-weight: 600;
   font-size: 12px;
   letter-spacing: 0.22em;
@@ -50,7 +55,7 @@ body {
 }
 
 .metric-value {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Rajdhani';
   font-size: 26px;
 }
 
@@ -60,7 +65,6 @@ body {
 }
 
 /* Nav */
-
 .nav-button {
   margin-top: 6px;
   width: 100%;
@@ -68,7 +72,7 @@ body {
   border: 1px solid rgba(255,0,0,0.5);
   background: rgba(255,0,0,0.08);
   color: #fff;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Orbitron';
   font-size: 11px;
   letter-spacing: 0.18em;
   cursor: pointer;
@@ -82,7 +86,6 @@ body {
 }
 
 /* Subscreens */
-
 .subscreen {
   position: fixed;
   inset: 0;
@@ -95,7 +98,7 @@ body {
   justify-content: flex-start;
   padding-top: 80px;
   color: var(--accent);
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Orbitron';
   font-size: 32px;
   letter-spacing: 0.3em;
   opacity: 0;
@@ -165,15 +168,13 @@ body {
   box-shadow: 0 0 18px var(--accent);
 }
 
-/* Mission grid */
-
+/* Mission Grid */
 .mission-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 12px;
   width: 90%;
-  margin: 0 auto;
-  margin-top: 40px;
+  margin: 40px auto 0;
 }
 
 .mission-card {
@@ -192,8 +193,7 @@ body {
   box-shadow: 0 0 14px var(--accent);
 }
 
-/* HUD overlays */
-
+/* HUD Overlays */
 .sub-hud {
   position: fixed;
   inset: 0;
@@ -210,45 +210,7 @@ body {
     repeating-linear-gradient(135deg, rgba(255,0,0,0.12) 0px, transparent 4px);
 }
 
-#hudWorkout.sub-hud-active {
-  background:
-    radial-gradient(circle at 50% 20%, rgba(255,0,0,0.35), transparent 70%),
-    repeating-linear-gradient(135deg, rgba(255,0,0,0.18) 0px, transparent 4px);
-}
-
-#hudMeals.sub-hud-active {
-  background:
-    radial-gradient(circle at 50% 80%, rgba(255,0,0,0.25), transparent 70%),
-    repeating-linear-gradient(45deg, rgba(255,0,0,0.12) 0px, transparent 4px);
-}
-
-#hudGrocery.sub-hud-active {
-  background:
-    radial-gradient(circle at 20% 50%, rgba(255,0,0,0.3), transparent 70%),
-    repeating-linear-gradient(90deg, rgba(255,0,0,0.15) 0px, transparent 4px);
-}
-
-/* Briefing */
-
-.briefing-panel {
-  font-family: 'Orbitron';
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  color: var(--accent);
-  padding: 12px;
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: 0.4s ease;
-  white-space: pre-line;
-}
-
-.briefing-active {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Threat colors */
-
+/* Threat Colors */
 .threat-green    { color: #00ff99; }
 .threat-yellow   { color: #ffee58; }
 .threat-orange   { color: #ff9800; }
@@ -256,7 +218,6 @@ body {
 .threat-black    { color: #ff0000; text-shadow: 0 0 18px #ff0000; }
 
 /* Scanlines */
-
 body::after {
   content: "";
   position: fixed;
@@ -276,7 +237,6 @@ body::after {
 }
 
 /* CRT Noise */
-
 #crtNoise {
   content: "";
   position: fixed;
@@ -296,7 +256,6 @@ body::after {
 }
 
 /* HUD Sweep */
-
 #hudSweep {
   position: fixed;
   inset: -20%;
@@ -313,8 +272,7 @@ body::after {
   animation: hudSweepPass 8s linear infinite;
 }
 
-/* Data streams */
-
+/* Data Streams */
 .data-stream {
   position: fixed;
   width: 2px;
@@ -327,7 +285,6 @@ body::after {
 }
 
 /* Animations */
-
 @keyframes noiseShift {
   0% { transform: translate(0,0); }
   25% { transform: translate(-2px,1px); }
@@ -344,78 +301,3 @@ body::after {
   100% { transform: translate(80%, 80%); opacity: 0; }
 }
 
-@keyframes dataStreamMove {
-  0%   { transform: translateY(-100%); opacity: 0.1; }
-  50%  { opacity: 0.25; }
-  100% { transform: translateY(100%); opacity: 0.1; }
-}
-
-@keyframes microPulse {
-  0%   { opacity: 0.18; }
-  50%  { opacity: 0.28; }
-  100% { opacity: 0.18; }
-}
-
-@keyframes microShift {
-  0%   { transform: translateY(0px); }
-  50%  { transform: translateY(-1px); }
-  100% { transform: translateY(0px); }
-}
-
-@keyframes modeFlash {
-  0%   { opacity: 0; filter: brightness(4); }
-  40%  { opacity: 1; filter: brightness(1.4); }
-  100% { opacity: 1; filter: brightness(1); }
-}
-
-/* Warning pulse */
-
-.warning-pulse {
-  animation: warningPulse 0.6s ease-in-out 3;
-}
-
-@keyframes warningPulse {
-  0%   { box-shadow: 0 0 0px rgba(255,0,0,0); }
-  50%  { box-shadow: 0 0 22px rgba(255,0,0,0.9); }
-  100% { box-shadow: 0 0 0px rgba(255,0,0,0); }
-}
-
-/* Panel flicker */
-
-.panel-flicker {
-  animation: panelFlicker 0.25s steps(2) 1;
-}
-
-@keyframes panelFlicker {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-
-/* Overdrive */
-
-.overdrive-active * {
-  transition: all 0.12s ease !important;
-}
-
-.overdrive-active .panel {
-  box-shadow: 0 0 32px #ff0000 !important;
-  border-color: #ff0000 !important;
-}
-
-.overdrive-active body::after {
-  opacity: 0.45 !important;
-}
-
-.overdrive-active #hudSweep {
-  animation-duration: 4s !important;
-}
-
-.overdrive-active .data-stream {
-  animation-duration: 1.5s !important;
-}
-
-.overdrive-active .subscreen-active {
-  filter: brightness(1.4) saturate(1.4);
-  text-shadow: 0 0 22px #ff0000;
-}
