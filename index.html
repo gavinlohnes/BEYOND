@@ -2,143 +2,108 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BEYOND‑OS V21.6 PRIME</title>
+  <title>BEYOND‑OS // V22</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+<body>
+  <div id="app">
+    <header class="top-bar">
+      <div class="brand">BEYOND‑OS<span class="tag">V22</span></div>
+      <div class="status-pill" id="syncStatus">SHEETS: IDLE</div>
+    </header>
 
-<body class="theme-nominal scenario-idle">
+    <main class="grid">
+      <!-- LEFT: DAILY SNAPSHOT -->
+      <section class="panel">
+        <h2>Daily Snapshot</h2>
+        <form id="dailyForm">
+          <div class="field-row">
+            <label>Calories</label>
+            <input type="number" id="calories" required />
+          </div>
+          <div class="field-row">
+            <label>Protein (g)</label>
+            <input type="number" id="protein" required />
+          </div>
+          <div class="field-row">
+            <label>Hydration (oz)</label>
+            <input type="number" id="hydration" required />
+          </div>
+          <div class="field-row">
+            <label>Sleep (hrs)</label>
+            <input type="number" step="0.1" id="sleep" required />
+          </div>
 
-  <!-- ============================
-       HUD TOP BAR
-       ============================ -->
-  <header id="hud">
-    <div class="hud-block">
-      <label>Readiness</label>
-      <span data-hud="readiness">--%</span>
-    </div>
+          <div class="field-row">
+            <label>Readiness</label>
+            <input type="text" id="readiness" placeholder="82%" />
+          </div>
+          <div class="field-row">
+            <label>Threat</label>
+            <input type="text" id="threat" placeholder="12%" />
+          </div>
+          <div class="field-row">
+            <label>Stability</label>
+            <input type="text" id="stability" placeholder="76%" />
+          </div>
 
-    <div class="hud-block">
-      <label>Stability</label>
-      <span data-hud="stability">--%</span>
-    </div>
+          <div class="field-row">
+            <label>Scenario</label>
+            <select id="scenario">
+              <option value="IDLE">IDLE</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="OVERWATCH">OVERWATCH</option>
+              <option value="RECOVERY">RECOVERY</option>
+            </select>
+          </div>
 
-    <div class="hud-block">
-      <label>Threat</label>
-      <span data-hud="threat">--%</span>
-    </div>
+          <div class="field-row">
+            <label>Mission</label>
+            <select id="mission">
+              <option value="NEUTRAL">NEUTRAL</option>
+              <option value="ENGAGED">ENGAGED</option>
+              <option value="AGGRESSIVE">AGGRESSIVE</option>
+            </select>
+          </div>
 
-    <div class="hud-block">
-      <label>Scenario</label>
-      <span data-hud="scenario">IDLE</span>
-    </div>
+          <div class="field-row">
+            <label>Emotional State</label>
+            <select id="emotional">
+              <option value="CALM">CALM</option>
+              <option value="FOCUSED">FOCUSED</option>
+              <option value="DRAINED">DRAINED</option>
+              <option value="WIRED">WIRED</option>
+            </select>
+          </div>
 
-    <div class="hud-block">
-      <label>Mission</label>
-      <span data-hud="mission">NEUTRAL</span>
-    </div>
+          <button type="submit" class="primary-btn">LOG TO SHEETS</button>
+        </form>
+      </section>
 
-    <div class="hud-block">
-      <label>Overdrive</label>
-      <span data-hud="overdrive">OFF</span>
-    </div>
-  </header>
+      <!-- RIGHT: SIGNALS / LAST 7 DAYS -->
+      <section class="panel">
+        <h2>Signals</h2>
+        <div id="signalSummary" class="signal-block">
+          <div class="signal-line">
+            <span class="label">Scenario</span>
+            <span id="signalScenario" class="value">IDLE</span>
+          </div>
+          <div class="signal-line">
+            <span class="label">Mission</span>
+            <span id="signalMission" class="value">NEUTRAL</span>
+          </div>
+          <div class="signal-line">
+            <span class="label">Emotional</span>
+            <span id="signalEmotional" class="value">CALM</span>
+          </div>
+        </div>
 
+        <h3>Last 7 Logs (local)</h3>
+        <ul id="last7List" class="log-list"></ul>
+      </section>
+    </main>
+  </div>
 
-  <!-- ============================
-       SUIT AI OUTPUT
-       ============================ -->
-  <section id="suitai">
-    <div data-suitai="output" class="suitai-output">...</div>
-  </section>
-
-
-  <!-- ============================
-       QUICK ADD PANEL
-       ============================ -->
-  <section id="quick-add">
-    <h2>Quick Add</h2>
-
-    <div class="quick-row">
-      <button data-quick-add="calories" data-amount="100">+100 Cal</button>
-      <button data-quick-add="calories" data-amount="250">+250 Cal</button>
-    </div>
-
-    <div class="quick-row">
-      <button data-quick-add="protein" data-amount="10">+10g Protein</button>
-      <button data-quick-add="protein" data-amount="25">+25g Protein</button>
-    </div>
-
-    <div class="quick-row">
-      <button data-quick-add="hydration" data-amount="8">+8 oz Water</button>
-      <button data-quick-add="hydration" data-amount="16">+16 oz Water</button>
-    </div>
-
-    <div class="quick-row">
-      <button data-quick-add="sleep" data-amount="1">+1 hr Sleep</button>
-    </div>
-  </section>
-
-
-  <!-- ============================
-       INPUT PANEL
-       ============================ -->
-  <section id="inputs">
-    <h2>Manual Input</h2>
-
-    <label>Calories</label>
-    <input type="number" data-input="calories" />
-
-    <label>Protein</label>
-    <input type="number" data-input="protein" />
-
-    <label>Hydration (oz)</label>
-    <input type="number" data-input="hydration" />
-
-    <label>Sleep (hrs)</label>
-    <input type="number" data-input="sleep" />
-  </section>
-
-
-  <!-- ============================
-       PANEL TOGGLES
-       ============================ -->
-  <nav id="panel-nav">
-    <button data-panel-toggle="metrics">Metrics</button>
-    <button data-panel-toggle="diagnostics">Diagnostics</button>
-    <button data-panel-toggle="system">System</button>
-  </nav>
-
-
-  <!-- ============================
-       PANELS
-       ============================ -->
-
-  <!-- METRICS PANEL -->
-  <section class="panel" data-panel="metrics">
-    <h2>Metrics</h2>
-    <p>Calories: <span id="metric-calories"></span></p>
-    <p>Protein: <span id="metric-protein"></span></p>
-    <p>Hydration: <span id="metric-hydration"></span></p>
-    <p>Sleep: <span id="metric-sleep"></span></p>
-  </section>
-
-  <!-- DIAGNOSTICS PANEL -->
-  <section class="panel" data-panel="diagnostics">
-    <h2>Diagnostics</h2>
-    <pre data-diagnostics="output">{}</pre>
-  </section>
-
-  <!-- SYSTEM PANEL -->
-  <section class="panel" data-panel="system">
-    <h2>System</h2>
-    <button data-reset>Reset System</button>
-  </section>
-
-
-  <!-- ============================
-       SCRIPT
-       ============================ -->
   <script src="script.js"></script>
 </body>
 </html>
