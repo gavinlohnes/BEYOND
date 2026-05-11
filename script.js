@@ -1,546 +1,911 @@
-/* ============================================================
-   BEYOND OS — V20 STABLE CORE
-   Includes: Audio Fix, Threat System, Missions, AI Personality,
-   Cross‑Integration, Overdrive, HUD, Boot Sequence
-   ============================================================ */
-
-/* -----------------------------
-   0. AUDIO SAFETY PATCH
------------------------------- */
-
-let userInteracted = false;
-
-window.addEventListener("click", () => userInteracted = true);
-window.addEventListener("keydown", () => userInteracted = true);
-
-function safePlay(audioElement) {
-  if (!userInteracted) return;
-  if (!audioElement) return;
-  audioElement.play().catch(() => {});
-}
-
-/* -----------------------------
-   1. GLOBAL STATE
------------------------------- */
-
-const state = {
-  readiness: 80,
-  activeScenario: "IDLE"
+// -----------------------------
+// CORE STATE
+// -----------------------------
+const State = {
+    mode: "LOW_CAPACITY",
+    heat: 20,
+    stats: {
+        readiness: 60,
+        stress: 30
+    },
+    identity: {
+        discipline: 60,
+        consistency: 60
+    },
+    agentTone: "TACTICAL",
+    emotion: {
+        mood: "NEUTRAL",
+        stability: 70,
+        tension: 30,
+        confidence: 60
+    }
 };
 
-const missions = {
-  Monday: "UPPER BODY TRAINING",
-  Tuesday: "MEAL PREP",
-  Wednesday: "LOWER BODY TRAINING",
-  Thursday: "GROCERY RUN",
-  Friday: "UPPER BODY TRAINING",
-  Saturday: "ACTIVE RECOVERY",
-  Sunday: "REST + RESET"
+// -----------------------------
+// SCENARIO ENGINE (simple demo)
+// -----------------------------
+const ScenarioEngine = {
+    evaluate() {
+        // Demo: oscillate stress/heat/readiness a bit
+        const t = Date.now() / 1000;
+        State.stats.stress = 40 + 20 * Math.sin(t / 10);
+        State.stats.readiness = 60 + 15 * Math.cos(t / 12);
+        State.heat = Math.min(100, Math.max(0, State.heat + (Math.random() - 0.5) * 4));
+
+        if (State.stats.stress > 70) State.mode = "ALERT";
+        else if (State.stats.stress > 55) State.mode = "STEALTH";
+        else if (State.stats.readiness > 70) State.mode = "HIGH_CAPACITY";
+        else State.mode = "LOW_CAPACITY";
+
+        if (State.heat > 80) State.mode = "OVERDRIVE_READY";
+    }
 };
 
-/* -----------------------------
-   2. SUIT AI PERSONALITY
------------------------------- */
-
-const suitAI = {
-  tone: {
-    neutral: [
-      "Acknowledged.",
-      "Confirmed.",
-      "Online.",
-      "Standing by.",
-      "Processing."
-    ],
-    warning: [
-      "Caution advised.",
-      "Threat level rising.",
-      "Readiness compromised.",
-      "Recommend adjustment."
-    ],
-    overdrive: [
-      "Overdrive strain increasing.",
-      "Systems exceeding safe output.",
-      "Warning: thermal load rising."
-    ],
-    humor: [
-      "Sarcasm module: online.",
-      "Your optimism is noted.",
-      "I calculate a 12% chance you’ll listen."
-    ]
-  },
-
-  speak(type = "neutral") {
-    const pool = this.tone[type] || this.tone.neutral;
-    const line = pool[Math.floor(Math.random() * pool.length)];
-    this.display(line);
-    return line;
-  },
-
-  display(text) {
-    const panel = document.getElementById("suitHint");
-    if (panel) panel.textContent = text;
-  }
+// -----------------------------
+// OVERDRIVE (stub)
+// -----------------------------
+const Overdrive = {
+    tick() {
+        if (State.mode === "OVERDRIVE_READY") {
+            State.heat = Math.min(100, State.heat + 2);
+        }
+    }
 };
 
-/* -----------------------------
-   3. AUDIO ROUTER
------------------------------- */
+// -----------------------------
+// IDENTITY ENGINE (simple growth)
+// -----------------------------
+const Identity = {
+    update() {
+        // Tiny drift toward more discipline/consistency over time
+        State.identity.discipline = Math.min(100, State.identity.discipline + 0.02);
+        State.identity.consistency = Math.min(100, State.identity.consistency + 0.02);
+    }
+};
 
-function playVoice(type) {
-  const map = {
-    overdrive: "voiceOverdrive",
-    stabilizing: "voiceStabilize",
-    workout: "voiceWorkout",
-    meals: "voiceMeals",
-    grocery: "voiceGrocery"
-  };
+// -----------------------------
+// COUNCIL ENGINE (simple votes)
+// -----------------------------
+const CouncilEngine = {
+    evaluate() {
+        const votes = [];
 
-  const el = document.getElementById(map[type]);
-  safePlay(el);
+        if (State.stats.readiness > 70 && State.stats.stress < 50) {
+            votes.push({ agent: "Load", recommendation: "increase_load" });
+        } else if (State.stats.stress > 70 || State.heat > 80) {
+            votes.push({ agent: "Protection", recommendation: "reduce_load" });
+        } else {
+            votes.push({ agent: "Baseline", recommendation: "maintain" });
+        }
+
+        if (State.identity.discipline < 60) {
+            votes.push({ agent: "Discipline", recommendation: "enforce_structure" });
+        }
+
+        const rec = votes[0].recommendation;
+        return {
+            decision: rec,
+            votes
+        };
+    }
+};
+
+function applyCouncil(decision) {
+    if (decision === "reduce_load") {
+        State.stats.readiness = Math.max(0, State.stats.readiness - 2);
+        State.stats.stress = Math.max(0, State.stats.stress - 2);
+    } else if (decision === "increase_load") {
+        State.stats.readiness = Math.min(100, State.stats.readiness + 2);
+        State.stats.stress = Math.min(100, State.stats.stress + 1);
+    } else if (decision === "enforce_structure") {
+        State.identity.discipline = Math.min(100, State.identity.discipline + 0.5);
+    }
 }
 
-/* -----------------------------
-   4. VISUAL EFFECTS
------------------------------- */
+// -----------------------------
+// AGENT VOICE PACKS (V26)
+// -----------------------------
+const AgentVoices = {
+    TACTICAL: {
+        boot: "BEYOND-OS online. Kernel stable. Monitoring all systems.",
+        highCapacity: "Capacity elevated. We can push with control.",
+        lowCapacity: "System load reduced. We move with precision, not ego.",
+        stealth: "Stress elevated. We shift into low-visibility operations.",
+        alert: "Strain detected. Alert posture engaged.",
+        overdrive: "Overdrive primed. Use it with intent.",
+        heatCritical: "Thermal load critical. Stand down intensity.",
+        heatRising: "Heat rising. Maintain discipline.",
+        identityLock: "Identity consolidation detected. Discipline is default.",
+        identityBuild: "You’re building the identity you train for.",
+        councilReduce: "Council recommends reducing load. We protect the system.",
+        councilIncrease: "Council recommends increasing load. Capacity supports escalation.",
+        councilStructure: "Council calls for structure. Follow protocol.",
+        councilSafe: "Council reports safe conditions. Standard execution authorized."
+    },
+    COACH: {
+        boot: "We’re live. Let’s make today count.",
+        highCapacity: "You’re in a great spot. We can push a bit today.",
+        lowCapacity: "You’re not at 100%, and that’s fine. We’ll move smart.",
+        stealth: "You’re under more stress than usual. We’ll keep things controlled.",
+        alert: "You’re close to your limit. We’ll pull back before you break.",
+        overdrive: "You’ve earned the right to push. Use it wisely.",
+        heatCritical: "You’re red-lining. Time to back off.",
+        heatRising: "You’re heating up. Stay composed.",
+        identityLock: "This is who you are now. Consistent. Disciplined.",
+        identityBuild: "You’re stacking proof that you’re serious.",
+        councilReduce: "System says dial it down. That’s not weakness, that’s strategy.",
+        councilIncrease: "You can handle more. Let’s level it up.",
+        councilStructure: "You need structure today. No winging it.",
+        councilSafe: "You’re in a good place. Standard plan is green-lit."
+    },
+    DRILL: {
+        boot: "System online. No excuses.",
+        highCapacity: "You’re loaded. We go hard.",
+        lowCapacity: "You’re not sharp. We tighten up and execute.",
+        stealth: "You’re compromised. We go quiet and controlled.",
+        alert: "You’re on the edge. We pull back before you break.",
+        overdrive: "Overdrive unlocked. Don’t waste it.",
+        heatCritical: "You’re burning out. Stand down.",
+        heatRising: "You’re heating up. Control or crash.",
+        identityLock: "This is discipline. This is who you are.",
+        identityBuild: "You’re earning your identity rep by rep.",
+        councilReduce: "Council says cut it. You listen.",
+        councilIncrease: "Council says push. You deliver.",
+        councilStructure: "Council demands structure. No deviation.",
+        councilSafe: "Conditions safe. Execute the plan."
+    },
+    CALM: {
+        boot: "System is online. We’ll move with clarity.",
+        highCapacity: "You’re in a strong place today. We can expand a bit.",
+        lowCapacity: "You’re carrying more than usual. We’ll keep things light.",
+        stealth: "Stress is high. We’ll move quietly and protect your bandwidth.",
+        alert: "You’re close to your edge. We’ll step back before it breaks.",
+        overdrive: "You have extra capacity. We’ll use it gently and deliberately.",
+        heatCritical: "You’re overextended. It’s time to slow down.",
+        heatRising: "You’re warming up. Let’s stay aware.",
+        identityLock: "Your actions and identity are aligning.",
+        identityBuild: "You’re building a steady, reliable version of yourself.",
+        councilReduce: "The system suggests easing off. That’s care, not weakness.",
+        councilIncrease: "You can handle a bit more. We’ll add it thoughtfully.",
+        councilStructure: "You’ll feel better with structure today.",
+        councilSafe: "Conditions are stable. We’ll follow the usual plan."
+    }
+};
 
-function triggerWarningPulse() {
-  const app = document.getElementById("app");
-  app.classList.add("warning-pulse");
-  setTimeout(() => app.classList.remove("warning-pulse"), 800);
+function voiceLine(key) {
+    const pack = AgentVoices[State.agentTone] || AgentVoices.TACTICAL;
+    return pack[key] || "";
 }
 
-function flickerPanels() {
-  document.querySelectorAll(".panel").forEach(p => {
-    p.classList.add("panel-flicker");
-    setTimeout(() => p.classList.remove("panel-flicker"), 260);
-  });
+// -----------------------------
+// AGENT ENGINE (FULL CONSOLE)
+// -----------------------------
+const Agent = {
+    history: [],
+    typing: false,
+    lastMode: State.mode,
+
+    say(message) {
+        this.queueMessage(message);
+    },
+
+    queueMessage(message) {
+        this.typing = true;
+        this.renderTyping(true);
+
+        setTimeout(() => {
+            this.typing = false;
+            this.history.push(message);
+            this.renderMessage(message);
+            this.renderTyping(false);
+        }, this.typingDelay(message));
+    },
+
+    typingDelay(message) {
+        return Math.min(2000, 40 * message.length);
+    },
+
+    renderMessage(message) {
+        const box = document.getElementById("agent-messages");
+        if (!box) return;
+
+        const div = document.createElement("div");
+        div.className = "agent-msg";
+        div.textContent = message;
+
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    },
+
+    renderTyping(state) {
+        const t = document.getElementById("agent-typing");
+        if (!t) return;
+        t.style.display = state ? "block" : "none";
+    },
+
+    onBoot() {
+        this.say(voiceLine("boot"));
+    },
+
+    onModeChange(newMode) {
+        const map = {
+            HIGH_CAPACITY: "highCapacity",
+            LOW_CAPACITY: "lowCapacity",
+            STEALTH: "stealth",
+            ALERT: "alert",
+            OVERDRIVE_READY: "overdrive"
+        };
+        const key = map[newMode];
+        if (key) this.say(voiceLine(key));
+        else this.say(`Mode shift: ${newMode}.`);
+    },
+
+    onHeatChange(heat) {
+        if (heat > 85) this.say(voiceLine("heatCritical"));
+        else if (heat > 70) this.say(voiceLine("heatRising"));
+    },
+
+    onIdentityUpdate() {
+        const id = State.identity;
+        const score = (id.discipline + id.consistency) / 2;
+
+        if (score > 80) this.say(voiceLine("identityLock"));
+        else if (score > 65) this.say(voiceLine("identityBuild"));
+    },
+
+    onCouncilDecision(decision) {
+        const map = {
+            reduce_load: "councilReduce",
+            increase_load: "councilIncrease",
+            enforce_structure: "councilStructure",
+            safe: "councilSafe",
+            maintain: "councilSafe"
+        };
+        const key = map[decision];
+        if (key) this.say(voiceLine(key));
+        else this.say("Council decision registered.");
+    },
+
+    tick(prevState) {
+        // Tone change
+        if (State.agentTone !== prevState.agentTone) {
+            this.say(`Tone shift detected. Switching to ${State.agentTone} profile.`);
+        }
+
+        // Mode change
+        if (State.mode !== this.lastMode) {
+            this.onModeChange(State.mode);
+            this.lastMode = State.mode;
+        }
+
+        // Heat change
+        if (Math.abs(State.heat - prevState.heat) > 10) {
+            this.onHeatChange(State.heat);
+        }
+
+        // Identity change
+        const prevIdScore = (prevState.identity.discipline + prevState.identity.consistency) / 2;
+        const currIdScore = (State.identity.discipline + State.identity.consistency) / 2;
+        if (currIdScore - prevIdScore > 2) {
+            this.onIdentityUpdate();
+        }
+
+        // Emotional mood shift
+        if (State.emotion.mood !== prevState.emotion.mood) {
+            this.say(`Emotional state shift detected. Mood: ${State.emotion.mood}.`);
+        }
+    }
+};
+
+// -----------------------------
+// TONE ENGINE (V27)
+// -----------------------------
+const ToneEngine = {
+    evaluate() {
+        const r = State.stats.readiness;
+        const s = State.stats.stress;
+        const h = State.heat;
+        const id = (State.identity.discipline + State.identity.consistency) / 2;
+
+        if (r > 75 && s < 40) {
+            State.agentTone = "TACTICAL";
+        } else if (r < 50 && s > 60) {
+            State.agentTone = "CALM";
+        } else if (h > 70 || State.mode === "ALERT") {
+            State.agentTone = "DRILL";
+        } else if (id > 75) {
+            State.agentTone = "COACH";
+        } else {
+            State.agentTone = "TACTICAL";
+        }
+    }
+};
+
+// -----------------------------
+// MISSION BRIEFING ENGINE (V28)
+// -----------------------------
+const MissionEngine = {
+    generateBriefing() {
+        const r = State.stats.readiness;
+        const s = State.stats.stress;
+        const h = State.heat;
+        const id = (State.identity.discipline + State.identity.consistency) / 2;
+        const mode = State.mode;
+
+        let objective = "";
+        let focus = "";
+        let caution = "";
+
+        if (r > 75) objective = "High-output training block authorized.";
+        else if (r > 55) objective = "Standard training block recommended.";
+        else objective = "Reduced load protocol advised.";
+
+        if (id > 80) focus = "Identity consolidation phase: reinforce discipline.";
+        else if (id > 65) focus = "Identity building phase: maintain consistency.";
+        else focus = "Identity foundation phase: establish reliable patterns.";
+
+        if (s > 70) caution = "Stress spike detected. Prioritize controlled pacing.";
+        else if (h > 70) caution = "Thermal load elevated. Avoid overdrive engagement.";
+        else caution = "System stable. No major constraints.";
+
+        return { objective, focus, caution, mode };
+    },
+
+    deliverBriefing() {
+        const b = this.generateBriefing();
+        Agent.say(`Mission Briefing: ${b.objective}`);
+        Agent.say(`Focus: ${b.focus}`);
+        Agent.say(`Caution: ${b.caution}`);
+        Agent.say(`Operational Mode: ${b.mode}`);
+    }
+};
+
+// -----------------------------
+// THREAT DETECTION ENGINE (V29)
+// -----------------------------
+const ThreatEngine = {
+    lastThreat: null,
+
+    evaluate(prevState) {
+        const threats = [];
+
+        if (State.stats.stress - prevState.stats.stress > 10) {
+            threats.push("STRESS_SPIKE");
+        }
+
+        if (prevState.stats.readiness - State.stats.readiness > 10) {
+            threats.push("READINESS_DROP");
+        }
+
+        if (State.heat - prevState.heat > 15) {
+            threats.push("HEAT_SURGE");
+        }
+
+        const prevId = (prevState.identity.discipline + prevState.identity.consistency) / 2;
+        const currId = (State.identity.discipline + State.identity.consistency) / 2;
+        if (prevId - currId > 5) {
+            threats.push("IDENTITY_COLLAPSE");
+        }
+
+        if (State.mode !== prevState.mode && prevState.mode === "HIGH_CAPACITY" && State.mode === "ALERT") {
+            threats.push("MODE_CRASH");
+        }
+
+        this.lastThreat = threats[0] || this.lastThreat;
+        return threats;
+    },
+
+    respond(threats) {
+        if (!threats.length) return;
+
+        threats.forEach(t => {
+            switch (t) {
+                case "STRESS_SPIKE":
+                    Agent.say("Threat detected: sudden stress spike. Switching to protective posture.");
+                    break;
+                case "READINESS_DROP":
+                    Agent.say("Threat detected: readiness drop. Adjusting mission parameters.");
+                    break;
+                case "HEAT_SURGE":
+                    Agent.say("Threat detected: thermal surge. Overdrive risk elevated.");
+                    break;
+                case "IDENTITY_COLLAPSE":
+                    Agent.say("Threat detected: identity instability. Reinforce discipline immediately.");
+                    break;
+                case "MODE_CRASH":
+                    Agent.say("Threat detected: mode crash from HIGH_CAPACITY to ALERT. System strain critical.");
+                    break;
+            }
+        });
+    }
+};
+
+// -----------------------------
+// MISSION DEBRIEF ENGINE (V30A)
+// -----------------------------
+const DebriefEngine = {
+    generate(prevState) {
+        const r0 = prevState.stats.readiness;
+        const r1 = State.stats.readiness;
+        const s0 = prevState.stats.stress;
+        const s1 = State.stats.stress;
+        const h0 = prevState.heat;
+        const h1 = State.heat;
+        const id0 = (prevState.identity.discipline + prevState.identity.consistency) / 2;
+        const id1 = (State.identity.discipline + State.identity.consistency) / 2;
+        const council = CouncilEngine.evaluate();
+
+        let readinessSummary = "";
+        if (r1 > r0) readinessSummary = "Readiness improved over the cycle.";
+        else if (r1 < r0) readinessSummary = "Readiness decreased. Recovery recommended.";
+        else readinessSummary = "Readiness stable.";
+
+        let stressSummary = "";
+        if (s1 > s0) stressSummary = "Stress increased. System load was significant.";
+        else if (s1 < s0) stressSummary = "Stress decreased. Good regulation.";
+        else stressSummary = "Stress stable.";
+
+        let heatSummary = "";
+        if (h1 > h0) heatSummary = "Thermal load increased. Overdrive usage was high.";
+        else if (h1 < h0) heatSummary = "Thermal load decreased. Good pacing.";
+        else heatSummary = "Thermal load stable.";
+
+        let identitySummary = "";
+        if (id1 > id0 + 2) identitySummary = "Identity strengthened. Discipline reinforced.";
+        else if (id1 < id0 - 2) identitySummary = "Identity destabilized. Re-center tomorrow.";
+        else identitySummary = "Identity stable.";
+
+        let councilSummary = "";
+        if (council.decision === "increase_load") councilSummary = "Council favored escalation today.";
+        else if (council.decision === "reduce_load") councilSummary = "Council favored protection today.";
+        else if (council.decision === "enforce_structure") councilSummary = "Council demanded structure.";
+        else councilSummary = "Council maintained standard posture.";
+
+        return { readinessSummary, stressSummary, heatSummary, identitySummary, councilSummary };
+    },
+
+    deliver(prevState) {
+        const d = this.generate(prevState);
+
+        Agent.say("Mission Debrief:");
+        Agent.say(d.readinessSummary);
+        Agent.say(d.stressSummary);
+        Agent.say(d.heatSummary);
+        Agent.say(d.identitySummary);
+        Agent.say(d.councilSummary);
+
+        const id = (State.identity.discipline + State.identity.consistency) / 2;
+        if (id > 80) Agent.say("Identity consolidation confirmed. You’re becoming the person you train to be.");
+        else if (id > 65) Agent.say("Identity trending upward. Keep reinforcing the pattern.");
+        else Agent.say("Identity foundation forming. Tomorrow is another rep.");
+    }
+};
+
+// -----------------------------
+// OVERDRIVE IGNITION ENGINE (V31C)
+// -----------------------------
+const OverdriveIgnition = {
+    triggered: false,
+
+    check(prevState) {
+        if (State.mode === "OVERDRIVE_READY" && prevState.mode !== "OVERDRIVE_READY") {
+            this.trigger();
+        }
+
+        if (State.heat > 85 && prevState.heat <= 85) {
+            this.trigger();
+        }
+    },
+
+    trigger() {
+        if (this.triggered) return;
+        this.triggered = true;
+
+        const layer = document.getElementById("overdrive-ignition");
+        layer.classList.remove("hidden");
+        layer.classList.add("overdrive-ignition");
+
+        const hud = document.querySelector(".hud");
+        if (hud) hud.classList.add("hud-distort");
+
+        document.querySelectorAll(".panel").forEach(p => {
+            p.classList.add("redline-pulse");
+            setTimeout(() => p.classList.remove("redline-pulse"), 1200);
+        });
+
+        Agent.say("Overdrive ignition sequence triggered. System output elevated.");
+
+        setTimeout(() => {
+            layer.classList.add("hidden");
+            this.triggered = false;
+        }, 900);
+    }
+};
+
+// -----------------------------
+// EMOTIONAL STATE ENGINE (V32B)
+// -----------------------------
+const EmotionEngine = {
+    evaluate(prevState) {
+        const e = State.emotion;
+
+        e.tension += (State.stats.stress - prevState.stats.stress) * 0.2;
+        e.tension += (State.heat - prevState.heat) * 0.1;
+
+        if (State.stats.stress > 75) e.stability -= 1.5;
+        if (State.heat > 85) e.stability -= 1.2;
+
+        const prevId = (prevState.identity.discipline + prevState.identity.consistency) / 2;
+        const currId = (State.identity.discipline + State.identity.consistency) / 2;
+        if (currId > prevId) e.confidence += 0.5;
+
+        if (State.stats.readiness < prevState.stats.readiness) {
+            e.confidence -= 0.4;
+        }
+
+        e.tension = Math.max(0, Math.min(100, e.tension));
+        e.stability = Math.max(0, Math.min(100, e.stability));
+        e.confidence = Math.max(0, Math.min(100, e.confidence));
+
+        State.emotion.mood = this.determineMood(e);
+    },
+
+    determineMood(e) {
+        if (e.tension > 70) return "ALERT";
+        if (e.stability < 40) return "UNSTABLE";
+        if (e.confidence > 80) return "ASSERTIVE";
+        if (e.confidence < 40) return "CAUTIOUS";
+        return "NEUTRAL";
+    }
+};
+
+// -----------------------------
+// PERSONA DEFINITIONS (V34A)
+// -----------------------------
+const Personas = {
+    STRATEGIST: {
+        name: "STRATEGIST",
+        tone: "TACTICAL",
+        lines: {
+            greet: "Strategist online. Optimizing operational pathways.",
+            advise: "Recommendation: maximize efficiency and minimize wasted motion.",
+            alert: "Deviation detected. Re-align with optimal trajectory."
+        }
+    },
+    OPERATOR: {
+        name: "OPERATOR",
+        tone: "DRILL",
+        lines: {
+            greet: "Operator online. Ready for direct execution.",
+            advise: "Execute cleanly. No hesitation.",
+            alert: "System strain rising. Adjust immediately."
+        }
+    },
+    SURVIVAL: {
+        name: "SURVIVAL",
+        tone: "CALM",
+        lines: {
+            greet: "Survival online. Prioritizing system integrity.",
+            advise: "Reduce load. Protect the system.",
+            alert: "Critical threat detected. Pull back."
+        }
+    },
+    DISCIPLINE: {
+        name: "DISCIPLINE",
+        tone: "COACH",
+        lines: {
+            greet: "Discipline online. Reinforcing identity.",
+            advise: "Stay consistent. Identity is built through repetition.",
+            alert: "Identity drift detected. Re-center immediately."
+        }
+    }
+};
+
+// -----------------------------
+// MULTI-PERSONA ENGINE (V34A)
+// -----------------------------
+const PersonaEngine = {
+    activePersona: "STRATEGIST",
+
+    evaluate(prevState) {
+        const r = State.stats.readiness;
+        const s = State.stats.stress;
+        const h = State.heat;
+        const id = (State.identity.discipline + State.identity.consistency) / 2;
+        const mode = State.mode;
+
+        if (r > 75 && s < 40) this.switchTo("STRATEGIST");
+        else if (h > 70 || mode === "ALERT") this.switchTo("OPERATOR");
+        else if (s > 70 || r < 50) this.switchTo("SURVIVAL");
+        else if (id < 60 || id > 80) this.switchTo("DISCIPLINE");
+        else this.switchTo("STRATEGIST");
+    },
+
+    switchTo(persona) {
+        if (this.activePersona === persona) return;
+        this.activePersona = persona;
+        const p = Personas[persona];
+        State.agentTone = p.tone;
+        Agent.say(p.lines.greet);
+    },
+
+    advise() {
+        const p = Personas[this.activePersona];
+        Agent.say(p.lines.advise);
+    }
+};
+
+// -----------------------------
+// PERSONA CONFLICT ENGINE (V35A)
+// -----------------------------
+const ConflictEngine = {
+    lastConflict: null,
+
+    evaluate(prevState) {
+        const triggers = [];
+
+        if (State.stats.stress - prevState.stats.stress > 8) triggers.push("STRESS_SPIKE");
+        if (State.heat - prevState.heat > 12) triggers.push("HEAT_SURGE");
+        if (prevState.stats.readiness - State.stats.readiness > 8) triggers.push("READINESS_DROP");
+        if (State.mode === "ALERT" && prevState.mode !== "ALERT") triggers.push("MODE_ALERT");
+        if (State.mode === "STEALTH" && prevState.mode !== "STEALTH") triggers.push("MODE_STEALTH");
+
+        if (!triggers.length) return;
+
+        this.lastConflict = triggers[0];
+        this.resolveConflict(triggers[0]);
+    },
+
+    resolveConflict(trigger) {
+        const votes = [];
+
+        switch (trigger) {
+            case "STRESS_SPIKE":
+                votes.push({ persona: "STRATEGIST", vote: "maintain" });
+                votes.push({ persona: "OPERATOR", vote: "correct" });
+                votes.push({ persona: "SURVIVAL", vote: "reduce" });
+                votes.push({ persona: "DISCIPLINE", vote: "structure" });
+                break;
+            case "HEAT_SURGE":
+                votes.push({ persona: "STRATEGIST", vote: "maintain" });
+                votes.push({ persona: "OPERATOR", vote: "cooldown" });
+                votes.push({ persona: "SURVIVAL", vote: "reduce" });
+                votes.push({ persona: "DISCIPLINE", vote: "structure" });
+                break;
+            case "READINESS_DROP":
+                votes.push({ persona: "STRATEGIST", vote: "adjust" });
+                votes.push({ persona: "OPERATOR", vote: "push" });
+                votes.push({ persona: "SURVIVAL", vote: "reduce" });
+                votes.push({ persona: "DISCIPLINE", vote: "structure" });
+                break;
+            case "MODE_ALERT":
+                votes.push({ persona: "STRATEGIST", vote: "maintain" });
+                votes.push({ persona: "OPERATOR", vote: "correct" });
+                votes.push({ persona: "SURVIVAL", vote: "protect" });
+                votes.push({ persona: "DISCIPLINE", vote: "structure" });
+                break;
+            case "MODE_STEALTH":
+                votes.push({ persona: "STRATEGIST", vote: "maintain" });
+                votes.push({ persona: "OPERATOR", vote: "hold" });
+                votes.push({ persona: "SURVIVAL", vote: "protect" });
+                votes.push({ persona: "DISCIPLINE", vote: "structure" });
+                break;
+        }
+
+        const tally = {};
+        votes.forEach(v => {
+            tally[v.vote] = (tally[v.vote] || 0) + 1;
+        });
+
+        const winner = Object.keys(tally).reduce((a, b) => tally[a] > tally[b] ? a : b);
+
+        this.announceConflict(trigger, votes, winner);
+        this.applyResolution(winner);
+    },
+
+    announceConflict(trigger, votes, winner) {
+        Agent.say(`Persona conflict triggered: ${trigger.replace("_", " ").toLowerCase()}.`);
+
+        votes.forEach(v => {
+            const p = Personas[v.persona];
+            Agent.say(`${p.name}: "${p.lines.alert}"`);
+        });
+
+        Agent.say(`Conflict resolved. Consensus: ${winner}.`);
+    },
+
+    applyResolution(winner) {
+        switch (winner) {
+            case "reduce":
+            case "protect":
+                PersonaEngine.switchTo("SURVIVAL");
+                break;
+            case "cooldown":
+            case "correct":
+                PersonaEngine.switchTo("OPERATOR");
+                break;
+            case "structure":
+                PersonaEngine.switchTo("DISCIPLINE");
+                break;
+            case "push":
+                PersonaEngine.switchTo("OPERATOR");
+                break;
+            case "adjust":
+            case "maintain":
+            default:
+                PersonaEngine.switchTo("STRATEGIST");
+                break;
+        }
+    }
+};
+
+// -----------------------------
+// UI ENGINE
+// -----------------------------
+const UI = {
+    render(prevState) {
+        const app = document.getElementById("app");
+        const council = CouncilEngine.evaluate();
+        const briefing = MissionEngine.generateBriefing();
+        const debrief = DebriefEngine.generate(prevState);
+
+        app.innerHTML = `
+        <div class="os mode-${State.mode}">
+            <div class="header">
+                <div>BEYOND-OS :: ${State.mode}</div>
+                <div class="hud">
+                    <div>R:${State.stats.readiness.toFixed(0)}</div>
+                    <div>S:${State.stats.stress.toFixed(0)}</div>
+                    <div class="heat-bar">
+                        <div class="heat-fill" style="width:${State.heat}%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tactical-hud">
+                <div class="waveform" id="waveform"></div>
+                <div class="readiness-arc">
+                    <div class="readiness-fill" id="readiness-fill"></div>
+                </div>
+                <div class="radar">
+                    <div class="radar-sweep"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>TACTICAL CORE</h3>
+                <div class="card">Discipline: ${State.identity.discipline.toFixed(1)}</div>
+                <div class="card">Consistency: ${State.identity.consistency.toFixed(1)}</div>
+                <div class="card">Council Decision: ${council.decision}</div>
+                <div class="card">
+                    Votes: ${council.votes.map(v => v.agent + ":" + v.recommendation).join(", ")}
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>MISSION BRIEFING</h3>
+                <div class="card">Objective: ${briefing.objective}</div>
+                <div class="card">Focus: ${briefing.focus}</div>
+                <div class="card">Caution: ${briefing.caution}</div>
+            </div>
+
+            <div class="panel">
+                <h3>MISSION DEBRIEF</h3>
+                <div class="card">${debrief.readinessSummary}</div>
+                <div class="card">${debrief.stressSummary}</div>
+                <div class="card">${debrief.heatSummary}</div>
+                <div class="card">${debrief.identitySummary}</div>
+                <div class="card">${debrief.councilSummary}</div>
+            </div>
+
+            <div class="panel">
+                <h3>THREAT MONITOR</h3>
+                <div class="card">Last Threat: ${ThreatEngine.lastThreat || "None"}</div>
+            </div>
+
+            <div class="panel">
+                <h3>EMOTIONAL STATE</h3>
+                <div class="card">Mood: ${State.emotion.mood}</div>
+                <div class="card">Stability: ${State.emotion.stability.toFixed(0)}</div>
+                <div class="card">Tension: ${State.emotion.tension.toFixed(0)}</div>
+                <div class="card">Confidence: ${State.emotion.confidence.toFixed(0)}</div>
+            </div>
+
+            <div class="panel">
+                <h3>ACTIVE PERSONA</h3>
+                <div class="card">${PersonaEngine.activePersona}</div>
+            </div>
+
+            <div class="panel agent-console">
+                <h3>AGENT</h3>
+                <div class="agent-messages" id="agent-messages"></div>
+                <div class="agent-typing" id="agent-typing" style="display:none;">typing…</div>
+            </div>
+
+            <div class="panel">
+                <h3>PERSONA CONFLICT</h3>
+                <div class="card">Last Conflict: ${ConflictEngine.lastConflict || "None"}</div>
+            </div>
+
+            <div class="footer">
+                KERNEL ACTIVE :: BEYOND-OS RUNNING
+            </div>
+        </div>
+        `;
+    }
+};
+
+// -----------------------------
+// TACTICAL HUD ENGINE (V33D)
+// -----------------------------
+const TacticalHUD = {
+    update() {
+        const wf = document.getElementById("waveform");
+        if (wf) {
+            wf.innerHTML = "";
+            const bars = 20;
+            for (let i = 0; i < bars; i++) {
+                const bar = document.createElement("div");
+                bar.className = "waveform-line";
+                bar.style.left = `${i * 7}px`;
+                bar.style.animationDelay = `${i * 0.05}s`;
+                bar.style.height = `${10 + State.stats.stress * 0.8}%`;
+                wf.appendChild(bar);
+            }
+        }
+
+        const arc = document.getElementById("readiness-fill");
+        if (arc) {
+            arc.style.height = `${State.stats.readiness}%`;
+        }
+    }
+};
+
+// -----------------------------
+// KERNEL LOOP
+// -----------------------------
+function Kernel() {
+    const prevState = JSON.parse(JSON.stringify(State));
+
+    ScenarioEngine.evaluate();
+    Overdrive.tick();
+    Identity.update();
+
+    const council = CouncilEngine.evaluate();
+    applyCouncil(council.decision);
+    Agent.onCouncilDecision(council.decision);
+
+    ToneEngine.evaluate();
+    const threats = ThreatEngine.evaluate(prevState);
+    ThreatEngine.respond(threats);
+    EmotionEngine.evaluate(prevState);
+    PersonaEngine.evaluate(prevState);
+    ConflictEngine.evaluate(prevState);
+    OverdriveIgnition.check(prevState);
+
+    UI.render(prevState);
+    TacticalHUD.update();
+    Agent.tick(prevState);
+
+    const now = performance.now();
+    if (now % 30000 < 1000) {
+        MissionEngine.deliverBriefing();
+    }
+    if (now % 60000 < 1000) {
+        DebriefEngine.deliver(prevState);
+    }
 }
 
-/* -----------------------------
-   5. OVERDRIVE MODE
------------------------------- */
-
-function enterOverdrive() {
-  document.body.classList.add("overdrive-active");
-  playVoice("overdrive");
-  triggerWarningPulse();
-  flickerPanels();
-}
-
-function exitOverdrive() {
-  document.body.classList.remove("overdrive-active");
-}
-
-/* -----------------------------
-   6. READINESS ENGINE
------------------------------- */
-
-function updateReadinessDisplay() {
-  const el = document.getElementById("readinessValue");
-  if (!el) return;
-
-  el.textContent = state.readiness;
-
-  if (state.readiness > 90) enterOverdrive();
-  else exitOverdrive();
-
-  updateThreatPanel();
-}
-
-/* -----------------------------
-   7. MISSION SYSTEM
------------------------------- */
-
-function getTodayMission() {
-  const day = new Date().toLocaleDateString("en-US", { weekday: "long" });
-  return missions[day];
-}
-
-function getNextMission() {
-  const todayIndex = new Date().getDay();
-  const nextIndex = (todayIndex + 1) % 7;
-  const nextDay = Object.keys(missions)[nextIndex];
-  return missions[nextDay];
-}
-
-function loadMissionGrid() {
-  const grid = document.getElementById("missionGrid");
-  grid.innerHTML = "";
-  for (const [day, task] of Object.entries(missions)) {
-    const div = document.createElement("div");
-    div.className = "mission-card";
-    div.innerHTML = `<strong>${day}</strong><br>${task}`;
-    grid.appendChild(div);
-  }
-}
-
-function missionReadinessImpact() {
-  const mission = getTodayMission();
-
-  if (mission.includes("UPPER") || mission.includes("LOWER")) return -12;
-  if (mission.includes("MEAL PREP")) return -4;
-  if (mission.includes("GROCERY")) return -6;
-  if (mission.includes("RECOVERY")) return +8;
-  if (mission.includes("REST")) return +12;
-
-  return 0;
-}
-
-function predictReadiness() {
-  const r = state.readiness;
-  return Math.max(0, Math.min(100, r + missionReadinessImpact()));
-}
-
-/* -----------------------------
-   8. THREAT LEVEL SYSTEM
------------------------------- */
-
-function calculateThreatLevel() {
-  const r = state.readiness;
-  const s = state.activeScenario;
-  const missionImpact = missionReadinessImpact();
-  const overdrive = document.body.classList.contains("overdrive-active");
-
-  let score = 0;
-
-  if (r > 80) score += 0;
-  else if (r > 60) score += 1;
-  else if (r > 40) score += 2;
-  else if (r > 20) score += 3;
-  else score += 4;
-
-  if (s === "HIGH_CAPACITY") score += 2;
-  if (s === "LOW_CAPACITY") score += 1;
-
-  if (missionImpact < 0) score += 1;
-  if (missionImpact < -10) score += 2;
-
-  if (overdrive) score += 3;
-
-  const h = new Date().getHours();
-  if (h < 6 || h > 22) score += 1;
-
-  return score;
-}
-
-function classifyThreat(score) {
-  if (score <= 1) return "GREEN — NOMINAL";
-  if (score <= 3) return "YELLOW — ELEVATED";
-  if (score <= 5) return "ORANGE — HIGH";
-  if (score <= 7) return "RED — CRITICAL";
-  return "BLACK — OVERDRIVE HAZARD";
-}
-
-function applyThreatColor(level) {
-  const el = document.getElementById("threatValue");
-  el.className = "metric-value";
-
-  if (level.includes("GREEN")) el.classList.add("threat-green");
-  else if (level.includes("YELLOW")) el.classList.add("threat-yellow");
-  else if (level.includes("ORANGE")) el.classList.add("threat-orange");
-  else if (level.includes("RED")) el.classList.add("threat-red");
-  else el.classList.add("threat-black");
-}
-
-function updateThreatPanel() {
-  const score = calculateThreatLevel();
-  const level = classifyThreat(score);
-  const el = document.getElementById("threatValue");
-  el.textContent = level;
-  applyThreatColor(level);
-}
-
-/* -----------------------------
-   9. WORKOUT SYSTEM
------------------------------- */
-
-function getAdaptiveIntensity() {
-  const threat = classifyThreat(calculateThreatLevel());
-
-  if (threat.includes("BLACK")) return "DISABLED";
-  if (threat.includes("RED")) return "LOW";
-  if (threat.includes("ORANGE")) return "MODERATE";
-  if (threat.includes("YELLOW")) return "HIGH";
-  return "MAXIMUM";
-}
-
-function generateWorkoutPlan() {
-  const today = document.getElementById("wk-today").textContent;
-  const readiness = state.readiness;
-
-  let plan = [];
-
-  if (today.includes("UPPER")) {
-    plan = [
-      "Bench Press — 4x6",
-      "Pull‑Ups — 3x8",
-      "Shoulder Press — 3x10",
-      "Chest Fly — 3x12",
-      "Tricep Dips — 3x12"
-    ];
-  }
-
-  if (today.includes("LOWER")) {
-    plan = [
-      "Squats — 4x6",
-      "Deadlift — 3x5",
-      "Lunges — 3x10",
-      "Leg Press — 3x12",
-      "Calf Raises — 3x15"
-    ];
-  }
-
-  if (readiness > 90) {
-    plan.push("⚠ OVERDRIVE BONUS: SPRINTS — 6x40m");
-  }
-
-  return plan;
-}
-
-function completeWorkout() {
-  state.readiness = Math.max(0, state.readiness - 15);
-  updateReadinessDisplay();
-  suitAI.speak("warning");
-}
-
-/* -----------------------------
-   10. MEAL SYSTEM
------------------------------- */
-
-function generateMealIntel() {
-  const a = document.getElementById("mealAView").textContent;
-  const b = document.getElementById("mealBView").textContent;
-
-  return [
-    `Primary Fuel: ${a}`,
-    `Secondary Fuel: ${b}`,
-    "Protein Target: 160g",
-    "Carb Target: 240g",
-    "Fat Target: 60g"
-  ];
-}
-
-function rotateAnchorMeals() {
-  const meals = [
-    "BEEF + RICE",
-    "CHICKEN + PASTA",
-    "TOFU + NOODLES",
-    "TURKEY + POTATO",
-    "SALMON + RICE",
-    "PORK + VEGGIES",
-    "SHRIMP + UDON"
-  ];
-
-  const a = meals[Math.floor(Math.random() * meals.length)];
-  const b = meals[Math.floor(Math.random() * meals.length)];
-
-  document.getElementById("mealAView").textContent = a;
-  document.getElementById("mealBView").textContent = b;
-}
-
-/* -----------------------------
-   11. GROCERY SYSTEM
------------------------------- */
-
-function generateGroceryList() {
-  const a = document.getElementById("mealAView").textContent;
-  const b = document.getElementById("mealBView").textContent;
-
-  const list = [];
-
-  if (a.includes("BEEF")) list.push("Ground Beef — 3 lbs");
-  if (a.includes("RICE")) list.push("White Rice — 5 lbs");
-
-  if (b.includes("CHICKEN")) list.push("Chicken Breast — 3 lbs");
-  if (b.includes("PASTA")) list.push("Pasta — 2 boxes");
-
-  list.push("Vegetables — 7 servings");
-  list.push("Fruit — 7 servings");
-
-  return list;
-}
-
-function optimizeBudget(list, budget) {
-  const prices = {
-    "Ground Beef — 3 lbs": 14,
-    "White Rice — 5 lbs": 6,
-    "Chicken Breast — 3 lbs": 12,
-    "Pasta — 2 boxes": 4,
-    "Vegetables — 7 servings": 10,
-    "Fruit — 7 servings": 10
-  };
-
-  let total = list.reduce((sum, item) => sum + (prices[item] || 0), 0);
-
-  while (total > budget && list.length > 0) {
-    list.pop();
-    total = list.reduce((sum, item) => sum + (prices[item] || 0), 0);
-  }
-
-  return list;
-}
-
-function groceryImpact() {
-  const status = document.getElementById("grocStatus").textContent;
-
-  if (status.includes("PRIORITY")) {
-    state.readiness = Math.max(0, state.readiness - 5);
-  }
-
-  if (status.includes("UPDATED")) {
-    state.readiness = Math.min(100, state.readiness + 3);
-  }
-
-  updateReadinessDisplay();
-}
-
-/* -----------------------------
-   12. SUBSYSTEM HUD
------------------------------- */
-
-function openSubscreen(id) {
-  document.querySelectorAll(".subscreen").forEach(s => s.classList.remove("subscreen-active"));
-  const target = document.getElementById(id);
-  if (target) {
-    target.classList.add("subscreen-active");
-    flickerPanels();
-    triggerWarningPulse();
-  }
-}
-
-function activateSubHUD(id) {
-  document.querySelectorAll(".sub-hud").forEach(h => h.classList.remove("sub-hud-active"));
-  const target = document.getElementById(id);
-  if (target) target.classList.add("sub-hud-active");
-}
-
-/* -----------------------------
-   13. NAVIGATION
------------------------------- */
-
-function initNavButtons() {
-  document.querySelectorAll(".nav-button[data-nav]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const target = btn.dataset.nav;
-
-      if (target === "workout") {
-        openSubscreen("screenWorkout");
-        activateSubHUD("hudWorkout");
-        suitAI.display("Training parameters optimal.");
-      }
-
-      if (target === "meals") {
-        openSubscreen("screenMeals");
-        activateSubHUD("hudMeals");
-        suitAI.display("Standard fueling protocol active.");
-      }
-
-      if (target === "grocery") {
-        openSubscreen("screenGrocery");
-        activateSubHUD("hudGrocery");
-        suitAI.display("Procurement recommended.");
-      }
-
-      if (target === "missions") {
-        openSubscreen("screenMissions");
-        loadMissionGrid();
-      }
-    });
-  });
-}
-
-/* -----------------------------
-   14. ESC CLOSE
------------------------------- */
-
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape") {
-    document.querySelectorAll(".subscreen").forEach(s => s.classList.remove("subscreen-active"));
-    activateSubHUD(null);
-  }
-});
-
-/* -----------------------------
-   15. BRIEFING
------------------------------- */
-
-function generateBriefing() {
-  return `
-TODAY: ${getTodayMission()}
-NEXT: ${getNextMission()}
-READINESS: ${state.readiness}%
-FORECAST: ${predictReadiness()}%
-MISSION IMPACT: ${missionReadinessImpact()}
-SCENARIO: ${state.activeScenario}
-  `;
-}
-
-function showBriefing() {
-  const b = document.getElementById("briefing");
-  b.textContent = generateBriefing();
-  b.classList.add("briefing-active");
-}
-
-/* -----------------------------
-   16. BOOT SEQUENCE
------------------------------- */
-
-function bootSequence() {
-  setTimeout(() => suitAI.display("Systems online."), 800);
-  setTimeout(() => suitAI.display("Initializing tactical subsystems."), 1600);
-  setTimeout(() => suitAI.display("Awaiting mission parameters."), 2400);
-}
-
-/* -----------------------------
-   17. INITIALIZATION
------------------------------- */
-
-window.addEventListener("load", () => {
-  document.getElementById("missionToday").textContent = getTodayMission();
-  document.getElementById("missionNext").textContent =
-    "NEXT: " + getNextMission();
-
-  updateReadinessDisplay();
-  updateThreatPanel();
-  showBriefing();
-  initNavButtons();
-  bootSequence();
-
-  /* Workout */
-  document.getElementById("wk-start").addEventListener("click", () => {
-    const plan = generateWorkoutPlan().join("\n");
-    document.getElementById("wk-plan").textContent = plan;
-    document.getElementById("wk-intensity").textContent = getAdaptiveIntensity();
-    suitAI.speak("neutral");
-  });
-
-  document.getElementById("wk-start").addEventListener("dblclick", completeWorkout);
-
-  /* Meals */
-  document.getElementById("meal-edit").addEventListener("click", () => {
-    const intel = generateMealIntel();
-    document.getElementById("meal-intel").textContent =
-      intel.join("\n");
-  });
-
-  document.getElementById("meal-rotate").addEventListener("click", () => {
-    rotateAnchorMeals();
-    const list = generateGroceryList();
-    document.getElementById("groc-list").textContent = list.join("\n");
-    document.getElementById("grocStatus").textContent = "UPDATED";
-  });
-
-  /* Grocery */
-  document.getElementById("groc-generate").addEventListener("click", () => {
-    let list = generateGroceryList();
-    const budget = parseInt(document.getElementById("grocBudget").textContent.replace("$",""));
-    list = optimizeBudget(list, budget);
-    document.getElementById("groc-list").textContent = list.join("\n");
-    document.getElementById("grocStatus").textContent = "UPDATED";
-    groceryImpact();
-  });
-
-  /* Periodic Systems */
-  setInterval(updateThreatPanel, 5000);
-  setInterval(() => suitAI.speak("neutral"), 12000);
-});
+// -----------------------------
+// BOOT
+// -----------------------------
+document.getElementById("boot-btn").onclick = () => {
+    document.getElementById("boot-screen").style.display = "none";
+    document.getElementById("app").classList.remove("hidden");
+
+    UI.render(State);
+    Agent.onBoot();
+    setInterval(Kernel, 1000);
+
+    console.log("[BEYOND-OS] FULL SYSTEM ONLINE");
+};
