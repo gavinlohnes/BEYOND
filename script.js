@@ -26,7 +26,6 @@ const State = {
 // -----------------------------
 const ScenarioEngine = {
     evaluate() {
-        // Demo: oscillate stress/heat/readiness a bit
         const t = Date.now() / 1000;
         State.stats.stress = 40 + 20 * Math.sin(t / 10);
         State.stats.readiness = 60 + 15 * Math.cos(t / 12);
@@ -42,7 +41,7 @@ const ScenarioEngine = {
 };
 
 // -----------------------------
-// OVERDRIVE (stub)
+// OVERDRIVE ENGINE
 // -----------------------------
 const Overdrive = {
     tick() {
@@ -53,18 +52,17 @@ const Overdrive = {
 };
 
 // -----------------------------
-// IDENTITY ENGINE (simple growth)
+// IDENTITY ENGINE
 // -----------------------------
 const Identity = {
     update() {
-        // Tiny drift toward more discipline/consistency over time
         State.identity.discipline = Math.min(100, State.identity.discipline + 0.02);
         State.identity.consistency = Math.min(100, State.identity.consistency + 0.02);
     }
 };
 
 // -----------------------------
-// COUNCIL ENGINE (simple votes)
+// COUNCIL ENGINE
 // -----------------------------
 const CouncilEngine = {
     evaluate() {
@@ -83,10 +81,7 @@ const CouncilEngine = {
         }
 
         const rec = votes[0].recommendation;
-        return {
-            decision: rec,
-            votes
-        };
+        return { decision: rec, votes };
     }
 };
 
@@ -267,30 +262,25 @@ const Agent = {
     },
 
     tick(prevState) {
-        // Tone change
         if (State.agentTone !== prevState.agentTone) {
             this.say(`Tone shift detected. Switching to ${State.agentTone} profile.`);
         }
 
-        // Mode change
         if (State.mode !== this.lastMode) {
             this.onModeChange(State.mode);
             this.lastMode = State.mode;
         }
 
-        // Heat change
         if (Math.abs(State.heat - prevState.heat) > 10) {
             this.onHeatChange(State.heat);
         }
 
-        // Identity change
         const prevIdScore = (prevState.identity.discipline + prevState.identity.consistency) / 2;
         const currIdScore = (State.identity.discipline + State.identity.consistency) / 2;
         if (currIdScore - prevIdScore > 2) {
             this.onIdentityUpdate();
         }
 
-        // Emotional mood shift
         if (State.emotion.mood !== prevState.emotion.mood) {
             this.say(`Emotional state shift detected. Mood: ${State.emotion.mood}.`);
         }
@@ -387,7 +377,9 @@ const ThreatEngine = {
             threats.push("IDENTITY_COLLAPSE");
         }
 
-        if (State.mode !== prevState.mode && prevState.mode === "HIGH_CAPACITY" && State.mode === "ALERT") {
+        if (State.mode !== prevState.mode &&
+            prevState.mode === "HIGH_CAPACITY" &&
+            State.mode === "ALERT") {
             threats.push("MODE_CRASH");
         }
 
@@ -666,24 +658,28 @@ const ConflictEngine = {
                 votes.push({ persona: "SURVIVAL", vote: "reduce" });
                 votes.push({ persona: "DISCIPLINE", vote: "structure" });
                 break;
+
             case "HEAT_SURGE":
                 votes.push({ persona: "STRATEGIST", vote: "maintain" });
                 votes.push({ persona: "OPERATOR", vote: "cooldown" });
                 votes.push({ persona: "SURVIVAL", vote: "reduce" });
                 votes.push({ persona: "DISCIPLINE", vote: "structure" });
                 break;
+
             case "READINESS_DROP":
                 votes.push({ persona: "STRATEGIST", vote: "adjust" });
                 votes.push({ persona: "OPERATOR", vote: "push" });
                 votes.push({ persona: "SURVIVAL", vote: "reduce" });
                 votes.push({ persona: "DISCIPLINE", vote: "structure" });
                 break;
+
             case "MODE_ALERT":
                 votes.push({ persona: "STRATEGIST", vote: "maintain" });
                 votes.push({ persona: "OPERATOR", vote: "correct" });
                 votes.push({ persona: "SURVIVAL", vote: "protect" });
                 votes.push({ persona: "DISCIPLINE", vote: "structure" });
                 break;
+
             case "MODE_STEALTH":
                 votes.push({ persona: "STRATEGIST", vote: "maintain" });
                 votes.push({ persona: "OPERATOR", vote: "hold" });
@@ -720,16 +716,20 @@ const ConflictEngine = {
             case "protect":
                 PersonaEngine.switchTo("SURVIVAL");
                 break;
+
             case "cooldown":
             case "correct":
                 PersonaEngine.switchTo("OPERATOR");
                 break;
+
             case "structure":
                 PersonaEngine.switchTo("DISCIPLINE");
                 break;
+
             case "push":
                 PersonaEngine.switchTo("OPERATOR");
                 break;
+
             case "adjust":
             case "maintain":
             default:
