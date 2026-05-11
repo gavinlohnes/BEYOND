@@ -1,154 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>BEYOND OS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&family=Rajdhani:wght@400;600&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <title>BEYOND-OS</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-  <!-- Boot Screen -->
-  <div id="bootScreen">
-    <div id="bootLogo">BEYOND</div>
-    <div id="bootSub">INITIALIZING SYSTEMS...</div>
-  </div>
-
-  <!-- CRT Noise + HUD Sweep + Data Streams -->
-  <div id="crtNoise"></div>
-  <div id="hudSweep"></div>
-  <div class="data-stream" style="left: 12%; animation-delay: 0s;"></div>
-  <div class="data-stream" style="left: 37%; animation-delay: 1.2s;"></div>
-  <div class="data-stream" style="left: 63%; animation-delay: 0.6s;"></div>
-  <div class="data-stream" style="left: 88%; animation-delay: 1.8s;"></div>
-
-  <!-- HUD Overlays -->
-  <div id="hudWorkout" class="sub-hud"></div>
-  <div id="hudMeals" class="sub-hud"></div>
-  <div id="hudGrocery" class="sub-hud"></div>
-
-  <!-- Main App -->
-  <div id="app">
-
-    <!-- Briefing -->
-    <div id="briefing" class="panel panel-depth briefing-panel"></div>
-
-    <!-- Suit Hint -->
-    <div id="suitHint" class="panel panel-depth"></div>
-
-    <!-- Mission Panel -->
-    <div id="missionPanel" class="panel panel-depth">
-      <div class="panel-title">MISSION SCHEDULE</div>
-      <div id="missionToday" class="metric-value"></div>
-      <div id="missionNext" class="metric-value small"></div>
-      <button class="nav-button interactive" data-nav="missions">VIEW MISSIONS</button>
+    <!-- Boot Screen -->
+    <div id="boot-screen">
+        <div class="boot-inner">
+            <h1>BEYOND-OS</h1>
+            <button id="boot-btn">BOOT SYSTEM</button>
+        </div>
     </div>
 
-    <!-- Threat Panel -->
-    <div id="threatPanel" class="panel panel-depth">
-      <div class="panel-title">THREAT LEVEL</div>
-      <div id="threatValue" class="metric-value"></div>
-    </div>
+    <!-- Overdrive Ignition Layer -->
+    <div id="overdrive-ignition" class="hidden"></div>
 
-    <!-- Readiness Panel -->
-    <div id="readinessPanel" class="panel panel-depth">
-      <div class="panel-title">READINESS</div>
-      <div id="readinessValue" class="metric-value">80</div>
-    </div>
+    <!-- App -->
+    <div id="app" class="hidden"></div>
 
-    <!-- Navigation Panel -->
-    <div id="navPanel" class="panel panel-depth">
-      <div class="panel-title">SUBSYSTEMS</div>
-      <button class="nav-button" data-nav="workout">WORKOUT</button>
-      <button class="nav-button" data-nav="meals">MEALS</button>
-      <button class="nav-button" data-nav="grocery">GROCERY</button>
-      <button class="nav-button" data-nav="missions">MISSIONS</button>
-    </div>
-
-  </div>
-
-  <!-- Subscreens -->
-  <div id="screenWorkout" class="subscreen">
-    <div class="subscreen-title">WORKOUT MODE</div>
-    <div class="sub-content">
-      <div class="sub-section">
-        <div class="sub-label">TODAY'S SESSION</div>
-        <div class="sub-value" id="wk-today">UPPER BODY</div>
-      </div>
-      <div class="sub-section">
-        <div class="sub-label">NEXT SESSION</div>
-        <div class="sub-value" id="wk-next">LOWER BODY</div>
-      </div>
-      <div class="sub-section">
-        <div class="sub-label">INTENSITY</div>
-        <div class="sub-value" id="wk-intensity">MODERATE</div>
-      </div>
-      <div class="sub-section">
-        <div class="sub-label">GENERATED PLAN</div>
-        <div id="wk-plan" class="sub-value small"></div>
-      </div>
-      <button class="sub-button" id="wk-start">BEGIN TRAINING</button>
-    </div>
-  </div>
-
-  <div id="screenMeals" class="subscreen">
-    <div class="subscreen-title">MEAL MODE</div>
-    <div class="sub-content">
-      <div class="sub-section">
-        <div class="sub-label">ANCHOR MEAL A</div>
-        <div class="sub-value" id="mealAView">BEEF + RICE</div>
-      </div>
-      <div class="sub-section">
-        <div class="sub-label">ANCHOR MEAL B</div>
-        <div class="sub-value" id="mealBView">CHICKEN + PASTA</div>
-      </div>
-      <div class="sub-section">
-        <div class="sub-label">NUTRITION INTEL</div>
-        <div id="meal-intel" class="sub-value small"></div>
-      </div>
-      <button class="sub-button" id="meal-edit">EDIT MEALS</button>
-      <button class="sub-button" id="meal-rotate">ROTATE ANCHORS</button>
-    </div>
-  </div>
-
-  <div id="screenGrocery" class="subscreen">
-    <div class="subscreen-title">GROCERY MODE</div>
-    <div class="sub-content">
-      <div class="sub-section">
-        <div class="sub-label">WEEKLY BUDGET</div>
-        <div class="sub-value" id="grocBudget">$120</div>
-      </div>
-      <div class="sub-section">
-        <div class="sub-label">ANCHOR COUNT</div>
-        <div class="sub-value" id="grocAnchors">2</div>
-      </div>
-      <div class="sub-section">
-        <div class="sub-label">STATUS</div>
-        <div class="sub-value" id="grocStatus">READY</div>
-      </div>
-      <div class="sub-section">
-        <div class="sub-label">GENERATED LIST</div>
-        <div id="groc-list" class="sub-value small"></div>
-      </div>
-      <button class="sub-button" id="groc-generate">GENERATE LIST</button>
-    </div>
-  </div>
-
-  <div id="screenMissions" class="subscreen">
-    <div class="subscreen-title">MISSION SCHEDULE</div>
-    <div id="missionGrid" class="mission-grid"></div>
-  </div>
-
-  <!-- Audio -->
-  <audio id="voiceOverdrive"></audio>
-  <audio id="voiceStabilize"></audio>
-  <audio id="voiceWorkout"></audio>
-  <audio id="voiceMeals"></audio>
-  <audio id="voiceGrocery"></audio>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
