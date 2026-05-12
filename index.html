@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=41" />
+  <link rel="stylesheet" href="style.css?v=50" />
 </head>
 
 <body>
@@ -41,156 +41,250 @@
     <!-- TOP BAR -->
     <div class="top-bar">
       <div class="brand">
-        BEYOND‑OS <span class="tag">V41</span>
+        BEYOND‑OS <span class="tag">V50</span>
       </div>
-      <div id="syncStatus" class="sync-status">SHEETS: READY</div>
-      <button id="patrolToggle" class="patrol-btn">PATROL: OFF</button>
+      <div class="top-center">
+        <span class="visor-label">WAYNE SYSTEMS // GOTHAM NODE</span>
+      </div>
+      <div class="top-right">
+        <div id="syncStatus" class="sync-status">SHEETS: READY</div>
+        <button id="patrolToggle" class="patrol-btn">PATROL: OFF</button>
+      </div>
     </div>
 
-    <!-- MAIN GRID -->
-    <div class="grid">
+    <!-- VISOR MODE WRAPPER -->
+    <div class="visor-shell">
 
-      <!-- LEFT COLUMN -->
-      <div class="col">
+      <!-- LEFT STRIP: MISSION / SCENARIO / SIGNALS -->
+      <div class="visor-column visor-left">
 
-        <!-- DAILY LOG -->
-        <div class="panel panel-accent">
+        <!-- MISSION CARD -->
+        <div class="panel panel-accent mission-card">
+          <div class="panel-title">MISSION STATE</div>
+          <div class="mission-row">
+            <div class="mission-label">SCENARIO</div>
+            <div class="mission-value" id="signalScenario">—</div>
+          </div>
+          <div class="mission-row">
+            <div class="mission-label">MISSION</div>
+            <div class="mission-value" id="signalMission">—</div>
+          </div>
+          <div class="mission-row">
+            <div class="mission-label">EMOTIONAL</div>
+            <div class="mission-value" id="signalEmotional">—</div>
+          </div>
+          <div class="mission-row">
+            <div class="mission-label">PROFILE</div>
+            <div class="mission-value" id="signalProfile">—</div>
+          </div>
+          <div class="mission-row mission-recommend">
+            <div class="mission-label">RECOMMEND</div>
+            <div class="mission-value" id="signalRecommendation">—</div>
+          </div>
+        </div>
+
+        <!-- DAILY LOG (compact) -->
+        <div class="panel panel-slim">
           <div class="panel-title">DAILY LOG</div>
-          <form id="dailyForm">
+          <form id="dailyForm" class="daily-form">
 
-            <label>Calories</label>
-            <input id="calories" type="number" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>Calories</label>
+                <input id="calories" type="number" />
+              </div>
+              <div class="form-group">
+                <label>Protein</label>
+                <input id="protein" type="number" />
+              </div>
+            </div>
 
-            <label>Protein (g)</label>
-            <input id="protein" type="number" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>Hydration</label>
+                <input id="hydration" type="number" />
+              </div>
+              <div class="form-group">
+                <label>Sleep</label>
+                <input id="sleep" type="number" />
+              </div>
+            </div>
 
-            <label>Hydration (oz)</label>
-            <input id="hydration" type="number" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>Readiness</label>
+                <select id="readiness">
+                  <option>LOW</option>
+                  <option>MEDIUM</option>
+                  <option>HIGH</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Threat</label>
+                <select id="threat">
+                  <option>LOW</option>
+                  <option>MEDIUM</option>
+                  <option>HIGH</option>
+                </select>
+              </div>
+            </div>
 
-            <label>Sleep (hrs)</label>
-            <input id="sleep" type="number" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>Stability</label>
+                <select id="stability">
+                  <option>LOW</option>
+                  <option>MEDIUM</option>
+                  <option>HIGH</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Scenario</label>
+                <select id="scenario">
+                  <option>ACTIVE</option>
+                  <option>RECOVERY</option>
+                  <option>OVERWATCH</option>
+                </select>
+              </div>
+            </div>
 
-            <label>Readiness</label>
-            <select id="readiness">
-              <option>LOW</option>
-              <option>MEDIUM</option>
-              <option>HIGH</option>
-            </select>
-
-            <label>Threat</label>
-            <select id="threat">
-              <option>LOW</option>
-              <option>MEDIUM</option>
-              <option>HIGH</option>
-            </select>
-
-            <label>Stability</label>
-            <select id="stability">
-              <option>LOW</option>
-              <option>MEDIUM</option>
-              <option>HIGH</option>
-            </select>
-
-            <label>Scenario</label>
-            <select id="scenario">
-              <option>ACTIVE</option>
-              <option>RECOVERY</option>
-              <option>OVERWATCH</option>
-            </select>
-
-            <label>Mission</label>
-            <select id="mission">
-              <option>NEUTRAL</option>
-              <option>ENGAGED</option>
-              <option>AGGRESSIVE</option>
-            </select>
-
-            <label>Emotional</label>
-            <select id="emotional">
-              <option>STABLE</option>
-              <option>WIRED</option>
-              <option>DRAINED</option>
-            </select>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Mission</label>
+                <select id="mission">
+                  <option>NEUTRAL</option>
+                  <option>ENGAGED</option>
+                  <option>AGGRESSIVE</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Emotional</label>
+                <select id="emotional">
+                  <option>STABLE</option>
+                  <option>WIRED</option>
+                  <option>DRAINED</option>
+                </select>
+              </div>
+            </div>
 
             <button type="submit" class="btn">LOG DAY</button>
           </form>
         </div>
 
         <!-- LAST 7 DAYS -->
-        <div class="panel">
+        <div class="panel panel-slim">
           <div class="panel-title">LAST 7 DAYS</div>
           <ul id="last7List" class="log-list"></ul>
         </div>
 
       </div>
 
-      <!-- MIDDLE COLUMN -->
-      <div class="col">
-
-        <!-- SIGNALS -->
-        <div class="panel">
-          <div class="panel-title">SIGNALS</div>
-          <div class="signal-line">SCENARIO: <span id="signalScenario">—</span></div>
-          <div class="signal-line">MISSION: <span id="signalMission">—</span></div>
-          <div class="signal-line">EMOTIONAL: <span id="signalEmotional">—</span></div>
-          <div class="signal-line">PROFILE: <span id="signalProfile">—</span></div>
-          <div class="signal-line">RECOMMEND: <span id="signalRecommendation">—</span></div>
-        </div>
+      <!-- CENTER: PREDICTIVE + WEEKLY DASHBOARD -->
+      <div class="visor-column visor-center">
 
         <!-- PREDICTIVE ENGINE -->
-        <div class="panel panel-accent">
+        <div class="panel panel-accent predictive-card">
           <div class="panel-title">PREDICTIVE ENGINE</div>
-          <div class="signal-line">SCENARIO: <span id="predScenario">—</span></div>
-          <div class="signal-line">MISSION: <span id="predMission">—</span></div>
-          <div class="signal-line">INTENSITY: <span id="predIntensity">—</span></div>
-          <div class="signal-line">CALORIES: <span id="predCalories">—</span></div>
+          <div class="predict-grid">
+            <div class="predict-item">
+              <div class="predict-label">SCENARIO</div>
+              <div class="predict-value" id="predScenario">—</div>
+            </div>
+            <div class="predict-item">
+              <div class="predict-label">MISSION</div>
+              <div class="predict-value" id="predMission">—</div>
+            </div>
+            <div class="predict-item">
+              <div class="predict-label">INTENSITY</div>
+              <div class="predict-value" id="predIntensity">—</div>
+            </div>
+            <div class="predict-item">
+              <div class="predict-label">CALORIES</div>
+              <div class="predict-value" id="predCalories">—</div>
+            </div>
+          </div>
         </div>
 
         <!-- WEEKLY DASHBOARD -->
-        <div class="panel">
+        <div class="panel weekly-core">
           <div class="panel-title">WEEKLY DASHBOARD</div>
-          <div class="signal-line">AVG CALORIES: <span id="wdCalories">—</span></div>
-          <div class="signal-line">AVG PROTEIN: <span id="wdProtein">—</span></div>
-          <div class="signal-line">AVG SLEEP: <span id="wdSleep">—</span></div>
+          <div class="weekly-grid">
+            <div class="weekly-metric">
+              <div class="metric-label">AVG CALORIES</div>
+              <div class="metric-value" id="wdCalories">—</div>
+              <div class="metric-bar">
+                <div class="metric-fill metric-fill-cal"></div>
+              </div>
+            </div>
+            <div class="weekly-metric">
+              <div class="metric-label">AVG PROTEIN</div>
+              <div class="metric-value" id="wdProtein">—</div>
+              <div class="metric-bar">
+                <div class="metric-fill metric-fill-pro"></div>
+              </div>
+            </div>
+            <div class="weekly-metric">
+              <div class="metric-label">AVG SLEEP</div>
+              <div class="metric-value" id="wdSleep">—</div>
+              <div class="metric-bar">
+                <div class="metric-fill metric-fill-sleep"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- WEEKLY TARGETS -->
         <div class="panel">
           <div class="panel-title">WEEKLY TARGETS</div>
-          <form id="targetsForm">
+          <form id="targetsForm" class="targets-form">
 
-            <label>Weekly Calories</label>
-            <input id="targetCalories" type="number" />
-
-            <label>Weekly Protein (g)</label>
-            <input id="targetProtein" type="number" />
-
-            <label>Weekly Training (min)</label>
-            <input id="targetTraining" type="number" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>Weekly Calories</label>
+                <input id="targetCalories" type="number" />
+              </div>
+              <div class="form-group">
+                <label>Weekly Protein (g)</label>
+                <input id="targetProtein" type="number" />
+              </div>
+              <div class="form-group">
+                <label>Weekly Training (min)</label>
+                <input id="targetTraining" type="number" />
+              </div>
+            </div>
 
             <button class="btn">SET TARGETS</button>
           </form>
 
-          <div class="target-bar">
-            <div id="barCalories" class="bar-fill"></div>
+          <div class="target-block">
+            <div class="target-label">CALORIES</div>
+            <div class="target-bar">
+              <div id="barCalories" class="bar-fill"></div>
+            </div>
+            <div class="target-value"> <span id="valCalories">—</span></div>
           </div>
-          <div class="target-value">CALORIES: <span id="valCalories">—</span></div>
 
-          <div class="target-bar">
-            <div id="barProtein" class="bar-fill"></div>
+          <div class="target-block">
+            <div class="target-label">PROTEIN</div>
+            <div class="target-bar">
+              <div id="barProtein" class="bar-fill"></div>
+            </div>
+            <div class="target-value"> <span id="valProtein">—</span></div>
           </div>
-          <div class="target-value">PROTEIN: <span id="valProtein">—</span></div>
 
-          <div class="target-bar">
-            <div id="barTraining" class="bar-fill"></div>
+          <div class="target-block">
+            <div class="target-label">TRAINING</div>
+            <div class="target-bar">
+              <div id="barTraining" class="bar-fill"></div>
+            </div>
+            <div class="target-value"> <span id="valTraining">—</span></div>
           </div>
-          <div class="target-value">TRAINING: <span id="valTraining">—</span></div>
         </div>
 
       </div>
 
-      <!-- RIGHT COLUMN -->
-      <div class="col">
+      <!-- RIGHT: TRAINING / MEALS / GROCERY -->
+      <div class="visor-column visor-right">
 
         <!-- TRAINING LOG -->
         <div class="panel">
@@ -264,17 +358,19 @@
           <label>Notes</label>
           <input id="gNotes" type="text" />
 
-          <button id="saveGroceryBtn" class="btn">ADD ITEM</button>
-          <button id="autoGenBtn" class="btn btn-ghost">AUTO‑GEN FROM MEALS</button>
+          <div class="btn-row">
+            <button id="saveGroceryBtn" class="btn">ADD ITEM</button>
+            <button id="autoGenBtn" class="btn btn-ghost">AUTO‑GEN FROM MEALS</button>
+          </div>
 
           <ul id="groceryList" class="log-list"></ul>
         </div>
 
       </div>
 
-    </div>
-  </div>
+    </div> <!-- /visor-shell -->
+  </div> <!-- /hud-frame -->
 
-  <script src="script.js?v=42"></script>
+  <script src="script.js?v=50"></script>
 </body>
 </html>
