@@ -2,15 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>BEYOND‑OS // V30‑Hybrid</title>
+  <title>BEYOND‑OS // V35</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- HUD OVERLAY -->
+  <div id="hudOverlay"></div>
+
   <!-- BOOT SCREEN -->
   <div id="bootScreen">
     <div class="boot-inner">
       <div class="boot-logo">BEYOND‑OS</div>
-      <div class="boot-sub">V30‑HYBRID // BATCOMPUTER PROFILE</div>
+      <div class="boot-sub">V35 // HYBRID PATROL PROFILE</div>
       <div class="boot-bar">
         <div class="boot-bar-fill" id="bootBarFill"></div>
       </div>
@@ -20,12 +23,17 @@
 
   <div id="app">
     <header class="top-bar">
-      <div class="brand">BEYOND‑OS<span class="tag">V30‑HYBRID</span></div>
-      <div class="status-pill" id="syncStatus">SHEETS: READY</div>
+      <div class="brand">
+        BEYOND‑OS<span class="tag">V35</span>
+      </div>
+      <div class="top-right">
+        <div class="status-pill" id="syncStatus">SHEETS: READY</div>
+        <button id="patrolToggle" class="patrol-toggle">PATROL: OFF</button>
+      </div>
     </header>
 
     <main class="grid">
-      <!-- LEFT COLUMN: DAILY + TRAINING -->
+      <!-- LEFT COLUMN: DAILY + WEEKLY TARGETS -->
       <section class="panel">
         <h2>Daily Snapshot</h2>
         <form id="dailyForm">
@@ -73,7 +81,7 @@
             <label>Mission</label>
             <select id="mission">
               <option value="NEUTRAL">NEUTRAL</option>
-              <option value="ENGAGED">ENGAGED</option>
+              <option value="ENGAGED">ENGAGED</OPTION>
               <option value="AGGRESSIVE">AGGRESSIVE</option>
             </select>
           </div>
@@ -90,8 +98,50 @@
 
           <button type="submit" class="primary-btn">LOG TO SHEETS</button>
         </form>
+
+        <h3>Weekly Targets</h3>
+        <form id="targetsForm">
+          <div class="field-row">
+            <label>Weekly Calories Target</label>
+            <input type="number" id="targetCalories" />
+          </div>
+          <div class="field-row">
+            <label>Weekly Protein Target (g)</label>
+            <input type="number" id="targetProtein" />
+          </div>
+          <div class="field-row">
+            <label>Weekly Training Target (min)</label>
+            <input type="number" id="targetTraining" />
+          </div>
+          <button type="submit" class="secondary-btn">SET TARGETS</button>
+        </form>
+
+        <div class="targets-block">
+          <div class="target-line">
+            <span class="label">Calories</span>
+            <div class="bar-wrap">
+              <div class="bar" id="barCalories"></div>
+            </div>
+            <span class="value" id="valCalories">—</span>
+          </div>
+          <div class="target-line">
+            <span class="label">Protein</span>
+            <div class="bar-wrap">
+              <div class="bar" id="barProtein"></div>
+            </div>
+            <span class="value" id="valProtein">—</span>
+          </div>
+          <div class="target-line">
+            <span class="label">Training</span>
+            <div class="bar-wrap">
+              <div class="bar" id="barTraining"></div>
+            </div>
+            <span class="value" id="valTraining">—</span>
+          </div>
+        </div>
       </section>
 
+      <!-- MIDDLE COLUMN: TRAINING + MEALS -->
       <section class="panel">
         <h2>Training Log</h2>
         <form id="trainingForm">
@@ -116,14 +166,46 @@
             <input type="text" id="tNotes" />
           </div>
 
-          <button type="submit" class="primary-btn">LOG TRAINING (LOCAL)</button>
+          <button type="submit" class="primary-btn">LOG TRAINING</button>
         </form>
 
-        <h3>Recent Sessions (local)</h3>
+        <h3>Recent Sessions</h3>
         <ul id="trainingList" class="log-list"></ul>
+
+        <h3>Meal Creator</h3>
+        <div class="field-row">
+          <label>Meal Name</label>
+          <input type="text" id="mealName" placeholder="Beef Bowl, Tofu Stir Fry" />
+        </div>
+        <div class="field-row">
+          <label>Protein (g)</label>
+          <input type="number" id="mealProtein" />
+        </div>
+        <div class="field-row">
+          <label>Carbs (g)</label>
+          <input type="number" id="mealCarbs" />
+        </div>
+        <div class="field-row">
+          <label>Fat (g)</label>
+          <input type="number" id="mealFat" />
+        </div>
+        <div class="field-row">
+          <label>Calories</label>
+          <input type="number" id="mealCalories" />
+        </div>
+        <div class="field-row">
+          <label>Notes</label>
+          <input type="text" id="mealNotes" />
+        </div>
+        <button type="button" class="secondary-btn" id="saveMealBtn">
+          SAVE MEAL
+        </button>
+
+        <h3>Meal Library</h3>
+        <ul id="mealList" class="log-list"></ul>
       </section>
 
-      <!-- RIGHT COLUMN: SIGNALS + WEEKLY + DRAWERS -->
+      <!-- RIGHT COLUMN: SIGNALS + WEEKLY + GROCERY -->
       <section class="panel">
         <h2>Signals</h2>
         <div id="signalSummary" class="signal-block">
@@ -143,9 +225,13 @@
             <span class="label">Profile</span>
             <span id="signalProfile" class="value">STABLE / LOW THREAT</span>
           </div>
+          <div class="signal-line">
+            <span class="label">Recommendation</span>
+            <span id="signalRecommendation" class="value">MAINTAIN CURRENT PLAN</span>
+          </div>
         </div>
 
-        <h3>Last 7 Logs (local)</h3>
+        <h3>Last 7 Logs</h3>
         <ul id="last7List" class="log-list"></ul>
 
         <h3>Weekly Dashboard</h3>
@@ -164,89 +250,37 @@
           </div>
         </div>
 
-        <h3>Systems</h3>
-        <div class="drawer-controls">
-          <button type="button" class="secondary-btn" data-drawer="mealDrawer">
-            MEAL CREATOR
-          </button>
-          <button type="button" class="secondary-btn" data-drawer="groceryDrawer">
-            GROCERY DIRECTOR
-          </button>
+        <h3>Grocery Director</h3>
+        <div class="field-row">
+          <label>Item</label>
+          <input type="text" id="gItem" placeholder="Chicken, Rice, Spinach" />
         </div>
-
-        <div id="mealDrawer" class="drawer collapsed">
-          <div class="drawer-header">
-            <span>Meal Creator</span>
-            <span class="drawer-close" data-drawer-close="mealDrawer">×</span>
-          </div>
-          <div class="drawer-body">
-            <div class="field-row">
-              <label>Meal Name</label>
-              <input type="text" id="mealName" placeholder="Beef Bowl, Tofu Stir Fry" />
-            </div>
-            <div class="field-row">
-              <label>Protein (g)</label>
-              <input type="number" id="mealProtein" />
-            </div>
-            <div class="field-row">
-              <label>Carbs (g)</label>
-              <input type="number" id="mealCarbs" />
-            </div>
-            <div class="field-row">
-              <label>Fat (g)</label>
-              <input type="number" id="mealFat" />
-            </div>
-            <div class="field-row">
-              <label>Calories</label>
-              <input type="number" id="mealCalories" />
-            </div>
-            <div class="field-row">
-              <label>Notes</label>
-              <input type="text" id="mealNotes" />
-            </div>
-            <button type="button" class="primary-btn" id="saveMealBtn">
-              SAVE MEAL (LOCAL)
-            </button>
-
-            <h4 class="subheading">Meal Library (local)</h4>
-            <ul id="mealList" class="log-list"></ul>
-          </div>
+        <div class="field-row">
+          <label>Category</label>
+          <input type="text" id="gCategory" placeholder="Protein, Carb, Veg" />
         </div>
-
-        <div id="groceryDrawer" class="drawer collapsed">
-          <div class="drawer-header">
-            <span>Grocery Director</span>
-            <span class="drawer-close" data-drawer-close="groceryDrawer">×</span>
-          </div>
-          <div class="drawer-body">
-            <div class="field-row">
-              <label>Item</label>
-              <input type="text" id="gItem" placeholder="Chicken, Rice, Spinach" />
-            </div>
-            <div class="field-row">
-              <label>Category</label>
-              <input type="text" id="gCategory" placeholder="Protein, Carb, Veg" />
-            </div>
-            <div class="field-row">
-              <label>Unit</label>
-              <input type="text" id="gUnit" placeholder="lb, g, pack" />
-            </div>
-            <div class="field-row">
-              <label>Default Qty</label>
-              <input type="number" id="gQty" />
-            </div>
-            <div class="field-row">
-              <label>Notes</label>
-              <input type="text" id="gNotes" />
-            </div>
-            <button type="button" class="primary-btn" id="saveGroceryBtn">
-              SAVE ITEM (LOCAL)
-            </button>
-
-            <h4 class="subheading">Grocery Library (local)</h4>
-            <ul id="groceryList" class="log-list"></ul>
-          </div>
+        <div class="field-row">
+          <label>Unit</label>
+          <input type="text" id="gUnit" placeholder="lb, g, pack" />
         </div>
+        <div class="field-row">
+          <label>Default Qty</label>
+          <input type="number" id="gQty" />
+        </div>
+        <div class="field-row">
+          <label>Notes</label>
+          <input type="text" id="gNotes" />
+        </div>
+        <button type="button" class="secondary-btn" id="saveGroceryBtn">
+          SAVE ITEM
+        </button>
+
+        <button type="button" class="secondary-btn" id="autoGenBtn" style="margin-top:8px;">
+          AUTO‑GENERATE GROCERY FROM MEALS
+        </button>
+
+        <h3>Grocery Library</h3>
+        <ul id="groceryList" class="log-list"></ul>
       </section>
     </main>
   </div>
