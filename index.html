@@ -4,255 +4,275 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BEYOND‑OS</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css?v=41" />
 </head>
 
 <body>
 
-  <!-- BOOT SCREEN -->
-  <div id="bootScreen" class="boot-screen">
-    <div class="boot-box">
-      <div class="boot-title">BEYOND‑OS <span class="tag">AUTONOMOUS</span></div>
-      <div class="boot-bar"><div id="bootBarFill" class="boot-bar-fill"></div></div>
-      <div id="bootStatus" class="boot-status">INITIALIZING…</div>
+  <!-- HUD FRAME + SCANLINES -->
+  <div class="hud-frame">
+    <div class="hud-reticle hud-reticle-top"></div>
+    <div class="hud-reticle hud-reticle-bottom"></div>
+    <div class="scanline-layer"></div>
+
+    <!-- BOOT SCREEN -->
+    <div id="bootScreen" class="boot-screen">
+      <div class="boot-box">
+        <div class="boot-title">
+          BEYOND‑OS <span class="tag">AUTONOMOUS</span>
+        </div>
+        <div class="boot-subtitle">WAYNE SYSTEMS PROTOCOL // SUIT LINK</div>
+        <div class="boot-bar">
+          <div id="bootBarFill" class="boot-bar-fill"></div>
+        </div>
+        <div id="bootStatus" class="boot-status">INITIALIZING…</div>
+      </div>
     </div>
-  </div>
 
-  <!-- HUD FLASH -->
-  <div id="hudOverlay" class="hud-overlay"></div>
+    <!-- HUD FLASH -->
+    <div id="hudOverlay" class="hud-overlay"></div>
 
-  <!-- TOP BAR -->
-  <div class="top-bar">
-    <div class="brand">BEYOND‑OS <span class="tag">V40</span></div>
-    <div id="syncStatus" class="sync-status">SHEETS: READY</div>
-    <button id="patrolToggle" class="patrol-btn">PATROL: OFF</button>
-  </div>
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="brand">
+        BEYOND‑OS <span class="tag">V41</span>
+      </div>
+      <div id="syncStatus" class="sync-status">SHEETS: READY</div>
+      <button id="patrolToggle" class="patrol-btn">PATROL: OFF</button>
+    </div>
 
-  <!-- MAIN GRID -->
-  <div class="grid">
+    <!-- MAIN GRID -->
+    <div class="grid">
 
-    <!-- LEFT COLUMN -->
-    <div class="col">
+      <!-- LEFT COLUMN -->
+      <div class="col">
 
-      <!-- DAILY LOG -->
-      <div class="panel">
-        <div class="panel-title">DAILY LOG</div>
-        <form id="dailyForm">
+        <!-- DAILY LOG -->
+        <div class="panel panel-accent">
+          <div class="panel-title">DAILY LOG</div>
+          <form id="dailyForm">
+
+            <label>Calories</label>
+            <input id="calories" type="number" />
+
+            <label>Protein (g)</label>
+            <input id="protein" type="number" />
+
+            <label>Hydration (oz)</label>
+            <input id="hydration" type="number" />
+
+            <label>Sleep (hrs)</label>
+            <input id="sleep" type="number" />
+
+            <label>Readiness</label>
+            <select id="readiness">
+              <option>LOW</option>
+              <option>MEDIUM</option>
+              <option>HIGH</option>
+            </select>
+
+            <label>Threat</label>
+            <select id="threat">
+              <option>LOW</option>
+              <option>MEDIUM</option>
+              <option>HIGH</option>
+            </select>
+
+            <label>Stability</label>
+            <select id="stability">
+              <option>LOW</option>
+              <option>MEDIUM</option>
+              <option>HIGH</option>
+            </select>
+
+            <label>Scenario</label>
+            <select id="scenario">
+              <option>ACTIVE</option>
+              <option>RECOVERY</option>
+              <option>OVERWATCH</option>
+            </select>
+
+            <label>Mission</label>
+            <select id="mission">
+              <option>NEUTRAL</option>
+              <option>ENGAGED</option>
+              <option>AGGRESSIVE</option>
+            </select>
+
+            <label>Emotional</label>
+            <select id="emotional">
+              <option>STABLE</option>
+              <option>WIRED</option>
+              <option>DRAINED</option>
+            </select>
+
+            <button type="submit" class="btn">LOG DAY</button>
+          </form>
+        </div>
+
+        <!-- LAST 7 DAYS -->
+        <div class="panel">
+          <div class="panel-title">LAST 7 DAYS</div>
+          <ul id="last7List" class="log-list"></ul>
+        </div>
+
+      </div>
+
+      <!-- MIDDLE COLUMN -->
+      <div class="col">
+
+        <!-- SIGNALS -->
+        <div class="panel">
+          <div class="panel-title">SIGNALS</div>
+          <div class="signal-line">SCENARIO: <span id="signalScenario">—</span></div>
+          <div class="signal-line">MISSION: <span id="signalMission">—</span></div>
+          <div class="signal-line">EMOTIONAL: <span id="signalEmotional">—</span></div>
+          <div class="signal-line">PROFILE: <span id="signalProfile">—</span></div>
+          <div class="signal-line">RECOMMEND: <span id="signalRecommendation">—</span></div>
+        </div>
+
+        <!-- PREDICTIVE ENGINE -->
+        <div class="panel panel-accent">
+          <div class="panel-title">PREDICTIVE ENGINE</div>
+          <div class="signal-line">SCENARIO: <span id="predScenario">—</span></div>
+          <div class="signal-line">MISSION: <span id="predMission">—</span></div>
+          <div class="signal-line">INTENSITY: <span id="predIntensity">—</span></div>
+          <div class="signal-line">CALORIES: <span id="predCalories">—</span></div>
+        </div>
+
+        <!-- WEEKLY DASHBOARD -->
+        <div class="panel">
+          <div class="panel-title">WEEKLY DASHBOARD</div>
+          <div class="signal-line">AVG CALORIES: <span id="wdCalories">—</span></div>
+          <div class="signal-line">AVG PROTEIN: <span id="wdProtein">—</span></div>
+          <div class="signal-line">AVG SLEEP: <span id="wdSleep">—</span></div>
+        </div>
+
+        <!-- WEEKLY TARGETS -->
+        <div class="panel">
+          <div class="panel-title">WEEKLY TARGETS</div>
+          <form id="targetsForm">
+
+            <label>Weekly Calories</label>
+            <input id="targetCalories" type="number" />
+
+            <label>Weekly Protein (g)</label>
+            <input id="targetProtein" type="number" />
+
+            <label>Weekly Training (min)</label>
+            <input id="targetTraining" type="number" />
+
+            <button class="btn">SET TARGETS</button>
+          </form>
+
+          <div class="target-bar">
+            <div id="barCalories" class="bar-fill"></div>
+          </div>
+          <div class="target-value">CALORIES: <span id="valCalories">—</span></div>
+
+          <div class="target-bar">
+            <div id="barProtein" class="bar-fill"></div>
+          </div>
+          <div class="target-value">PROTEIN: <span id="valProtein">—</span></div>
+
+          <div class="target-bar">
+            <div id="barTraining" class="bar-fill"></div>
+          </div>
+          <div class="target-value">TRAINING: <span id="valTraining">—</span></div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div class="col">
+
+        <!-- TRAINING LOG -->
+        <div class="panel">
+          <div class="panel-title">TRAINING LOG</div>
+          <form id="trainingForm">
+
+            <label>Session</label>
+            <input id="tSession" type="text" />
+
+            <label>Focus</label>
+            <input id="tFocus" type="text" />
+
+            <label>Duration (min)</label>
+            <input id="tDuration" type="number" />
+
+            <label>RPE</label>
+            <input id="tRPE" type="number" />
+
+            <label>Notes</label>
+            <input id="tNotes" type="text" />
+
+            <button class="btn">LOG TRAINING</button>
+          </form>
+
+          <ul id="trainingList" class="log-list"></ul>
+        </div>
+
+        <!-- MEAL CREATOR -->
+        <div class="panel">
+          <div class="panel-title">MEAL CREATOR</div>
+
+          <label>Name</label>
+          <input id="mealName" type="text" />
+
+          <label>Protein</label>
+          <input id="mealProtein" type="number" />
+
+          <label>Carbs</label>
+          <input id="mealCarbs" type="number" />
+
+          <label>Fat</label>
+          <input id="mealFat" type="number" />
 
           <label>Calories</label>
-          <input id="calories" type="number" />
-
-          <label>Protein (g)</label>
-          <input id="protein" type="number" />
-
-          <label>Hydration (oz)</label>
-          <input id="hydration" type="number" />
-
-          <label>Sleep (hrs)</label>
-          <input id="sleep" type="number" />
-
-          <label>Readiness</label>
-          <select id="readiness">
-            <option>LOW</option>
-            <option>MEDIUM</option>
-            <option>HIGH</option>
-          </select>
-
-          <label>Threat</label>
-          <select id="threat">
-            <option>LOW</option>
-            <option>MEDIUM</option>
-            <option>HIGH</option>
-          </select>
-
-          <label>Stability</label>
-          <select id="stability">
-            <option>LOW</option>
-            <option>MEDIUM</option>
-            <option>HIGH</option>
-          </select>
-
-          <label>Scenario</label>
-          <select id="scenario">
-            <option>ACTIVE</option>
-            <option>RECOVERY</option>
-            <option>OVERWATCH</option>
-          </select>
-
-          <label>Mission</label>
-          <select id="mission">
-            <option>NEUTRAL</option>
-            <option>ENGAGED</option>
-            <option>AGGRESSIVE</option>
-          </select>
-
-          <label>Emotional</label>
-          <select id="emotional">
-            <option>STABLE</option>
-            <option>WIRED</option>
-            <option>DRAINED</option>
-          </select>
-
-          <button type="submit" class="btn">LOG DAY</button>
-        </form>
-      </div>
-
-      <!-- LAST 7 DAYS -->
-      <div class="panel">
-        <div class="panel-title">LAST 7 DAYS</div>
-        <ul id="last7List" class="log-list"></ul>
-      </div>
-
-    </div>
-
-    <!-- MIDDLE COLUMN -->
-    <div class="col">
-
-      <!-- SIGNALS -->
-      <div class="panel">
-        <div class="panel-title">SIGNALS</div>
-        <div class="signal-line">Scenario: <span id="signalScenario">—</span></div>
-        <div class="signal-line">Mission: <span id="signalMission">—</span></div>
-        <div class="signal-line">Emotional: <span id="signalEmotional">—</span></div>
-        <div class="signal-line">Profile: <span id="signalProfile">—</span></div>
-        <div class="signal-line">Recommendation: <span id="signalRecommendation">—</span></div>
-      </div>
-
-      <!-- PREDICTIVE ENGINE -->
-      <div class="panel">
-        <div class="panel-title">PREDICTIVE ENGINE</div>
-        <div class="signal-line">Scenario: <span id="predScenario">—</span></div>
-        <div class="signal-line">Mission: <span id="predMission">—</span></div>
-        <div class="signal-line">Intensity: <span id="predIntensity">—</span></div>
-        <div class="signal-line">Calories: <span id="predCalories">—</span></div>
-      </div>
-
-      <!-- WEEKLY DASHBOARD -->
-      <div class="panel">
-        <div class="panel-title">WEEKLY DASHBOARD</div>
-        <div class="signal-line">Avg Calories: <span id="wdCalories">—</span></div>
-        <div class="signal-line">Avg Protein: <span id="wdProtein">—</span></div>
-        <div class="signal-line">Avg Sleep: <span id="wdSleep">—</span></div>
-      </div>
-
-      <!-- WEEKLY TARGETS -->
-      <div class="panel">
-        <div class="panel-title">WEEKLY TARGETS</div>
-        <form id="targetsForm">
-
-          <label>Weekly Calories</label>
-          <input id="targetCalories" type="number" />
-
-          <label>Weekly Protein (g)</label>
-          <input id="targetProtein" type="number" />
-
-          <label>Weekly Training (min)</label>
-          <input id="targetTraining" type="number" />
-
-          <button class="btn">SET TARGETS</button>
-        </form>
-
-        <div class="target-bar">
-          <div id="barCalories" class="bar-fill"></div>
-        </div>
-        <div class="target-value">Calories: <span id="valCalories">—</span></div>
-
-        <div class="target-bar">
-          <div id="barProtein" class="bar-fill"></div>
-        </div>
-        <div class="target-value">Protein: <span id="valProtein">—</span></div>
-
-        <div class="target-bar">
-          <div id="barTraining" class="bar-fill"></div>
-        </div>
-        <div class="target-value">Training: <span id="valTraining">—</span></div>
-      </div>
-
-    </div>
-
-    <!-- RIGHT COLUMN -->
-    <div class="col">
-
-      <!-- TRAINING LOG -->
-      <div class="panel">
-        <div class="panel-title">TRAINING LOG</div>
-        <form id="trainingForm">
-
-          <label>Session</label>
-          <input id="tSession" type="text" />
-
-          <label>Focus</label>
-          <input id="tFocus" type="text" />
-
-          <label>Duration (min)</label>
-          <input id="tDuration" type="number" />
-
-          <label>RPE</label>
-          <input id="tRPE" type="number" />
+          <input id="mealCalories" type="number" />
 
           <label>Notes</label>
-          <input id="tNotes" type="text" />
+          <input id="mealNotes" type="text" />
 
-          <button class="btn">LOG TRAINING</button>
-        </form>
+          <button id="saveMealBtn" class="btn">SAVE MEAL</button>
 
-        <ul id="trainingList" class="log-list"></ul>
-      </div>
+          <ul id="mealList" class="log-list"></ul>
+        </div>
 
-      <!-- MEAL CREATOR -->
-      <div class="panel">
-        <div class="panel-title">MEAL CREATOR</div>
+        <!-- GROCERY DIRECTOR -->
+        <div class="panel">
+          <div class="panel-title">GROCERY DIRECTOR</div>
 
-        <label>Name</label>
-        <input id="mealName" type="text" />
+          <label>Item</label>
+          <input id="gItem" type="text" />
 
-        <label>Protein</label>
-        <input id="mealProtein" type="number" />
+          <label>Category</label>
+          <input id="gCategory" type="text" />
 
-        <label>Carbs</label>
-        <input id="mealCarbs" type="number" />
+          <label>Unit</label>
+          <input id="gUnit" type="text" />
 
-        <label>Fat</label>
-        <input id="mealFat" type="number" />
+          <label>Qty</label>
+          <input id="gQty" type="number" />
 
-        <label>Calories</label>
-        <input id="mealCalories" type="number" />
+          <label>Notes</label>
+          <input id="gNotes" type="text" />
 
-        <label>Notes</label>
-        <input id="mealNotes" type="text" />
+          <button id="saveGroceryBtn" class="btn">ADD ITEM</button>
+          <button id="autoGenBtn" class="btn btn-ghost">AUTO‑GEN FROM MEALS</button>
 
-        <button id="saveMealBtn" class="btn">SAVE MEAL</button>
+          <ul id="groceryList" class="log-list"></ul>
+        </div>
 
-        <ul id="mealList" class="log-list"></ul>
-      </div>
-
-      <!-- GROCERY DIRECTOR -->
-      <div class="panel">
-        <div class="panel-title">GROCERY DIRECTOR</div>
-
-        <label>Item</label>
-        <input id="gItem" type="text" />
-
-        <label>Category</label>
-        <input id="gCategory" type="text" />
-
-        <label>Unit</label>
-        <input id="gUnit" type="text" />
-
-        <label>Qty</label>
-        <input id="gQty" type="number" />
-
-        <label>Notes</label>
-        <input id="gNotes" type="text" />
-
-        <button id="saveGroceryBtn" class="btn">ADD ITEM</button>
-        <button id="autoGenBtn" class="btn">AUTO‑GEN FROM MEALS</button>
-
-        <ul id="groceryList" class="log-list"></ul>
       </div>
 
     </div>
-
   </div>
 
   <script src="script.js?v=40"></script>
