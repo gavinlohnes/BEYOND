@@ -384,6 +384,25 @@ body {
   font-weight: 600;
 }
 
+/* === SYSTEM STATE ========================================== */
+
+.system-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 6px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.system-label {
+  color: #888;
+}
+
+.system-value {
+  color: #ff335f;
+}
+
 /* === FORMS ================================================= */
 
 label {
