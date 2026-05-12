@@ -89,6 +89,10 @@ let targets = {
 };
 let patrolMode = false;
 
+// V37–V40 state
+let weekPlan = []; // 7-day array of {date, scenario, mission, calorieTarget, training, meals, session}
+let autonomousMode = true;
+
 // === PERSISTENCE =============================================
 
 function saveState() {
@@ -98,6 +102,7 @@ function saveState() {
   localStorage.setItem("beyond_grocery", JSON.stringify(groceryLocal));
   localStorage.setItem("beyond_targets", JSON.stringify(targets));
   localStorage.setItem("beyond_patrol", patrolMode ? "1" : "0");
+  localStorage.setItem("beyond_weekPlan", JSON.stringify(weekPlan));
 }
 
 function loadState() {
@@ -110,6 +115,7 @@ function loadState() {
       '{"calories":0,"protein":0,"training":0}'
   );
   patrolMode = localStorage.getItem("beyond_patrol") === "1";
+  weekPlan = JSON.parse(localStorage.getItem("beyond_weekPlan") || "[]");
 }
 
 // === TODAY INDICATOR =========================================
@@ -147,6 +153,7 @@ function pushLocalLog(entry) {
   updateTargetsProgress();
   updateScenarioEngine();
   updatePredictiveEngine();
+  runAutonomousCycle();
   saveState();
 }
 
@@ -242,8 +249,10 @@ function computeV36Averages() {
     return { avgCalories: 0, avgProtein: 0, avgSleep: 0 };
   }
 
-  let c = 0, p = 0, s = 0;
-  last7Local.forEach(e => {
+  let c = 0,
+    p = 0,
+    s = 0;
+  last7Local.forEach((e) => {
     c += e.calories || 0;
     p += e.protein || 0;
     s += e.sleep || 0;
@@ -253,14 +262,14 @@ function computeV36Averages() {
   return {
     avgCalories: c / d,
     avgProtein: p / d,
-    avgSleep: s / d
+    avgSleep: s / d,
   };
 }
 
 function computeV36TrainingLoad() {
   if (!trainingLocal.length) return 0;
   let total = 0;
-  trainingLocal.forEach(t => {
+  trainingLocal.forEach((t) => {
     total += (t.duration || 0) * (t.rpe || 1);
   });
   return total;
@@ -303,6 +312,15 @@ function updatePredictiveEngine() {
   if (avgProtein < 120) {
     pScenario = "RECOVERY";
     pIntensity = "LOW";
+  }
+
+  // If autonomous mode and we have a plan for tomorrow, bias to that
+  const tomorrowPlan = getTomorrowPlan();
+  if (autonomousMode && tomorrowPlan) {
+    if (tomorrowPlan.scenario) pScenario = tomorrowPlan.scenario;
+    if (tomorrowPlan.mission) pMission = tomorrowPlan.mission;
+    if (tomorrowPlan.calorieTarget)
+      pCalories = tomorrowPlan.calorieTarget;
   }
 
   predScenario.textContent = pScenario;
@@ -389,6 +407,7 @@ function pushTraining(entry) {
   updateTargetsProgress();
   updateScenarioEngine();
   updatePredictiveEngine();
+  runAutonomousCycle();
   saveState();
 }
 
@@ -406,6 +425,18 @@ function renderTraining() {
       `;
       trainingList.appendChild(li);
     });
+
+  // Render suggested sessions from weekPlan (non-persistent)
+  const suggested = getTodayPlan();
+  if (autonomousMode && suggested && suggested.session) {
+    const li = document.createElement("li");
+    li.className = "log-item";
+    li.innerHTML = `
+      <span class="key">SUGGESTED</span>
+      <span>${suggested.session.type} • ${suggested.session.duration}m • RPE ${suggested.session.rpe}</span>
+    `;
+    trainingList.insertBefore(li, trainingList.firstChild);
+  }
 }
 
 // === MEAL CREATOR ============================================
@@ -431,6 +462,18 @@ function renderMeals() {
       `;
       mealList.appendChild(li);
     });
+
+  // Render suggested meals for today (non-persistent)
+  const plan = getTodayPlan();
+  if (autonomousMode && plan && plan.meals && plan.meals.length) {
+    const li = document.createElement("li");
+    li.className = "log-item";
+    li.innerHTML = `
+      <span class="key">SUGGESTED</span>
+      <span>${plan.meals.map((m) => m.name + " x" + m.servings).join(" • ")}</span>
+    `;
+    mealList.insertBefore(li, mealList.firstChild);
+  }
 }
 
 // === GROCERY DIRECTOR ========================================
@@ -456,6 +499,20 @@ function renderGroceries() {
       `;
       groceryList.appendChild(li);
     });
+
+  // Render suggested grocery from week plan (non-persistent)
+  if (autonomousMode) {
+    const agg = buildAggregatedGroceryFromWeekPlan();
+    if (agg.length) {
+      const li = document.createElement("li");
+      li.className = "log-item";
+      li.innerHTML = `
+        <span class="key">AUTO-GEN</span>
+        <span>${agg.map((i) => `${i.item} x${i.qty}`).join(" • ")}</span>
+      `;
+      groceryList.insertBefore(li, groceryList.firstChild);
+    }
+  }
 }
 
 function autoGenerateGroceryFromMeals() {
@@ -463,13 +520,195 @@ function autoGenerateGroceryFromMeals() {
   mealLocal.forEach((m) => {
     const key = m.name || "";
     if (!key) return;
-    const base = map.get(key) || { item: key, qty: 0, unit: "x", category: "MEAL", notes: "" };
+    const base =
+      map.get(key) || {
+        item: key,
+        qty: 0,
+        unit: "x",
+        category: "MEAL",
+        notes: "",
+      };
     base.qty += 1;
     map.set(key, base);
   });
 
   map.forEach((entry) => pushGrocery(entry));
   flashHUD();
+}
+
+// === V37 MISSION PLANNER =====================================
+
+function buildMissionPlan() {
+  const today = new Date();
+  const { avgCalories, avgProtein, avgSleep } = computeV36Averages();
+  const load = computeV36TrainingLoad();
+
+  const baseCalories =
+    targets.calories && targets.calories > 0
+      ? targets.calories / 7
+      : avgCalories || 2200;
+
+  const plan = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dateStr = d.toISOString().slice(0, 10);
+
+    let scenario = "ACTIVE";
+    let mission = "ENGAGED";
+    let calorieTarget = Math.round(baseCalories);
+    let training = true;
+
+    // Simple weekly structure: 2 rest days
+    if (i === 3 || i === 6) {
+      scenario = "RECOVERY";
+      mission = "NEUTRAL";
+      training = false;
+      calorieTarget = Math.round(baseCalories * 0.9);
+    }
+
+    // If sleep has been low or load high, bias more recovery
+    if (avgSleep < 6 || load > 1500) {
+      if (i === 1 || i === 4) {
+        scenario = "RECOVERY";
+        mission = "NEUTRAL";
+        training = false;
+      }
+    }
+
+    plan.push({
+      date: dateStr,
+      scenario,
+      mission,
+      calorieTarget,
+      training,
+      meals: [],
+      session: null,
+    });
+  }
+
+  weekPlan = plan;
+}
+
+// === V38 MEAL SYSTEM 2.0 =====================================
+
+function buildMealWeekFromTargets() {
+  if (!weekPlan.length || !mealLocal.length) return;
+
+  const dailyProteinTarget =
+    targets.protein && targets.protein > 0
+      ? targets.protein / 7
+      : 130; // default
+
+  weekPlan.forEach((day) => {
+    const meals = [];
+    let remainingProtein = dailyProteinTarget;
+
+    // Greedy: pick highest-protein meals first
+    const sortedMeals = mealLocal
+      .slice()
+      .sort((a, b) => b.protein - a.protein);
+
+    for (let i = 0; i < sortedMeals.length && remainingProtein > 0; i++) {
+      const m = sortedMeals[i];
+      if (m.protein <= 0) continue;
+      const servings = Math.max(1, Math.round(remainingProtein / m.protein));
+      meals.push({
+        name: m.name,
+        servings,
+      });
+      remainingProtein -= m.protein * servings;
+      if (meals.length >= 3) break;
+    }
+
+    day.meals = meals;
+  });
+}
+
+function buildAggregatedGroceryFromWeekPlan() {
+  const map = new Map();
+  weekPlan.forEach((day) => {
+    (day.meals || []).forEach((m) => {
+      const key = m.name;
+      if (!key) return;
+      const base = map.get(key) || { item: key, qty: 0 };
+      base.qty += m.servings || 1;
+      map.set(key, base);
+    });
+  });
+  return Array.from(map.values());
+}
+
+// === V39 ADAPTIVE TRAINING ENGINE ============================
+
+function buildAdaptiveSessions() {
+  if (!weekPlan.length) return;
+
+  const { avgSleep } = computeV36Averages();
+  const load = computeV36TrainingLoad();
+  const emotional = emotionalEl.value;
+
+  weekPlan.forEach((day, idx) => {
+    if (!day.training) {
+      day.session = null;
+      return;
+    }
+
+    let type = "STRENGTH";
+    let duration = 45;
+    let rpe = 7;
+
+    if (avgSleep < 6 || emotional === "DRAINED") {
+      type = "RECOVERY / WALK";
+      duration = 25;
+      rpe = 4;
+    } else if (load > 1500 && idx >= 2) {
+      type = "LIGHT CONDITIONING";
+      duration = 30;
+      rpe = 5;
+    } else if (emotional === "WIRED") {
+      type = "POWER / SPEED";
+      duration = 35;
+      rpe = 8;
+    }
+
+    day.session = { type, duration, rpe };
+  });
+}
+
+// === V40 AUTONOMOUS MODE =====================================
+
+function getTodayPlan() {
+  if (!weekPlan.length) return null;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  return weekPlan.find((d) => d.date === todayStr) || null;
+}
+
+function getTomorrowPlan() {
+  if (!weekPlan.length) return null;
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tStr = tomorrow.toISOString().slice(0, 10);
+  return weekPlan.find((d) => d.date === tStr) || null;
+}
+
+function runAutonomousCycle() {
+  if (!autonomousMode) return;
+
+  buildMissionPlan();
+  buildMealWeekFromTargets();
+  buildAdaptiveSessions();
+
+  const todayPlan = getTodayPlan();
+  if (todayPlan) {
+    scenarioEl.value = todayPlan.scenario || scenarioEl.value;
+    missionEl.value = todayPlan.mission || missionEl.value;
+  }
+
+  updateSignals();
+  updatePredictiveEngine();
+  saveState();
 }
 
 // === PATROL MODE =============================================
@@ -491,7 +730,10 @@ function applyPatrolMode() {
 
 scenarioEl.addEventListener("change", updateSignals);
 missionEl.addEventListener("change", updateSignals);
-emotionalEl.addEventListener("change", updateSignals);
+emotionalEl.addEventListener("change", () => {
+  updateSignals();
+  runAutonomousCycle();
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -539,9 +781,6 @@ form.addEventListener("submit", async (e) => {
 trainingForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-trainingForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
   const entry = {
     date: new Date().toISOString().slice(0, 10),
     session: document.getElementById("tSession").value || "",
@@ -579,6 +818,7 @@ saveMealBtn.addEventListener("click", () => {
   if (!entry.name) return;
   pushMeal(entry);
   flashHUD();
+  runAutonomousCycle();
 });
 
 saveGroceryBtn.addEventListener("click", () => {
@@ -602,6 +842,7 @@ targetsForm.addEventListener("submit", (e) => {
   targets.protein = Number(targetProteinEl.value) || 0;
   targets.training = Number(targetTrainingEl.value) || 0;
   updateTargetsProgress();
+  runAutonomousCycle();
   saveState();
 });
 
@@ -624,7 +865,7 @@ function runBoot() {
 
   setTimeout(() => {
     bootBarFill.style.width = "100%";
-    bootStatus.textContent = "BEYOND‑OS ONLINE";
+    bootStatus.textContent = "BEYOND‑OS AUTONOMOUS";
   }, 1200);
 
   setTimeout(() => {
@@ -644,6 +885,7 @@ updateWeeklyDashboard();
 updateTargetsProgress();
 updateTodayIndicator();
 applyPatrolMode();
+runAutonomousCycle();
 updatePredictiveEngine();
 setStatus("READY");
 runBoot();
