@@ -1,160 +1,190 @@
-/* RESET */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+// =========================
+// CORE STATE
+// =========================
 
-html, body {
-  height: 100%;
-  background: #000;
-  color: #fff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
+const OSState = {
+  tick: 0,
+  mode: "REDX",
+  link: "ONLINE",
+  signal: "STABLE",
+  mission: "IDLE",
+  riskLevel: "LOW",
+  predictions: [],
+  scenarios: [],
+  log: [],
+  lastUpdate: null
+};
 
-/* OS FRAME */
-#os-frame {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #000;
-}
-
-/* HEADER */
-#os-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid #ff0000;
-  background: #050505;
-}
-
-#os-brand {
-  font-size: 0.9rem;
-  letter-spacing: 0.18rem;
-  text-transform: uppercase;
-  color: #ff0000;
-}
-
-#os-status {
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: #ff0000;
-}
-
-/* MAIN GRID */
-#os-main {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1.1fr 1.4fr 1.1fr;
-  gap: 0.75rem;
-  padding: 0.75rem 1.25rem 1.25rem;
-}
-
-/* PANELS */
-.os-panel {
-  border: 1px solid #222;
-  background: #050505;
-  display: flex;
-  flex-direction: column;
-}
-
-.panel-title {
-  font-size: 0.75rem;
-  letter-spacing: 0.16rem;
-  text-transform: uppercase;
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #111;
-  color: #ff0000;
-}
-
-.panel-body {
-  padding: 0.75rem;
-  font-size: 0.85rem;
-}
-
-/* VISOR */
-.visor-line {
-  font-family: monospace;
-  color: #ccc;
-  margin-bottom: 0.25rem;
-}
-
-/* TODAY */
-.today-line {
-  font-family: monospace;
-  color: #fff;
-  margin-bottom: 0.35rem;
-}
-
-/* SYSTEM LOG */
-#log-panel {
-  font-family: monospace;
-  color: #aaa;
-}
-
-/* COMMAND BAR */
-#os-command {
-  display: flex;
-  align-items: center;
-  border-top: 1px solid #111;
-  background: #050505;
-  padding: 0.5rem 1.25rem;
-  font-family: monospace;
-  font-size: 0.8rem;
-}
-
-#command-label {
-  color: #ff0000;
-  margin-right: 0.75rem;
-  letter-spacing: 0.12rem;
-}
-
-#command-line {
-  color: #ccc;
-}
-
-/* SPLASH SCREEN */
-#os-splash {
-  position: fixed;
-  inset: 0;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  opacity: 1;
-  animation: osSplashFade 0.8s ease-out forwards;
-  animation-delay: 1.2s;
-}
-
-#os-splash-text {
-  color: #ff0000;
-  font-family: monospace;
-  font-size: 1.6rem;
-  letter-spacing: 0.18rem;
-  text-transform: uppercase;
-  opacity: 0;
-  animation: osSplashText 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  animation-delay: 0.15s;
-}
-
-@keyframes osSplashText {
-  0% { opacity: 0; transform: scale(0.92); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes osSplashFade {
-  0% { opacity: 1; }
-  100% { opacity: 0; visibility: hidden; }
-}
-
-/* RESPONSIVE */
-@media (max-width: 900px) {
-  #os-main {
-    grid-template-columns: 1fr;
+// Utility: push to log with cap
+function pushLog(line) {
+  const timestamp = new Date().toISOString().split("T")[1].slice(0, 8);
+  OSState.log.push(`[${timestamp}] ${line}`);
+  if (OSState.log.length > 40) {
+    OSState.log.shift();
   }
 }
+
+// =========================
+// ENGINES (INLINE)
+// =========================
+
+// Autonomous Engine
+function runAutonomousEngine(state) {
+  if (state.tick === 0) {
+    pushLog("AUTONOMOUS: CORE ONLINE");
+  }
+  if (state.tick % 20 === 0 && state.tick !== 0) {
+    pushLog("AUTONOMOUS: ROUTINE SYSTEM SWEEP COMPLETE");
+  }
+}
+
+// Self-Correcting Engine
+function runSelfCorrectingEngine(state) {
+  if (state.signal !== "STABLE") {
+    pushLog("SELF-CORRECTING: SIGNAL ANOMALY DETECTED, ADJUSTING…");
+    state.signal = "STABLE";
+  }
+}
+
+// Self-Balancing Engine
+function runSelfBalancingEngine(state) {
+  if (state.riskLevel === "HIGH") {
+    pushLog("SELF-BALANCING: RISK HIGH, DAMPENING LOAD");
+    state.riskLevel = "MEDIUM";
+  } else if (state.riskLevel === "MEDIUM") {
+    state.riskLevel = "LOW";
+  }
+}
+
+// Prediction Engine
+function runPredictionEngine(state) {
+  if (state.tick % 15 === 0) {
+    const prediction = `PREDICTION: NEXT LOAD SPIKE IN ~${30 + state.tick} TICKS`;
+    state.predictions.push(prediction);
+    if (state.predictions.length > 5) state.predictions.shift();
+    pushLog("PREDICTION: UPDATED FUTURE LOAD MODEL");
+  }
+}
+
+// Scenario Smoothing Engine
+function runScenarioEngine(state) {
+  if (state.tick % 25 === 0 && state.tick !== 0) {
+    const scenario = `SCENARIO: ALT PATH READY @ TICK ${state.tick + 10}`;
+    state.scenarios.push(scenario);
+    if (state.scenarios.length > 5) state.scenarios.shift();
+    pushLog("SCENARIO: PREPARED ALTERNATE ROUTE");
+  }
+}
+
+// Mission Orchestration Engine
+function runMissionEngine(state) {
+  if (state.tick === 5 && state.mission === "IDLE") {
+    state.mission = "ARMED";
+    pushLog("MISSION: PROFILE REDX ARMED");
+  }
+  if (state.tick === 30 && state.mission === "ARMED") {
+    state.mission = "TRACKING";
+    pushLog("MISSION: TRACKING LIVE CONTEXT");
+  }
+}
+
+// Adaptive Fail-Safe Engine
+function runFailSafeEngine(state) {
+  if (state.tick % 40 === 0 && state.tick !== 0) {
+    pushLog("FAIL-SAFE: CHECKPOINT SNAPSHOT TAKEN");
+  }
+}
+
+// Insight Timing Engine
+function runInsightEngine(state) {
+  if (state.tick % 18 === 0 && state.tick !== 0) {
+    pushLog("INSIGHT: SYSTEM TREND STABLE, NO ACTION REQUIRED");
+  }
+}
+
+// =========================
+// RENDERING
+// =========================
+
+function renderLogPanel() {
+  const logPanel = document.getElementById("log-panel");
+  if (!logPanel) return;
+  logPanel.innerHTML = "";
+  OSState.log.forEach(line => {
+    const row = document.createElement("p");
+    row.textContent = line;
+    row.style.marginBottom = "0.2rem";
+    logPanel.appendChild(row);
+  });
+}
+
+function renderVisor() {
+  const linkEl = document.getElementById("visor-link");
+  const modeEl = document.getElementById("visor-mode");
+  const signalEl = document.getElementById("visor-signal");
+  if (linkEl) linkEl.textContent = `• LINK: ${OSState.link}`;
+  if (modeEl) modeEl.textContent = `• MODE: ${OSState.mode}`;
+  if (signalEl) signalEl.textContent = `• SIGNAL: ${OSState.signal}`;
+}
+
+function renderToday() {
+  const coreEl = document.getElementById("today-core");
+  const panelsEl = document.getElementById("today-panels");
+  const missionEl = document.getElementById("today-mission");
+
+  if (coreEl) coreEl.textContent = "/// CORE SHELL ACTIVE";
+  if (panelsEl) panelsEl.textContent = "/// ENGINES ONLINE";
+  if (missionEl) missionEl.textContent = `/// MISSION: ${OSState.mission}`;
+}
+
+// =========================
+// UPDATE LOOP
+// =========================
+
+function runEngines() {
+  runAutonomousEngine(OSState);
+  runSelfCorrectingEngine(OSState);
+  runSelfBalancingEngine(OSState);
+  runPredictionEngine(OSState);
+  runScenarioEngine(OSState);
+  runMissionEngine(OSState);
+  runFailSafeEngine(OSState);
+  runInsightEngine(OSState);
+}
+
+function tick() {
+  OSState.tick += 1;
+  OSState.lastUpdate = Date.now();
+
+  runEngines();
+  renderVisor();
+  renderToday();
+  renderLogPanel();
+}
+
+// =========================
+// BOOT SEQUENCE
+// =========================
+
+function bootSequence() {
+  // Initial boot log
+  pushLog("/// BOOTSTRAP: CORE ONLINE");
+  pushLog("/// VISOR: LINKED");
+  pushLog("/// REDX PROFILE: LOADED");
+  pushLog("/// ENGINES: STANDING BY");
+
+  renderVisor();
+  renderToday();
+  renderLogPanel();
+
+  // Start engine loop
+  setInterval(tick, 1500);
+
+  // Remove splash after boot timing
+  setTimeout(() => {
+    const splash = document.getElementById("os-splash");
+    if (splash) splash.remove();
+  }, 1600);
+}
+
+window.addEventListener("load", bootSequence);
