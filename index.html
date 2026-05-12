@@ -2,18 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>BEYOND‑OS // V22</title>
+  <title>BEYOND‑OS // V30‑Hybrid</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- BOOT SCREEN -->
+  <div id="bootScreen">
+    <div class="boot-inner">
+      <div class="boot-logo">BEYOND‑OS</div>
+      <div class="boot-sub">V30‑HYBRID // BATCOMPUTER PROFILE</div>
+      <div class="boot-bar">
+        <div class="boot-bar-fill" id="bootBarFill"></div>
+      </div>
+      <div class="boot-status" id="bootStatus">INITIALIZING SYSTEMS…</div>
+    </div>
+  </div>
+
   <div id="app">
     <header class="top-bar">
-      <div class="brand">BEYOND‑OS<span class="tag">V22</span></div>
+      <div class="brand">BEYOND‑OS<span class="tag">V30‑HYBRID</span></div>
       <div class="status-pill" id="syncStatus">SHEETS: READY</div>
     </header>
 
     <main class="grid">
-      <!-- LEFT: DAILY SNAPSHOT -->
+      <!-- LEFT COLUMN: DAILY + TRAINING -->
       <section class="panel">
         <h2>Daily Snapshot</h2>
         <form id="dailyForm">
@@ -80,7 +92,38 @@
         </form>
       </section>
 
-      <!-- RIGHT: SIGNALS / LAST 7 DAYS -->
+      <section class="panel">
+        <h2>Training Log</h2>
+        <form id="trainingForm">
+          <div class="field-row">
+            <label>Session</label>
+            <input type="text" id="tSession" placeholder="Upper, Conditioning, Patrol" />
+          </div>
+          <div class="field-row">
+            <label>Focus</label>
+            <input type="text" id="tFocus" placeholder="Strength, Endurance, Mobility" />
+          </div>
+          <div class="field-row">
+            <label>Duration (min)</label>
+            <input type="number" id="tDuration" />
+          </div>
+          <div class="field-row">
+            <label>RPE</label>
+            <input type="number" id="tRPE" min="1" max="10" />
+          </div>
+          <div class="field-row">
+            <label>Notes</label>
+            <input type="text" id="tNotes" />
+          </div>
+
+          <button type="submit" class="primary-btn">LOG TRAINING (LOCAL)</button>
+        </form>
+
+        <h3>Recent Sessions (local)</h3>
+        <ul id="trainingList" class="log-list"></ul>
+      </section>
+
+      <!-- RIGHT COLUMN: SIGNALS + WEEKLY + DRAWERS -->
       <section class="panel">
         <h2>Signals</h2>
         <div id="signalSummary" class="signal-block">
@@ -96,10 +139,114 @@
             <span class="label">Emotional</span>
             <span id="signalEmotional" class="value">CALM</span>
           </div>
+          <div class="signal-line">
+            <span class="label">Profile</span>
+            <span id="signalProfile" class="value">STABLE / LOW THREAT</span>
+          </div>
         </div>
 
         <h3>Last 7 Logs (local)</h3>
         <ul id="last7List" class="log-list"></ul>
+
+        <h3>Weekly Dashboard</h3>
+        <div class="signal-block">
+          <div class="signal-line">
+            <span class="label">Avg Calories</span>
+            <span id="wdCalories" class="value">—</span>
+          </div>
+          <div class="signal-line">
+            <span class="label">Avg Protein</span>
+            <span id="wdProtein" class="value">—</span>
+          </div>
+          <div class="signal-line">
+            <span class="label">Avg Sleep</span>
+            <span id="wdSleep" class="value">—</span>
+          </div>
+        </div>
+
+        <h3>Systems</h3>
+        <div class="drawer-controls">
+          <button type="button" class="secondary-btn" data-drawer="mealDrawer">
+            MEAL CREATOR
+          </button>
+          <button type="button" class="secondary-btn" data-drawer="groceryDrawer">
+            GROCERY DIRECTOR
+          </button>
+        </div>
+
+        <div id="mealDrawer" class="drawer collapsed">
+          <div class="drawer-header">
+            <span>Meal Creator</span>
+            <span class="drawer-close" data-drawer-close="mealDrawer">×</span>
+          </div>
+          <div class="drawer-body">
+            <div class="field-row">
+              <label>Meal Name</label>
+              <input type="text" id="mealName" placeholder="Beef Bowl, Tofu Stir Fry" />
+            </div>
+            <div class="field-row">
+              <label>Protein (g)</label>
+              <input type="number" id="mealProtein" />
+            </div>
+            <div class="field-row">
+              <label>Carbs (g)</label>
+              <input type="number" id="mealCarbs" />
+            </div>
+            <div class="field-row">
+              <label>Fat (g)</label>
+              <input type="number" id="mealFat" />
+            </div>
+            <div class="field-row">
+              <label>Calories</label>
+              <input type="number" id="mealCalories" />
+            </div>
+            <div class="field-row">
+              <label>Notes</label>
+              <input type="text" id="mealNotes" />
+            </div>
+            <button type="button" class="primary-btn" id="saveMealBtn">
+              SAVE MEAL (LOCAL)
+            </button>
+
+            <h4 class="subheading">Meal Library (local)</h4>
+            <ul id="mealList" class="log-list"></ul>
+          </div>
+        </div>
+
+        <div id="groceryDrawer" class="drawer collapsed">
+          <div class="drawer-header">
+            <span>Grocery Director</span>
+            <span class="drawer-close" data-drawer-close="groceryDrawer">×</span>
+          </div>
+          <div class="drawer-body">
+            <div class="field-row">
+              <label>Item</label>
+              <input type="text" id="gItem" placeholder="Chicken, Rice, Spinach" />
+            </div>
+            <div class="field-row">
+              <label>Category</label>
+              <input type="text" id="gCategory" placeholder="Protein, Carb, Veg" />
+            </div>
+            <div class="field-row">
+              <label>Unit</label>
+              <input type="text" id="gUnit" placeholder="lb, g, pack" />
+            </div>
+            <div class="field-row">
+              <label>Default Qty</label>
+              <input type="number" id="gQty" />
+            </div>
+            <div class="field-row">
+              <label>Notes</label>
+              <input type="text" id="gNotes" />
+            </div>
+            <button type="button" class="primary-btn" id="saveGroceryBtn">
+              SAVE ITEM (LOCAL)
+            </button>
+
+            <h4 class="subheading">Grocery Library (local)</h4>
+            <ul id="groceryList" class="log-list"></ul>
+          </div>
+        </div>
       </section>
     </main>
   </div>
