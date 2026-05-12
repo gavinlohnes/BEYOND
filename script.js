@@ -30,9 +30,26 @@ const wdCalories = document.getElementById("wdCalories");
 const wdProtein = document.getElementById("wdProtein");
 const wdSleep = document.getElementById("wdSleep");
 
+// Today indicator
+const todayIndicator = document.createElement("div");
+todayIndicator.className = "today-indicator";
+todayIndicator.style.cssText =
+  "margin-top:10px;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#888;";
+document.querySelector(".top-bar").appendChild(todayIndicator);
+
 // Training
 const trainingForm = document.getElementById("trainingForm");
 const trainingList = document.getElementById("trainingList");
+
+// Training quick tags
+const trainingTags = [
+  "UPPER",
+  "LOWER",
+  "CONDITIONING",
+  "STRENGTH",
+  "ENDURANCE",
+  "MOBILITY",
+];
 
 // Meal creator
 const saveMealBtn = document.getElementById("saveMealBtn");
@@ -53,10 +70,37 @@ let trainingLocal = [];
 let mealLocal = [];
 let groceryLocal = [];
 
+// === PERSISTENCE =============================================
+
+function saveState() {
+  localStorage.setItem("beyond_last7", JSON.stringify(last7Local));
+  localStorage.setItem("beyond_training", JSON.stringify(trainingLocal));
+  localStorage.setItem("beyond_meals", JSON.stringify(mealLocal));
+  localStorage.setItem("beyond_grocery", JSON.stringify(groceryLocal));
+}
+
+function loadState() {
+  last7Local = JSON.parse(localStorage.getItem("beyond_last7") || "[]");
+  trainingLocal = JSON.parse(localStorage.getItem("beyond_training") || "[]");
+  mealLocal = JSON.parse(localStorage.getItem("beyond_meals") || "[]");
+  groceryLocal = JSON.parse(localStorage.getItem("beyond_grocery") || "[]");
+}
+
+// === TODAY INDICATOR =========================================
+
+function updateTodayIndicator() {
+  const today = new Date().toISOString().slice(0, 10);
+  const logged = last7Local.some((e) => e.date === today);
+
+  todayIndicator.textContent = logged
+    ? "TODAY: LOGGED"
+    : "TODAY: OPEN";
+  todayIndicator.style.color = logged ? "#3ddc84" : "#ffb347";
+}
+
 // === HELPERS: STATUS =========================================
 
 function setStatus(text, mode = "idle") {
-  if (!syncStatus) return;
   syncStatus.textContent = `SHEETS: ${text}`;
   syncStatus.classList.remove("ok", "error");
   if (mode === "ok") syncStatus.classList.add("ok");
@@ -70,10 +114,11 @@ function pushLocalLog(entry) {
   if (last7Local.length > 7) last7Local.shift();
   renderLast7();
   updateWeeklyDashboard();
+  updateTodayIndicator();
+  saveState();
 }
 
 function renderLast7() {
-  if (!last7List) return;
   last7List.innerHTML = "";
   last7Local
     .slice()
@@ -92,9 +137,9 @@ function renderLast7() {
 // === HELPERS: SIGNALS + SCENARIO ENGINE ======================
 
 function updateSignals() {
-  if (signalScenario) signalScenario.textContent = scenarioEl.value;
-  if (signalMission) signalMission.textContent = missionEl.value;
-  if (signalEmotional) signalEmotional.textContent = emotionalEl.value;
+  signalScenario.textContent = scenarioEl.value;
+  signalMission.textContent = missionEl.value;
+  signalEmotional.textContent = emotionalEl.value;
   updateScenarioEngine();
 }
 
@@ -113,20 +158,15 @@ function updateScenarioEngine() {
     profile = "RECOVERY PRIORITY / REDUCED LOAD";
   }
 
-  if (emotional === "DRAINED") {
-    profile += " / ENERGY LOW";
-  } else if (emotional === "WIRED") {
-    profile += " / NERVOUS SYSTEM HOT";
-  }
+  if (emotional === "DRAINED") profile += " / ENERGY LOW";
+  if (emotional === "WIRED") profile += " / NERVOUS SYSTEM HOT";
 
-  if (signalProfile) signalProfile.textContent = profile;
+  signalProfile.textContent = profile;
 }
 
 // === HELPERS: WEEKLY DASHBOARD ===============================
 
 function updateWeeklyDashboard() {
-  if (!wdCalories || !wdProtein || !wdSleep) return;
-
   const data = last7Local;
   if (!data.length) {
     wdCalories.textContent = "—";
@@ -158,10 +198,10 @@ function pushTraining(entry) {
   trainingLocal.push(entry);
   if (trainingLocal.length > 20) trainingLocal.shift();
   renderTraining();
+  saveState();
 }
 
 function renderTraining() {
-  if (!trainingList) return;
   trainingList.innerHTML = "";
   trainingLocal
     .slice()
@@ -177,16 +217,37 @@ function renderTraining() {
     });
 }
 
+// === TRAINING QUICK TAGS =====================================
+
+function injectTrainingTags() {
+  const container = document.createElement("div");
+  container.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;";
+
+  trainingTags.forEach((tag) => {
+    const btn = document.createElement("button");
+    btn.textContent = tag;
+    btn.className = "secondary-btn";
+    btn.style.fontSize = "10px";
+    btn.addEventListener("click", () => {
+      document.getElementById("tSession").value = tag;
+      document.getElementById("tFocus").value = tag;
+    });
+    container.appendChild(btn);
+  });
+
+  trainingForm.prepend(container);
+}
+
 // === HELPERS: MEAL CREATOR ===================================
 
 function pushMeal(entry) {
   mealLocal.push(entry);
   if (mealLocal.length > 50) mealLocal.shift();
   renderMeals();
+  saveState();
 }
 
 function renderMeals() {
-  if (!mealList) return;
   mealList.innerHTML = "";
   mealLocal
     .slice()
@@ -208,10 +269,10 @@ function pushGrocery(entry) {
   groceryLocal.push(entry);
   if (groceryLocal.length > 100) groceryLocal.shift();
   renderGroceries();
+  saveState();
 }
 
 function renderGroceries() {
-  if (!groceryList) return;
   groceryList.innerHTML = "";
   groceryLocal
     .slice()
@@ -230,132 +291,112 @@ function renderGroceries() {
 // === DRAWERS =================================================
 
 function openDrawer(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.remove("collapsed");
+  document.getElementById(id).classList.remove("collapsed");
 }
 
 function closeDrawer(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add("collapsed");
+  document.getElementById(id).classList.add("collapsed");
 }
 
 // === EVENT WIRING ============================================
 
-if (scenarioEl) scenarioEl.addEventListener("change", updateSignals);
-if (missionEl) missionEl.addEventListener("change", updateSignals);
-if (emotionalEl) emotionalEl.addEventListener("change", updateSignals);
+scenarioEl.addEventListener("change", updateSignals);
+missionEl.addEventListener("change", updateSignals);
+emotionalEl.addEventListener("change", updateSignals);
 
-if (form) {
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-    const payload = {
-      calories: Number(document.getElementById("calories").value),
-      protein: Number(document.getElementById("protein").value),
-      hydration: Number(document.getElementById("hydration").value),
-      sleep: Number(document.getElementById("sleep").value),
-      readiness: document.getElementById("readiness").value || "",
-      threat: document.getElementById("threat").value || "",
-      stability: document.getElementById("stability").value || "",
-      scenario: scenarioEl.value,
-      mission: missionEl.value,
-      emotional: emotionalEl.value,
-    };
+  const payload = {
+    calories: Number(document.getElementById("calories").value),
+    protein: Number(document.getElementById("protein").value),
+    hydration: Number(document.getElementById("hydration").value),
+    sleep: Number(document.getElementById("sleep").value),
+    readiness: document.getElementById("readiness").value || "",
+    threat: document.getElementById("threat").value || "",
+    stability: document.getElementById("stability").value || "",
+    scenario: scenarioEl.value,
+    mission: missionEl.value,
+    emotional: emotionalEl.value,
+  };
 
-    setStatus("SENDING…");
+  setStatus("SENDING…");
 
-    try {
-      const res = await fetch(SHEETS_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+  try {
+    const res = await fetch(SHEETS_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      setStatus("OK", "ok");
+    setStatus("OK", "ok");
 
-      const today = new Date().toISOString().slice(0, 10);
-      pushLocalLog({
-        date: today,
-        calories: payload.calories,
-        protein: payload.protein,
-        sleep: payload.sleep,
-      });
-    } catch (err) {
-      console.error(err);
-      setStatus("ERROR", "error");
-    }
-  });
-}
+    const today = new Date().toISOString().slice(0, 10);
+    pushLocalLog({
+      date: today,
+      calories: payload.calories,
+      protein: payload.protein,
+      sleep: payload.sleep,
+    });
+  } catch (err) {
+    console.error(err);
+    setStatus("ERROR", "error");
+  }
+});
 
-if (trainingForm) {
-  trainingForm.addEventListener("submit", (e) => {
-    e.preventDefault();
+trainingForm.addEventListener("submit", (e) => {
+  e.preventDefault();
 
-    const entry = {
-      date: new Date().toISOString().slice(0, 10),
-      session: document.getElementById("tSession").value || "",
-      focus: document.getElementById("tFocus").value || "",
-      duration: Number(document.getElementById("tDuration").value) || 0,
-      rpe: Number(document.getElementById("tRPE").value) || 0,
-      notes: document.getElementById("tNotes").value || "",
-    };
+  const entry = {
+    date: new Date().toISOString().slice(0, 10),
+    session: document.getElementById("tSession").value || "",
+    focus: document.getElementById("tFocus").value || "",
+    duration: Number(document.getElementById("tDuration").value) || 0,
+    rpe: Number(document.getElementById("tRPE").value) || 0,
+    notes: document.getElementById("tNotes").value || "",
+  };
 
-    pushTraining(entry);
-  });
-}
+  pushTraining(entry);
+});
 
-if (saveMealBtn) {
-  saveMealBtn.addEventListener("click", () => {
-    const entry = {
-      name: document.getElementById("mealName").value || "",
-      protein: Number(document.getElementById("mealProtein").value) || 0,
-      carbs: Number(document.getElementById("mealCarbs").value) || 0,
-      fat: Number(document.getElementById("mealFat").value) || 0,
-      calories: Number(document.getElementById("mealCalories").value) || 0,
-      notes: document.getElementById("mealNotes").value || "",
-    };
-    if (!entry.name) return;
-    pushMeal(entry);
-  });
-}
+saveMealBtn.addEventListener("click", () => {
+  const entry = {
+    name: document.getElementById("mealName").value || "",
+    protein: Number(document.getElementById("mealProtein").value) || 0,
+    carbs: Number(document.getElementById("mealCarbs").value) || 0,
+    fat: Number(document.getElementById("mealFat").value) || 0,
+    calories: Number(document.getElementById("mealCalories").value) || 0,
+    notes: document.getElementById("mealNotes").value || "",
+  };
+  if (!entry.name) return;
+  pushMeal(entry);
+});
 
-if (saveGroceryBtn) {
-  saveGroceryBtn.addEventListener("click", () => {
-    const entry = {
-      item: document.getElementById("gItem").value || "",
-      category: document.getElementById("gCategory").value || "",
-      unit: document.getElementById("gUnit").value || "",
-      qty: Number(document.getElementById("gQty").value) || 0,
-      notes: document.getElementById("gNotes").value || "",
-    };
-    if (!entry.item) return;
-    pushGrocery(entry);
-  });
-}
+saveGroceryBtn.addEventListener("click", () => {
+  const entry = {
+    item: document.getElementById("gItem").value || "",
+    category: document.getElementById("gCategory").value || "",
+    unit: document.getElementById("gUnit").value || "",
+    qty: Number(document.getElementById("gQty").value) || 0,
+    notes: document.getElementById("gNotes").value || "",
+  };
+  if (!entry.item) return;
+  pushGrocery(entry);
+});
 
 drawerButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const id = btn.getAttribute("data-drawer");
-    openDrawer(id);
-  });
+  btn.addEventListener("click", () => openDrawer(btn.dataset.drawer));
 });
 
 drawerCloseButtons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const id = btn.getAttribute("data-drawer-close");
-    closeDrawer(id);
-  });
+  btn.addEventListener("click", () => closeDrawer(btn.dataset.drawerClose));
 });
 
 // === BOOT SEQUENCE ===========================================
 
 function runBoot() {
-  if (!bootScreen || !bootBarFill || !bootStatus) return;
-
   bootBarFill.style.width = "35%";
   bootStatus.textContent = "SCANNING SYSTEMS…";
 
@@ -376,10 +417,14 @@ function runBoot() {
 
 // === INIT ====================================================
 
-updateSignals();
-setStatus("READY");
-updateWeeklyDashboard();
+loadState();
+renderLast7();
 renderTraining();
 renderMeals();
 renderGroceries();
+injectTrainingTags();
+updateSignals();
+updateWeeklyDashboard();
+updateTodayIndicator();
+setStatus("READY");
 runBoot();
