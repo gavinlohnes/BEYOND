@@ -1,7 +1,3 @@
-// =========================
-// GLOBAL STATE
-// =========================
-
 const osState = {
   metrics: {
     protein: { current: 0, target: 160 },
@@ -32,10 +28,6 @@ function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
-// =========================
-// INPUT HANDLERS
-// =========================
-
 function readInputs() {
   osState.metrics.protein.current = Number(document.getElementById("input-protein").value) || 0;
   osState.metrics.calories.current = Number(document.getElementById("input-calories").value) || 0;
@@ -47,13 +39,28 @@ function readInputs() {
 }
 
 // =========================
-// ENGINE GROUPS (PLACEHOLDERS)
+// ENGINE GROUPS
 // =========================
 
-// Insert your engines here during Phase 2.
+function computeLoadSynthesis() {}
+function computeRecoverySynthesis() {}
+function computeBehaviorSynthesis() {}
+function computeThreatSynthesis() {}
+function computeIntegritySynthesis() {}
+function computeCrashSynthesis() {}
+function computeChronoSynthesis() {}
+
+function computeDirectiveSynthesis() {}
+function applyToneToDirective() {}
+
+function computeConsciousnessTier1() {}
+function computeConsciousnessTier2() {}
+function computeConsciousnessTier3() {}
+function computeConsciousnessTier4() {}
+function computeConsciousnessTier5() {}
 
 // =========================
-// REDX SYNC (placeholder)
+// REDX SYNC
 // =========================
 
 async function syncRedx() {
@@ -61,7 +68,7 @@ async function syncRedx() {
 }
 
 // =========================
-// HUD RENDERING
+// HUD
 // =========================
 
 function updatePriorityHUD() {
@@ -112,15 +119,28 @@ function renderAll() {
 
 function tick() {
   readInputs();
-  // Engines will be inserted here
+
+  computeLoadSynthesis();
+  computeRecoverySynthesis();
+  computeBehaviorSynthesis();
+  computeThreatSynthesis();
+  computeIntegritySynthesis();
+  computeCrashSynthesis();
+  computeChronoSynthesis();
+
+  computeDirectiveSynthesis();
+  applyToneToDirective();
+
+  computeConsciousnessTier1();
+  computeConsciousnessTier2();
+  computeConsciousnessTier3();
+  computeConsciousnessTier4();
+  computeConsciousnessTier5();
+
   renderAll();
 }
 
 setInterval(tick, 5000);
-
-// =========================
-// UI WIRING
-// =========================
 
 window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-sync").addEventListener("click", syncRedx);
