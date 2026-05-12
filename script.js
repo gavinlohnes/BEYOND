@@ -539,3 +539,111 @@ form.addEventListener("submit", async (e) => {
 trainingForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
+trainingForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const entry = {
+    date: new Date().toISOString().slice(0, 10),
+    session: document.getElementById("tSession").value || "",
+    focus: document.getElementById("tFocus").value || "",
+    duration: Number(document.getElementById("tDuration").value) || 0,
+    rpe: Number(document.getElementById("tRPE").value) || 0,
+    notes: document.getElementById("tNotes").value || "",
+  };
+
+  pushTraining(entry);
+  flashHUD();
+
+  if (!TRAINING_SYNC_ENABLED) return;
+
+  try {
+    await fetch(SHEETS_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "training", ...entry }),
+    });
+  } catch (err) {
+    console.error("Training sync error", err);
+  }
+});
+
+saveMealBtn.addEventListener("click", () => {
+  const entry = {
+    name: document.getElementById("mealName").value || "",
+    protein: Number(document.getElementById("mealProtein").value) || 0,
+    carbs: Number(document.getElementById("mealCarbs").value) || 0,
+    fat: Number(document.getElementById("mealFat").value) || 0,
+    calories: Number(document.getElementById("mealCalories").value) || 0,
+    notes: document.getElementById("mealNotes").value || "",
+  };
+  if (!entry.name) return;
+  pushMeal(entry);
+  flashHUD();
+});
+
+saveGroceryBtn.addEventListener("click", () => {
+  const entry = {
+    item: document.getElementById("gItem").value || "",
+    category: document.getElementById("gCategory").value || "",
+    unit: document.getElementById("gUnit").value || "",
+    qty: Number(document.getElementById("gQty").value) || 0,
+    notes: document.getElementById("gNotes").value || "",
+  };
+  if (!entry.item) return;
+  pushGrocery(entry);
+  flashHUD();
+});
+
+autoGenBtn.addEventListener("click", autoGenerateGroceryFromMeals);
+
+targetsForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  targets.calories = Number(targetCaloriesEl.value) || 0;
+  targets.protein = Number(targetProteinEl.value) || 0;
+  targets.training = Number(targetTrainingEl.value) || 0;
+  updateTargetsProgress();
+  saveState();
+});
+
+patrolToggle.addEventListener("click", () => {
+  patrolMode = !patrolMode;
+  applyPatrolMode();
+  flashHUD();
+});
+
+// === BOOT SEQUENCE ===========================================
+
+function runBoot() {
+  bootBarFill.style.width = "35%";
+  bootStatus.textContent = "SCANNING SYSTEMS…";
+
+  setTimeout(() => {
+    bootBarFill.style.width = "72%";
+    bootStatus.textContent = "LINKING SHEETS BACKEND…";
+  }, 600);
+
+  setTimeout(() => {
+    bootBarFill.style.width = "100%";
+    bootStatus.textContent = "BEYOND‑OS ONLINE";
+  }, 1200);
+
+  setTimeout(() => {
+    bootScreen.classList.add("hidden");
+  }, 1800);
+}
+
+// === INIT ====================================================
+
+loadState();
+renderLast7();
+renderTraining();
+renderMeals();
+renderGroceries();
+updateSignals();
+updateWeeklyDashboard();
+updateTargetsProgress();
+updateTodayIndicator();
+applyPatrolMode();
+updatePredictiveEngine();
+setStatus("READY");
+runBoot();
