@@ -9,14 +9,13 @@
   <div id="app">
     <header class="top-bar">
       <div class="brand">BEYOND‑OS<span class="tag">V22</span></div>
-      <div class="status-pill" id="syncStatus">SHEETS: IDLE</div>
+      <div class="status-pill" id="syncStatus">SHEETS: READY</div>
     </header>
 
     <main class="grid">
       <!-- LEFT: DAILY SNAPSHOT -->
       <section class="panel">
         <h2>Daily Snapshot</h2>
-
         <form id="dailyForm">
           <div class="field-row">
             <label>Calories</label>
@@ -79,45 +78,6 @@
 
           <button type="submit" class="primary-btn">LOG TO SHEETS</button>
         </form>
-
-        <!-- ========================= -->
-        <!-- NEW: BEYOND‑OS TACTICAL TILES -->
-        <!-- ========================= -->
-
-        <h2 style="margin-top: 2rem;">Operational Metrics</h2>
-
-        <!-- WEIGHT TILE -->
-        <div class="tile" id="tile-weight">
-          <div class="tile-title">WEIGHT</div>
-          <div class="tile-value" id="weight-current">--</div>
-          <div class="tile-sub">
-            Δ <span id="weight-delta">--</span> • 
-            Avg <span id="weight-avg">--</span> • 
-            <span id="weight-trend">■</span>
-          </div>
-        </div>
-
-        <!-- COMPLIANCE TILE -->
-        <div class="tile" id="tile-compliance">
-          <div class="tile-title">COMPLIANCE</div>
-          <div class="tile-value" id="comp-score">--</div>
-          <div class="tile-sub">
-            Flags: <span id="comp-flags">--</span> • 
-            Readiness: <span id="comp-readiness">--</span>
-          </div>
-        </div>
-
-        <!-- WEEKLY SUMMARY TILE -->
-        <div class="tile" id="tile-weekly">
-          <div class="tile-title">WEEKLY SUMMARY</div>
-          <div class="tile-sub">Cal: <span id="week-cal">--</span></div>
-          <div class="tile-sub">Pro: <span id="week-pro">--</span></div>
-          <div class="tile-sub">Hyd: <span id="week-hyd">--</span></div>
-          <div class="tile-sub">Sleep: <span id="week-sleep">--</span></div>
-          <div class="tile-sub">Train: <span id="week-train">--</span></div>
-          <div class="tile-sub">Ready: <span id="week-ready">--</span></div>
-        </div>
-
       </section>
 
       <!-- RIGHT: SIGNALS / LAST 7 DAYS -->
