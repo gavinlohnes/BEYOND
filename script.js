@@ -1,5 +1,5 @@
 /* ============================================================
-   BEYOND‑OS V50 — AUTONOMOUS ENGINE + WEEKLY ENGINE 2.0
+   BEYOND‑OS V51 — VISOR + INTEGRATION
    ============================================================ */
 
 /* ---------- ELEMENT HOOKS ---------- */
@@ -38,7 +38,7 @@ const predCalories = document.getElementById("predCalories");
 /* Signals */
 const signalScenario = document.getElementById("signalScenario");
 const signalMission = document.getElementById("signalMission");
-const signalEmotional = document.getElementById("signalEmotional");
+const signalIntensity = document.getElementById("signalIntensity");
 const signalProfile = document.getElementById("signalProfile");
 const signalRecommendation = document.getElementById("signalRecommendation");
 
@@ -55,6 +55,23 @@ const barTraining = document.getElementById("barTraining");
 const valCalories = document.getElementById("valCalories");
 const valProtein = document.getElementById("valProtein");
 const valTraining = document.getElementById("valTraining");
+
+/* System State */
+const sysStress = document.getElementById("sysStress");
+const sysRecovery = document.getElementById("sysRecovery");
+const sysSleepQuality = document.getElementById("sysSleepQuality");
+const sysMood = document.getElementById("sysMood");
+
+/* Autonomous */
+const autoMission = document.getElementById("autoMission");
+const autoScenario = document.getElementById("autoScenario");
+const autoCalories = document.getElementById("autoCalories");
+const autoProtein = document.getElementById("autoProtein");
+const autoTraining = document.getElementById("autoTraining");
+
+/* Recommendations */
+const recTraining = document.getElementById("recTraining");
+const recMeals = document.getElementById("recMeals");
 
 /* ============================================================
    UTIL: PULSE
@@ -118,7 +135,7 @@ function hudFlash() {
    ============================================================ */
 
 const SHEETS_URL =
-  "https://script.google.com/macros/s/AKfycbzc4HGOrrRAM4isV85CABdBEWQdr46Y2JPKWI0p9vbZgkzAQKVMFV5A7GfEmpz9YaAmQA/exec";
+  "YOUR_WEB_APP_URL_HERE"; // replace with deployed Apps Script Web App URL
 
 /* ============================================================
    SYNC STATUS HELPER
@@ -133,7 +150,92 @@ function setSyncStatus(state, label) {
 }
 
 /* ============================================================
-   DAILY LOG SUBMIT  (POST → Sheets + refresh weekly)
+   CORE HUD UPDATE
+   ============================================================ */
+
+function updateHUDFromSystems(systems) {
+  if (!systems) return;
+
+  // Weekly
+  if (systems.weekly) {
+    wdCalories.innerText = systems.weekly.avgCalories ?? "—";
+    wdProtein.innerText = systems.weekly.avgProtein ?? "—";
+    wdSleep.innerText = systems.weekly.avgSleep ?? "—";
+
+    pulseElement(wdCalories);
+    pulseElement(wdProtein);
+    pulseElement(wdSleep);
+  }
+
+  // Mission / Scenario / Profile
+  if (systems.mission) {
+    signalMission.innerText = systems.mission.missionState || "—";
+    signalIntensity.innerText = systems.mission.missionIntensity || "—";
+    signalRecommendation.innerText = systems.mission.missionReason || "—";
+    pulseElement(signalMission);
+  }
+
+  if (systems.scenario) {
+    signalScenario.innerText = systems.scenario.scenarioState || "—";
+    pulseElement(signalScenario);
+  }
+
+  if (systems.profile) {
+    signalProfile.innerText = systems.profile.profileState || "—";
+  }
+
+  // Predictive
+  if (systems.predictions) {
+    predScenario.innerText = systems.predictions.predictedScenario || "—";
+    predMission.innerText = systems.predictions.predictedMission || "—";
+    predIntensity.innerText = systems.predictions.predictedIntensity || "—";
+    predCalories.innerText = systems.predictions.predictedCalories || "—";
+    pulseElement(predCalories);
+  }
+
+  // System State
+  if (systems.stress) {
+    sysStress.innerText = `${systems.stress.stressLevel} (${systems.stress.stressScore})`;
+  }
+  if (systems.recovery) {
+    sysRecovery.innerText = `${systems.recovery.recoveryLevel} (${systems.recovery.recoveryScore})`;
+  }
+  if (systems.sleepQuality) {
+    sysSleepQuality.innerText = `${systems.sleepQuality.sleepQuality} (${systems.sleepQuality.avgSleep}h)`;
+  }
+  if (systems.mood) {
+    sysMood.innerText = `${systems.mood.moodState} (${systems.mood.moodScore})`;
+  }
+
+  // Autonomous
+  if (systems.autonomous) {
+    autoMission.innerText = systems.autonomous.mission || "—";
+    autoScenario.innerText = systems.autonomous.scenario || "—";
+    autoCalories.innerText = systems.autonomous.calorieTarget || "—";
+    autoProtein.innerText = systems.autonomous.proteinTarget || "—";
+    autoTraining.innerText = `${systems.autonomous.trainingTargetMinutes || "—"} min`;
+  }
+
+  // Recommendations
+  if (systems.trainingRecommendation) {
+    recTraining.innerText =
+      `${systems.trainingRecommendation.recommendedFocus} / ` +
+      `${systems.trainingRecommendation.recommendedDuration} min / ` +
+      `${systems.trainingRecommendation.recommendedIntensity}`;
+  }
+
+  if (systems.mealRecommendation) {
+    const meals = systems.mealRecommendation.recommendedMeals || [];
+    if (meals.length) {
+      recMeals.innerText = meals.map(m => m.name).join(", ");
+    } else {
+      recMeals.innerText = "—";
+    }
+  }
+}
+
+/* ============================================================
+   DAILY LOG SUBMIT  (POST → backend + refresh)
    ============================================================ */
 
 dailyForm.addEventListener("submit", async (e) => {
@@ -141,10 +243,10 @@ dailyForm.addEventListener("submit", async (e) => {
   hudFlash();
 
   const payload = {
-    calories: document.getElementById("calories").value,
-    protein: document.getElementById("protein").value,
-    hydration: document.getElementById("hydration").value,
-    sleep: document.getElementById("sleep").value,
+    calories: Number(document.getElementById("calories").value) || 0,
+    protein: Number(document.getElementById("protein").value) || 0,
+    hydration: Number(document.getElementById("hydration").value) || 0,
+    sleep: Number(document.getElementById("sleep").value) || 0,
     readiness: document.getElementById("readiness").value,
     threat: document.getElementById("threat").value,
     stability: document.getElementById("stability").value,
@@ -161,14 +263,24 @@ dailyForm.addEventListener("submit", async (e) => {
       body: JSON.stringify(payload)
     });
 
-    if (!res.ok) {
+    const data = await res.json();
+
+    if (!res.ok || data.status !== "OK") {
       setSyncStatus("error", "SHEETS: ERROR");
+      console.error("POST error:", data);
       return;
     }
 
     setSyncStatus("ok", "SHEETS: OK");
 
-    await fetchWeeklyData();
+    if (data.systems) {
+      updateHUDFromSystems(data.systems);
+    }
+    if (data.rows) {
+      updateLast7List(data.rows);
+    } else {
+      await fetchWeeklyData();
+    }
   } catch (err) {
     setSyncStatus("error", "SHEETS: ERROR");
     console.error("POST error:", err);
@@ -176,7 +288,7 @@ dailyForm.addEventListener("submit", async (e) => {
 });
 
 /* ============================================================
-   WEEKLY ENGINE 2.0  (GET → Sheets, update dashboard)
+   WEEKLY ENGINE 2.0  (GET → backend, update HUD)
    ============================================================ */
 
 async function fetchWeeklyData() {
@@ -184,43 +296,35 @@ async function fetchWeeklyData() {
     const res = await fetch(SHEETS_URL);
     const data = await res.json();
 
-    if (data.status !== "OK") {
+    if (!res.ok || data.status !== "OK") {
       setSyncStatus("error", "SHEETS: ERROR");
-      console.error("Sheets error:", data.message);
+      console.error("GET error:", data);
       return;
     }
 
     setSyncStatus("ok", "SHEETS: OK");
 
     const rows = data.rows || [];
-    updateWeeklyDashboard(rows);
+    updateWeeklyDashboard(data.weekly || {});
     updateLast7List(rows);
+    updateHUDFromSystems(data.systems || {});
   } catch (err) {
     setSyncStatus("error", "SHEETS: ERROR");
     console.error("GET error:", err);
   }
 }
 
-function updateWeeklyDashboard(rows) {
-  if (!rows || rows.length === 0) {
+function updateWeeklyDashboard(weekly) {
+  if (!weekly || Object.keys(weekly).length === 0) {
     wdCalories.innerText = "—";
     wdProtein.innerText = "—";
     wdSleep.innerText = "—";
     return;
   }
 
-  const avg = (key) => {
-    const nums = rows
-      .map((r) => Number(r[key]) || 0)
-      .filter((n) => !isNaN(n) && n > 0);
-    if (!nums.length) return "—";
-    const val = nums.reduce((a, b) => a + b, 0) / nums.length;
-    return Math.round(val * 10) / 10;
-  };
-
-  wdCalories.innerText = avg("calories");
-  wdProtein.innerText = avg("protein");
-  wdSleep.innerText = avg("sleep");
+  wdCalories.innerText = weekly.avgCalories ?? "—";
+  wdProtein.innerText = weekly.avgProtein ?? "—";
+  wdSleep.innerText = weekly.avgSleep ?? "—";
 
   pulseElement(wdCalories);
   pulseElement(wdProtein);
@@ -231,19 +335,14 @@ function updateLast7List(rows) {
   last7List.innerHTML = "";
   if (!rows || rows.length === 0) return;
 
-  const sorted = [...rows].sort((a, b) => {
-    const da = new Date(a.date);
-    const db = new Date(b.date);
-    return db - da;
-  });
-
-  const recent = sorted.slice(0, 7);
+  const recent = [...rows];
 
   recent.forEach((r) => {
     const li = document.createElement("li");
     li.className = "log-item";
+    const date = r.date ? new Date(r.date).toISOString().split("T")[0] : "—";
     li.innerHTML = `
-      <span class="key">${r.date || "—"}</span>
+      <span class="key">${date}</span>
       <span>${r.calories || "0"} cal / ${r.protein || "0"} g</span>
     `;
     last7List.appendChild(li);
@@ -251,7 +350,7 @@ function updateLast7List(rows) {
 }
 
 /* ============================================================
-   WEEKLY TARGETS (local only, visual engine)
+   WEEKLY TARGETS (local visual)
    ============================================================ */
 
 targetsForm.addEventListener("submit", (e) => {
@@ -336,7 +435,7 @@ saveGroceryBtn.addEventListener("click", () => {
   groceryList.appendChild(item);
 });
 
-/* AUTO‑GEN FROM MEALS */
+/* AUTO‑GEN FROM MEALS (frontend-only demo) */
 autoGenBtn.addEventListener("click", () => {
   hudFlash();
 
@@ -373,26 +472,7 @@ patrolToggle.addEventListener("click", () => {
 });
 
 /* ============================================================
-   PREDICTIVE ENGINE (STATIC DEMO FOR NOW)
-   ============================================================ */
-
-function runPredictiveEngine() {
-  predScenario.innerText = "ACTIVE";
-  predMission.innerText = "ENGAGED";
-  predIntensity.innerText = "MODERATE";
-  predCalories.innerText = "2450";
-
-  signalScenario.innerText = "ACTIVE";
-  signalMission.innerText = "ENGAGED";
-  signalEmotional.innerText = "STABLE";
-  signalProfile.innerText = "CUT PHASE";
-  signalRecommendation.innerText = "MAINTAIN CURRENT MISSION";
-}
-
-runPredictiveEngine();
-
-/* ============================================================
-   BOOT-TIME WEEKLY SYNC
+   BOOT-TIME SYNC
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
