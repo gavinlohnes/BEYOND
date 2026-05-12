@@ -2,9 +2,12 @@ const CACHE_NAME = "beyond-os-cache-v1";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
+  "./manifest.json",
   "./styles.css",
   "./script.js",
-  "./manifest.json"
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-512-maskable.png"
 ];
 
 self.addEventListener("install", event => {
