@@ -15,8 +15,6 @@ body {
   min-height: 100vh;
 }
 
-/* VISOR */
-
 #visor {
   position: relative;
   flex: 2;
@@ -29,8 +27,6 @@ body {
   inset: 10%;
   border: 1px solid #ff000055;
 }
-
-/* HUD */
 
 #visor-suit-state {
   position: absolute;
@@ -79,8 +75,6 @@ body {
   border: 1px dashed #ff000022;
   opacity: 0.1;
 }
-
-/* CONTROL PANEL */
 
 #control-panel {
   flex: 1;
@@ -141,8 +135,6 @@ button:hover {
   font-size: 12px;
 }
 
-/* Animations toggle */
-
 .animations-on #visor-overlay {
   transition: box-shadow 0.3s ease, filter 0.3s ease;
 }
@@ -150,8 +142,6 @@ button:hover {
 .animations-on #visor-timeline-fill {
   transition: width 0.3s linear;
 }
-
-/* Responsive */
 
 @media (max-width: 900px) {
   #app {
