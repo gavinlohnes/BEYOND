@@ -39,19 +39,41 @@ html, body {
   color: #ff0000;
 }
 
+#os-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 #os-status {
   font-family: monospace;
   font-size: 0.8rem;
   color: #ff0000;
 }
 
+.header-btn {
+  border: 1px solid #ff0000;
+  background: #050505;
+  color: #ff0000;
+  font-size: 0.7rem;
+  letter-spacing: 0.12rem;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+}
+
+.header-btn:hover {
+  background: #ff0000;
+  color: #000;
+}
+
 /* MAIN GRID */
 #os-main {
-  flex: 1;
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: 1.1fr 1.4fr 1.1fr;
   gap: 0.75rem;
-  padding: 0.75rem 1.25rem 1.25rem;
+  padding: 0.75rem 1.25rem 0.75rem;
 }
 
 /* PANELS */
@@ -94,6 +116,60 @@ html, body {
 #log-panel {
   font-family: monospace;
   color: #aaa;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+/* APP GRID */
+#app-grid {
+  margin: 0.25rem 1.25rem 0.75rem;
+  border: 1px solid #222;
+  background: #050505;
+  display: flex;
+  flex-direction: column;
+}
+
+#app-grid-body {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.app-tile {
+  border: 1px solid #333;
+  background: #080808;
+  color: #eee;
+  padding: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-tile:hover {
+  border-color: #ff0000;
+  background: #101010;
+}
+
+.app-title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08rem;
+  color: #ff0000;
+}
+
+.app-subtitle {
+  font-size: 0.7rem;
+  color: #aaa;
+  margin-top: 0.15rem;
+}
+
+#app-grid-output {
+  border-top: 1px solid #111;
+  padding: 0.75rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #ccc;
+  min-height: 2.2rem;
 }
 
 /* COMMAND BAR */
@@ -113,8 +189,19 @@ html, body {
   letter-spacing: 0.12rem;
 }
 
-#command-line {
-  color: #ccc;
+#command-input {
+  flex: 1;
+  background: #000;
+  border: 1px solid #222;
+  color: #eee;
+  padding: 0.3rem 0.5rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+#command-input:focus {
+  outline: none;
+  border-color: #ff0000;
 }
 
 /* SPLASH SCREEN */
@@ -128,7 +215,7 @@ html, body {
   z-index: 9999;
   opacity: 1;
   animation: osSplashFade 0.8s ease-out forwards;
-  animation-delay: 1.2s;
+  animation-delay: 1.4s;
 }
 
 #os-splash-text {
@@ -152,9 +239,105 @@ html, body {
   100% { opacity: 0; visibility: hidden; }
 }
 
+/* VISOR 2.0 OVERLAY */
+#visor-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998;
+  opacity: 1;
+  transition: opacity 0.25s ease-out, visibility 0.25s ease-out;
+}
+
+#visor-overlay.visor-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#visor-overlay-inner {
+  width: min(960px, 96vw);
+  border: 1px solid #ff0000;
+  background: #050505;
+  padding: 0.75rem;
+}
+
+#visor-overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #111;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
+  color: #ff0000;
+  font-size: 0.8rem;
+  letter-spacing: 0.16rem;
+  text-transform: uppercase;
+}
+
+#visor-close-btn {
+  border: 1px solid #ff0000;
+  background: #050505;
+  color: #ff0000;
+  width: 1.4rem;
+  height: 1.4rem;
+  cursor: pointer;
+}
+
+#visor-overlay-body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.visor-overlay-column h3 {
+  font-size: 0.75rem;
+  letter-spacing: 0.12rem;
+  text-transform: uppercase;
+  color: #ff0000;
+  margin-bottom: 0.4rem;
+}
+
+.visor-overlay-column ul {
+  list-style: none;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #ccc;
+}
+
+/* NOTIFICATION STACK */
+#notification-stack {
+  position: fixed;
+  right: 1rem;
+  bottom: 3.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  z-index: 9997;
+}
+
+.notification {
+  min-width: 220px;
+  max-width: 280px;
+  border: 1px solid #ff0000;
+  background: #050505;
+  color: #eee;
+  padding: 0.5rem 0.6rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   #os-main {
+    grid-template-columns: 1fr;
+  }
+  #app-grid-body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #visor-overlay-body {
     grid-template-columns: 1fr;
   }
 }
