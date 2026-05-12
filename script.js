@@ -1,388 +1,376 @@
-/* ============================================================
-   BEYOND‑OS V41 — AUTONOMOUS ENGINE + WEEKLY ENGINE 2.0
-   ============================================================ */
-
-/* ---------- ELEMENT HOOKS ---------- */
-
-const bootScreen = document.getElementById("bootScreen");
-const bootBarFill = document.getElementById("bootBarFill");
-const bootStatus = document.getElementById("bootStatus");
-
-const hudOverlay = document.getElementById("hudOverlay");
-
-const syncStatus = document.getElementById("syncStatus");
-const patrolToggle = document.getElementById("patrolToggle");
-
-/* Forms */
-const dailyForm = document.getElementById("dailyForm");
-const trainingForm = document.getElementById("trainingForm");
-const targetsForm = document.getElementById("targetsForm");
-
-/* Lists */
-const last7List = document.getElementById("last7List");
-const trainingList = document.getElementById("trainingList");
-const mealList = document.getElementById("mealList");
-const groceryList = document.getElementById("groceryList");
-
-/* Meal + Grocery buttons */
-const saveMealBtn = document.getElementById("saveMealBtn");
-const saveGroceryBtn = document.getElementById("saveGroceryBtn");
-const autoGenBtn = document.getElementById("autoGenBtn");
-
-/* Predictive Engine */
-const predScenario = document.getElementById("predScenario");
-const predMission = document.getElementById("predMission");
-const predIntensity = document.getElementById("predIntensity");
-const predCalories = document.getElementById("predCalories");
-
-/* Signals */
-const signalScenario = document.getElementById("signalScenario");
-const signalMission = document.getElementById("signalMission");
-const signalEmotional = document.getElementById("signalEmotional");
-const signalProfile = document.getElementById("signalProfile");
-const signalRecommendation = document.getElementById("signalRecommendation");
-
-/* Weekly Dashboard */
-const wdCalories = document.getElementById("wdCalories");
-const wdProtein = document.getElementById("wdProtein");
-const wdSleep = document.getElementById("wdSleep");
-
-/* Weekly Target Bars */
-const barCalories = document.getElementById("barCalories");
-const barProtein = document.getElementById("barProtein");
-const barTraining = document.getElementById("barTraining");
-
-const valCalories = document.getElementById("valCalories");
-const valProtein = document.getElementById("valProtein");
-const valTraining = document.getElementById("valTraining");
-
-/* ============================================================
-   BOOT SEQUENCE
-   ============================================================ */
-
-function runBoot() {
-  let progress = 0;
-  const steps = [
-    "WAYNE SYSTEMS PROTOCOL",
-    "SUIT LINK ESTABLISHED",
-    "NEURAL SYNC ONLINE",
-    "AUTONOMOUS ENGINE BOOTING",
-    "PREDICTIVE SYSTEMS ACTIVE",
-    "MISSION ENGINE READY",
-    "VISOR HUD ONLINE"
-  ];
-
-  const interval = setInterval(() => {
-    progress += 100 / steps.length;
-    bootBarFill.style.width = progress + "%";
-
-    bootStatus.innerText =
-      steps[Math.floor(progress / (100 / steps.length))] || "READY";
-
-    if (progress >= 100) {
-      clearInterval(interval);
-      setTimeout(() => {
-        bootScreen.style.opacity = "0";
-        setTimeout(() => {
-          bootScreen.style.display = "none";
-        }, 400);
-      }, 600);
-    }
-  }, 500);
-}
-
-runBoot();
-
-/* ============================================================
-   HUD FLASH
-   ============================================================ */
-
-function hudFlash() {
-  hudOverlay.classList.add("active");
-  setTimeout(() => hudOverlay.classList.remove("active"), 180);
-}
-
-/* ============================================================
-   SHEETS ENDPOINT
-   ============================================================ */
-
-const SHEETS_URL =
-  "https://script.google.com/macros/s/AKfycbzc4HGOrrRAM4isV85CABdBEWQdr46Y2JPKWI0p9vbZgkzAQKVMFV5A7GfEmpz9YaAmQA/exec";
-
-/* ============================================================
-   SYNC STATUS HELPER
-   ============================================================ */
-
-function setSyncStatus(state, label) {
-  syncStatus.classList.remove("ok", "error");
-  if (state === "ok") syncStatus.classList.add("ok");
-  if (state === "error") syncStatus.classList.add("error");
-  syncStatus.innerText = label;
-}
-
-/* ============================================================
-   DAILY LOG SUBMIT  (POST → Sheets + refresh weekly)
-   ============================================================ */
-
-dailyForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  hudFlash();
-
-  const payload = {
-    calories: document.getElementById("calories").value,
-    protein: document.getElementById("protein").value,
-    hydration: document.getElementById("hydration").value,
-    sleep: document.getElementById("sleep").value,
-    readiness: document.getElementById("readiness").value,
-    threat: document.getElementById("threat").value,
-    stability: document.getElementById("stability").value,
-    scenario: document.getElementById("scenario").value,
-    mission: document.getElementById("mission").value,
-    emotional: document.getElementById("emotional").value
-  };
-
-  try {
-    setSyncStatus("", "SHEETS: SYNCING…");
-
-    const res = await fetch(SHEETS_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      setSyncStatus("error", "SHEETS: ERROR");
-      return;
-    }
-
-    setSyncStatus("ok", "SHEETS: OK");
-
-    // Refresh weekly data after a successful log
-    await fetchWeeklyData();
-  } catch (err) {
-    setSyncStatus("error", "SHEETS: ERROR");
-    console.error("POST error:", err);
-  }
-});
-
-/* ============================================================
-   WEEKLY ENGINE 2.0  (GET → Sheets, update dashboard)
-   ============================================================ */
-
-async function fetchWeeklyData() {
-  try {
-    const res = await fetch(SHEETS_URL);
-    const data = await res.json();
-
-    if (data.status !== "OK") {
-      setSyncStatus("error", "SHEETS: ERROR");
-      console.error("Sheets error:", data.message);
-      return;
-    }
-
-    setSyncStatus("ok", "SHEETS: OK");
-
-    const rows = data.rows || [];
-    updateWeeklyDashboard(rows);
-    updateLast7List(rows);
-  } catch (err) {
-    setSyncStatus("error", "SHEETS: ERROR");
-    console.error("GET error:", err);
-  }
-}
-
-function updateWeeklyDashboard(rows) {
-  if (!rows || rows.length === 0) {
-    wdCalories.innerText = "—";
-    wdProtein.innerText = "—";
-    wdSleep.innerText = "—";
-    return;
-  }
-
-  const avg = (key) => {
-    const nums = rows
-      .map((r) => Number(r[key]) || 0)
-      .filter((n) => !isNaN(n) && n > 0);
-    if (!nums.length) return "—";
-    const val =
-      nums.reduce((a, b) => a + b, 0) / nums.length;
-    return Math.round(val * 10) / 10;
-  };
-
-  wdCalories.innerText = avg("calories");
-  wdProtein.innerText = avg("protein");
-  wdSleep.innerText = avg("sleep");
-}
-
-function updateLast7List(rows) {
-  last7List.innerHTML = "";
-  if (!rows || rows.length === 0) return;
-
-  const sorted = [...rows].sort((a, b) => {
-    const da = new Date(a.date);
-    const db = new Date(b.date);
-    return db - da;
-  });
-
-  const recent = sorted.slice(0, 7);
-
-  recent.forEach((r) => {
-    const li = document.createElement("li");
-    li.className = "log-item";
-    li.innerHTML = `
-      <span class="key">${r.date || "—"}</span>
-      <span>${r.calories || "0"} cal / ${r.protein || "0"} g</span>
-    `;
-    last7List.appendChild(li);
-  });
-}
-
-/* ============================================================
-   WEEKLY TARGETS (local only, visual engine)
-   ============================================================ */
-
-targetsForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  hudFlash();
-
-  const tCalories = Number(document.getElementById("targetCalories").value) || 0;
-  const tProtein = Number(document.getElementById("targetProtein").value) || 0;
-  const tTraining = Number(document.getElementById("targetTraining").value) || 0;
-
-  // Use current weekly dashboard values as "actuals"
-  const aCalories = Number(wdCalories.innerText) || 0;
-  const aProtein = Number(wdProtein.innerText) || 0;
-  const aTraining = 0; // no training aggregation yet
-
-  const pct = (actual, target) => {
-    if (!target || target <= 0) return 0;
-    return Math.max(0, Math.min(100, Math.round((actual / target) * 100)));
-  };
-
-  const cPct = pct(aCalories, tCalories);
-  const pPct = pct(aProtein, tProtein);
-  const trPct = pct(aTraining, tTraining);
-
-  barCalories.style.width = cPct + "%";
-  barProtein.style.width = pPct + "%";
-  barTraining.style.width = trPct + "%";
-
-  valCalories.innerText = `${aCalories} / ${tCalories || "—"}`;
-  valProtein.innerText = `${aProtein} / ${tProtein || "—"}`;
-  valTraining.innerText = `${aTraining} / ${tTraining || "—"}`;
-});
-
-/* ============================================================
-   TRAINING LOG
-   ============================================================ */
-
-trainingForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  hudFlash();
-
-  const item = document.createElement("li");
-  item.className = "log-item";
-  item.innerHTML = `
-    <span class="key">${document.getElementById("tSession").value}</span>
-    <span>${document.getElementById("tDuration").value} min</span>
-  `;
-
-  trainingList.appendChild(item);
-});
-
-/* ============================================================
-   MEAL CREATOR
-   ============================================================ */
-
-saveMealBtn.addEventListener("click", () => {
-  hudFlash();
-
-  const item = document.createElement("li");
-  item.className = "log-item";
-  item.innerHTML = `
-    <span class="key">${document.getElementById("mealName").value}</span>
-    <span>${document.getElementById("mealCalories").value} cal</span>
-  `;
-
-  mealList.appendChild(item);
-});
-
-/* ============================================================
-   GROCERY DIRECTOR
-   ============================================================ */
-
-saveGroceryBtn.addEventListener("click", () => {
-  hudFlash();
-
-  const item = document.createElement("li");
-  item.className = "log-item";
-  item.innerHTML = `
-    <span class="key">${document.getElementById("gItem").value}</span>
-    <span>${document.getElementById("gQty").value} ${document.getElementById("gUnit").value}</span>
-  `;
-
-  groceryList.appendChild(item);
-});
-
-/* AUTO‑GEN FROM MEALS */
-autoGenBtn.addEventListener("click", () => {
-  hudFlash();
-
-  const items = [
-    "Chicken Breast",
-    "Rice",
-    "Eggs",
-    "Spinach",
-    "Greek Yogurt"
-  ];
-
-  items.forEach((i) => {
-    const li = document.createElement("li");
-    li.className = "log-item";
-    li.innerHTML = `<span class="key">${i}</span><span>1 unit</span>`;
-    groceryList.appendChild(li);
-  });
-});
-
-/* ============================================================
-   PATROL MODE
-   ============================================================ */
-
-patrolToggle.addEventListener("click", () => {
-  hudFlash();
-
-  patrolToggle.classList.toggle("active");
-
-  if (patrolToggle.classList.contains("active")) {
-    patrolToggle.innerText = "PATROL: ON";
-  } else {
-    patrolToggle.innerText = "PATROL: OFF";
-  }
-});
-
-/* ============================================================
-   PREDICTIVE ENGINE (STATIC DEMO FOR NOW)
-   ============================================================ */
-
-function runPredictiveEngine() {
-  predScenario.innerText = "ACTIVE";
-  predMission.innerText = "ENGAGED";
-  predIntensity.innerText = "MODERATE";
-  predCalories.innerText = "2450";
-
-  // Mirror into signals for now
-  signalScenario.innerText = "ACTIVE";
-  signalMission.innerText = "ENGAGED";
-  signalEmotional.innerText = "STABLE";
-  signalProfile.innerText = "CUT PHASE";
-  signalRecommendation.innerText = "MAINTAIN CURRENT MISSION";
-}
-
-runPredictiveEngine();
-
-/* ============================================================
-   BOOT-TIME WEEKLY SYNC
-   ============================================================ */
-
-document.addEventListener("DOMContentLoaded", () => {
-  fetchWeeklyData();
-});
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BEYOND‑OS</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css?v=50" />
+</head>
+
+<body>
+
+  <!-- HUD FRAME + SCANLINES -->
+  <div class="hud-frame">
+    <div class="hud-reticle hud-reticle-top"></div>
+    <div class="hud-reticle hud-reticle-bottom"></div>
+    <div class="scanline-layer"></div>
+
+    <!-- BOOT SCREEN -->
+    <div id="bootScreen" class="boot-screen">
+      <div class="boot-box">
+        <div class="boot-title">
+          BEYOND‑OS <span class="tag">AUTONOMOUS</span>
+        </div>
+        <div class="boot-subtitle">WAYNE SYSTEMS PROTOCOL // SUIT LINK</div>
+        <div class="boot-bar">
+          <div id="bootBarFill" class="boot-bar-fill"></div>
+        </div>
+        <div id="bootStatus" class="boot-status">INITIALIZING…</div>
+      </div>
+    </div>
+
+    <!-- HUD FLASH -->
+    <div id="hudOverlay" class="hud-overlay"></div>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <div class="brand">
+        BEYOND‑OS <span class="tag">V50</span>
+      </div>
+      <div class="top-center">
+        <span class="visor-label">WAYNE SYSTEMS // GOTHAM NODE</span>
+      </div>
+      <div class="top-right">
+        <div id="syncStatus" class="sync-status">SHEETS: READY</div>
+        <button id="patrolToggle" class="patrol-btn">PATROL: OFF</button>
+      </div>
+    </div>
+
+    <!-- VISOR MODE WRAPPER -->
+    <div class="visor-shell">
+
+      <!-- LEFT STRIP: MISSION / SCENARIO / SIGNALS -->
+      <div class="visor-column visor-left">
+
+        <!-- MISSION CARD -->
+        <div class="panel panel-accent mission-card">
+          <div class="panel-title">MISSION STATE</div>
+          <div class="mission-row">
+            <div class="mission-label">SCENARIO</div>
+            <div class="mission-value" id="signalScenario">—</div>
+          </div>
+          <div class="mission-row">
+            <div class="mission-label">MISSION</div>
+            <div class="mission-value" id="signalMission">—</div>
+          </div>
+          <div class="mission-row">
+            <div class="mission-label">EMOTIONAL</div>
+            <div class="mission-value" id="signalEmotional">—</div>
+          </div>
+          <div class="mission-row">
+            <div class="mission-label">PROFILE</div>
+            <div class="mission-value" id="signalProfile">—</div>
+          </div>
+          <div class="mission-row mission-recommend">
+            <div class="mission-label">RECOMMEND</div>
+            <div class="mission-value" id="signalRecommendation">—</div>
+          </div>
+        </div>
+
+        <!-- DAILY LOG (compact) -->
+        <div class="panel panel-slim">
+          <div class="panel-title">DAILY LOG</div>
+          <form id="dailyForm" class="daily-form">
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Calories</label>
+                <input id="calories" type="number" />
+              </div>
+              <div class="form-group">
+                <label>Protein</label>
+                <input id="protein" type="number" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Hydration</label>
+                <input id="hydration" type="number" />
+              </div>
+              <div class="form-group">
+                <label>Sleep</label>
+                <input id="sleep" type="number" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Readiness</label>
+                <select id="readiness">
+                  <option>LOW</option>
+                  <option>MEDIUM</option>
+                  <option>HIGH</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Threat</label>
+                <select id="threat">
+                  <option>LOW</option>
+                  <option>MEDIUM</option>
+                  <option>HIGH</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Stability</label>
+                <select id="stability">
+                  <option>LOW</option>
+                  <option>MEDIUM</option>
+                  <option>HIGH</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Scenario</label>
+                <select id="scenario">
+                  <option>ACTIVE</option>
+                  <option>RECOVERY</option>
+                  <option>OVERWATCH</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Mission</label>
+                <select id="mission">
+                  <option>NEUTRAL</option>
+                  <option>ENGAGED</option>
+                  <option>AGGRESSIVE</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Emotional</label>
+                <select id="emotional">
+                  <option>STABLE</option>
+                  <option>WIRED</option>
+                  <option>DRAINED</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="btn">LOG DAY</button>
+          </form>
+        </div>
+
+        <!-- LAST 7 DAYS -->
+        <div class="panel panel-slim">
+          <div class="panel-title">LAST 7 DAYS</div>
+          <ul id="last7List" class="log-list"></ul>
+        </div>
+
+      </div>
+
+      <!-- CENTER: PREDICTIVE + WEEKLY DASHBOARD -->
+      <div class="visor-column visor-center">
+
+        <!-- PREDICTIVE ENGINE -->
+        <div class="panel panel-accent predictive-card">
+          <div class="panel-title">PREDICTIVE ENGINE</div>
+          <div class="predict-grid">
+            <div class="predict-item">
+              <div class="predict-label">SCENARIO</div>
+              <div class="predict-value" id="predScenario">—</div>
+            </div>
+            <div class="predict-item">
+              <div class="predict-label">MISSION</div>
+              <div class="predict-value" id="predMission">—</div>
+            </div>
+            <div class="predict-item">
+              <div class="predict-label">INTENSITY</div>
+              <div class="predict-value" id="predIntensity">—</div>
+            </div>
+            <div class="predict-item">
+              <div class="predict-label">CALORIES</div>
+              <div class="predict-value" id="predCalories">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WEEKLY DASHBOARD -->
+        <div class="panel weekly-core">
+          <div class="panel-title">WEEKLY DASHBOARD</div>
+          <div class="weekly-grid">
+            <div class="weekly-metric">
+              <div class="metric-label">AVG CALORIES</div>
+              <div class="metric-value" id="wdCalories">—</div>
+              <div class="metric-bar">
+                <div class="metric-fill metric-fill-cal"></div>
+              </div>
+            </div>
+            <div class="weekly-metric">
+              <div class="metric-label">AVG PROTEIN</div>
+              <div class="metric-value" id="wdProtein">—</div>
+              <div class="metric-bar">
+                <div class="metric-fill metric-fill-pro"></div>
+              </div>
+            </div>
+            <div class="weekly-metric">
+              <div class="metric-label">AVG SLEEP</div>
+              <div class="metric-value" id="wdSleep">—</div>
+              <div class="metric-bar">
+                <div class="metric-fill metric-fill-sleep"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WEEKLY TARGETS -->
+        <div class="panel">
+          <div class="panel-title">WEEKLY TARGETS</div>
+          <form id="targetsForm" class="targets-form">
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Weekly Calories</label>
+                <input id="targetCalories" type="number" />
+              </div>
+              <div class="form-group">
+                <label>Weekly Protein (g)</label>
+                <input id="targetProtein" type="number" />
+              </div>
+              <div class="form-group">
+                <label>Weekly Training (min)</label>
+                <input id="targetTraining" type="number" />
+              </div>
+            </div>
+
+            <button class="btn">SET TARGETS</button>
+          </form>
+
+          <div class="target-block">
+            <div class="target-label">CALORIES</div>
+            <div class="target-bar">
+              <div id="barCalories" class="bar-fill"></div>
+            </div>
+            <div class="target-value"> <span id="valCalories">—</span></div>
+          </div>
+
+          <div class="target-block">
+            <div class="target-label">PROTEIN</div>
+            <div class="target-bar">
+              <div id="barProtein" class="bar-fill"></div>
+            </div>
+            <div class="target-value"> <span id="valProtein">—</span></div>
+          </div>
+
+          <div class="target-block">
+            <div class="target-label">TRAINING</div>
+            <div class="target-bar">
+              <div id="barTraining" class="bar-fill"></div>
+            </div>
+            <div class="target-value"> <span id="valTraining">—</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: TRAINING / MEALS / GROCERY -->
+      <div class="visor-column visor-right">
+
+        <!-- TRAINING LOG -->
+        <div class="panel">
+          <div class="panel-title">TRAINING LOG</div>
+          <form id="trainingForm">
+
+            <label>Session</label>
+            <input id="tSession" type="text" />
+
+            <label>Focus</label>
+            <input id="tFocus" type="text" />
+
+            <label>Duration (min)</label>
+            <input id="tDuration" type="number" />
+
+            <label>RPE</label>
+            <input id="tRPE" type="number" />
+
+            <label>Notes</label>
+            <input id="tNotes" type="text" />
+
+            <button class="btn">LOG TRAINING</button>
+          </form>
+
+          <ul id="trainingList" class="log-list"></ul>
+        </div>
+
+        <!-- MEAL CREATOR -->
+        <div class="panel">
+          <div class="panel-title">MEAL CREATOR</div>
+
+          <label>Name</label>
+          <input id="mealName" type="text" />
+
+          <label>Protein</label>
+          <input id="mealProtein" type="number" />
+
+          <label>Carbs</label>
+          <input id="mealCarbs" type="number" />
+
+          <label>Fat</label>
+          <input id="mealFat" type="number" />
+
+          <label>Calories</label>
+          <input id="mealCalories" type="number" />
+
+          <label>Notes</label>
+          <input id="mealNotes" type="text" />
+
+          <button id="saveMealBtn" class="btn">SAVE MEAL</button>
+
+          <ul id="mealList" class="log-list"></ul>
+        </div>
+
+        <!-- GROCERY DIRECTOR -->
+        <div class="panel">
+          <div class="panel-title">GROCERY DIRECTOR</div>
+
+          <label>Item</label>
+          <input id="gItem" type="text" />
+
+          <label>Category</label>
+          <input id="gCategory" type="text" />
+
+          <label>Unit</label>
+          <input id="gUnit" type="text" />
+
+          <label>Qty</label>
+          <input id="gQty" type="number" />
+
+          <label>Notes</label>
+          <input id="gNotes" type="text" />
+
+          <div class="btn-row">
+            <button id="saveGroceryBtn" class="btn">ADD ITEM</button>
+            <button id="autoGenBtn" class="btn btn-ghost">AUTO‑GEN FROM MEALS</button>
+          </div>
+
+          <ul id="groceryList" class="log-list"></ul>
+        </div>
+
+      </div>
+
+    </div> <!-- /visor-shell -->
+  </div> <!-- /hud-frame -->
+
+  <script src="script.js?v=50"></script>
+</body>
+</html>
