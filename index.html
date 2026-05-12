@@ -1,79 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>BEYOND‑OS REDX</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#000000" />
-
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="app">
+  <!-- BEYOND‑OS Splash -->
+  <div id="os-splash">
+    <div id="os-splash-text">/// BEYOND ONLINE</div>
+  </div>
 
-    <div id="visor">
-      <div id="visor-overlay"></div>
-      <div id="visor-suit-state"></div>
-      <div id="visor-priority"></div>
-      <div id="visor-directive"></div>
+  <!-- OS FRAME -->
+  <div id="os-frame">
+    <header id="os-header">
+      <div id="os-brand">BEYOND‑OS REDX</div>
+      <div id="os-status">SYSTEM ARMED</div>
+    </header>
 
-      <div id="visor-timeline">
-        <div id="visor-timeline-fill"></div>
-      </div>
+    <div id="os-main">
+      <!-- LEFT: VISOR / STATUS -->
+      <section id="os-visor">
+        <h2 class="panel-title">VISOR</h2>
+        <div class="panel-body">
+          <p class="visor-line">• LINK: ONLINE</p>
+          <p class="visor-line">• MODE: REDX</p>
+          <p class="visor-line">• SIGNAL: STABLE</p>
+        </div>
+      </section>
 
-      <div id="visor-glyphs"></div>
+      <!-- CENTER: TODAY / PRIMARY PANEL -->
+      <section id="os-today">
+        <h2 class="panel-title">TODAY</h2>
+        <div class="panel-body">
+          <p class="today-line">/// CORE SHELL ACTIVE</p>
+          <p class="today-line">/// PANELS STANDING BY</p>
+          <p class="today-line">/// READY FOR MODULES</p>
+        </div>
+      </section>
+
+      <!-- RIGHT: SYSTEM / LOG -->
+      <section id="os-system">
+        <h2 class="panel-title">SYSTEM LOG</h2>
+        <div class="panel-body" id="log-panel">
+          <!-- Filled by script.js -->
+        </div>
+      </section>
     </div>
 
-    <div id="control-panel">
-      <h1>BEYOND‑OS REDX</h1>
-
-      <div class="section">
-        <h2>Metrics</h2>
-        <label>Protein <input id="input-protein" type="number" /></label>
-        <label>Calories <input id="input-calories" type="number" /></label>
-        <label>Sleep (hrs) <input id="input-sleep" type="number" step="0.1" /></label>
-        <label>Hydration (L) <input id="input-hydration" type="number" step="0.1" /></label>
-        <label>Steps <input id="input-steps" type="number" /></label>
-      </div>
-
-      <div class="section">
-        <h2>Mission</h2>
-        <select id="mission-select">
-          <option value="BASELINE">Baseline</option>
-          <option value="CUT">Cut</option>
-          <option value="BULK">Bulk</option>
-          <option value="RECOVERY">Recovery</option>
-        </select>
-      </div>
-
-      <div class="section">
-        <h2>System</h2>
-        <button id="btn-sync">Sync REDX</button>
-        <button id="btn-force-tick">Force Tick</button>
-
-        <label class="toggle">
-          <input id="toggle-animations" type="checkbox" checked />
-          <span>Animations</span>
-        </label>
-      </div>
-
-      <div class="section">
-        <h2>Debug</h2>
-        <pre id="debug-output"></pre>
-      </div>
-    </div>
-
+    <!-- COMMAND BAR -->
+    <footer id="os-command">
+      <div id="command-label">COMMAND</div>
+      <div id="command-line">awaiting input…</div>
+    </footer>
   </div>
 
   <script src="script.js"></script>
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js");
-  }
-</script>
-
-  
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./service-worker.js");
+    }
+  </script>
 </body>
 </html>
