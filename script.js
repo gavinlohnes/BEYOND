@@ -1,6 +1,5 @@
 /* ============================================================
-   BEYOND‑OS V41 — AUTONOMOUS ENGINE + BATMAN BEYOND UI SYNC
-   Fully compatible with V41 HTML + CSS
+   BEYOND‑OS V41 — AUTONOMOUS ENGINE + WEEKLY ENGINE 2.0
    ============================================================ */
 
 /* ---------- ELEMENT HOOKS ---------- */
@@ -77,7 +76,8 @@ function runBoot() {
     progress += 100 / steps.length;
     bootBarFill.style.width = progress + "%";
 
-    bootStatus.innerText = steps[Math.floor(progress / (100 / steps.length))] || "READY";
+    bootStatus.innerText =
+      steps[Math.floor(progress / (100 / steps.length))] || "READY";
 
     if (progress >= 100) {
       clearInterval(interval);
@@ -107,10 +107,21 @@ function hudFlash() {
    ============================================================ */
 
 const SHEETS_URL =
-  "https://script.google.com/macros/s/AKfycbxcf9q-Jmbhe_jTKXbAHg7uMNW6g8LR8Jw0l8bM5aT5P9EgxGh1mYN7UY1rxeCSbAxkkg/exec";
+  "https://script.google.com/macros/s/AKfycbzc4HGOrrRAM4isV85CABdBEWQdr46Y2JPKWI0p9vbZgkzAQKVMFV5A7GfEmpz9YaAmQA/exec";
 
 /* ============================================================
-   DAILY LOG SUBMIT
+   SYNC STATUS HELPER
+   ============================================================ */
+
+function setSyncStatus(state, label) {
+  syncStatus.classList.remove("ok", "error");
+  if (state === "ok") syncStatus.classList.add("ok");
+  if (state === "error") syncStatus.classList.add("error");
+  syncStatus.innerText = label;
+}
+
+/* ============================================================
+   DAILY LOG SUBMIT  (POST → Sheets + refresh weekly)
    ============================================================ */
 
 dailyForm.addEventListener("submit", async (e) => {
@@ -131,17 +142,133 @@ dailyForm.addEventListener("submit", async (e) => {
   };
 
   try {
-    syncStatus.innerText = "SHEETS: SYNCING…";
+    setSyncStatus("", "SHEETS: SYNCING…");
 
-    await fetch(SHEETS_URL, {
+    const res = await fetch(SHEETS_URL, {
       method: "POST",
       body: JSON.stringify(payload)
     });
 
-    syncStatus.innerText = "SHEETS: OK";
+    if (!res.ok) {
+      setSyncStatus("error", "SHEETS: ERROR");
+      return;
+    }
+
+    setSyncStatus("ok", "SHEETS: OK");
+
+    // Refresh weekly data after a successful log
+    await fetchWeeklyData();
   } catch (err) {
-    syncStatus.innerText = "SHEETS: ERROR";
+    setSyncStatus("error", "SHEETS: ERROR");
+    console.error("POST error:", err);
   }
+});
+
+/* ============================================================
+   WEEKLY ENGINE 2.0  (GET → Sheets, update dashboard)
+   ============================================================ */
+
+async function fetchWeeklyData() {
+  try {
+    const res = await fetch(SHEETS_URL);
+    const data = await res.json();
+
+    if (data.status !== "OK") {
+      setSyncStatus("error", "SHEETS: ERROR");
+      console.error("Sheets error:", data.message);
+      return;
+    }
+
+    setSyncStatus("ok", "SHEETS: OK");
+
+    const rows = data.rows || [];
+    updateWeeklyDashboard(rows);
+    updateLast7List(rows);
+  } catch (err) {
+    setSyncStatus("error", "SHEETS: ERROR");
+    console.error("GET error:", err);
+  }
+}
+
+function updateWeeklyDashboard(rows) {
+  if (!rows || rows.length === 0) {
+    wdCalories.innerText = "—";
+    wdProtein.innerText = "—";
+    wdSleep.innerText = "—";
+    return;
+  }
+
+  const avg = (key) => {
+    const nums = rows
+      .map((r) => Number(r[key]) || 0)
+      .filter((n) => !isNaN(n) && n > 0);
+    if (!nums.length) return "—";
+    const val =
+      nums.reduce((a, b) => a + b, 0) / nums.length;
+    return Math.round(val * 10) / 10;
+  };
+
+  wdCalories.innerText = avg("calories");
+  wdProtein.innerText = avg("protein");
+  wdSleep.innerText = avg("sleep");
+}
+
+function updateLast7List(rows) {
+  last7List.innerHTML = "";
+  if (!rows || rows.length === 0) return;
+
+  const sorted = [...rows].sort((a, b) => {
+    const da = new Date(a.date);
+    const db = new Date(b.date);
+    return db - da;
+  });
+
+  const recent = sorted.slice(0, 7);
+
+  recent.forEach((r) => {
+    const li = document.createElement("li");
+    li.className = "log-item";
+    li.innerHTML = `
+      <span class="key">${r.date || "—"}</span>
+      <span>${r.calories || "0"} cal / ${r.protein || "0"} g</span>
+    `;
+    last7List.appendChild(li);
+  });
+}
+
+/* ============================================================
+   WEEKLY TARGETS (local only, visual engine)
+   ============================================================ */
+
+targetsForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  hudFlash();
+
+  const tCalories = Number(document.getElementById("targetCalories").value) || 0;
+  const tProtein = Number(document.getElementById("targetProtein").value) || 0;
+  const tTraining = Number(document.getElementById("targetTraining").value) || 0;
+
+  // Use current weekly dashboard values as "actuals"
+  const aCalories = Number(wdCalories.innerText) || 0;
+  const aProtein = Number(wdProtein.innerText) || 0;
+  const aTraining = 0; // no training aggregation yet
+
+  const pct = (actual, target) => {
+    if (!target || target <= 0) return 0;
+    return Math.max(0, Math.min(100, Math.round((actual / target) * 100)));
+  };
+
+  const cPct = pct(aCalories, tCalories);
+  const pPct = pct(aProtein, tProtein);
+  const trPct = pct(aTraining, tTraining);
+
+  barCalories.style.width = cPct + "%";
+  barProtein.style.width = pPct + "%";
+  barTraining.style.width = trPct + "%";
+
+  valCalories.innerText = `${aCalories} / ${tCalories || "—"}`;
+  valProtein.innerText = `${aProtein} / ${tProtein || "—"}`;
+  valTraining.innerText = `${aTraining} / ${tTraining || "—"}`;
 });
 
 /* ============================================================
@@ -241,6 +368,21 @@ function runPredictiveEngine() {
   predMission.innerText = "ENGAGED";
   predIntensity.innerText = "MODERATE";
   predCalories.innerText = "2450";
+
+  // Mirror into signals for now
+  signalScenario.innerText = "ACTIVE";
+  signalMission.innerText = "ENGAGED";
+  signalEmotional.innerText = "STABLE";
+  signalProfile.innerText = "CUT PHASE";
+  signalRecommendation.innerText = "MAINTAIN CURRENT MISSION";
 }
 
 runPredictiveEngine();
+
+/* ============================================================
+   BOOT-TIME WEEKLY SYNC
+   ============================================================ */
+
+document.addEventListener("DOMContentLoaded", () => {
+  fetchWeeklyData();
+});
