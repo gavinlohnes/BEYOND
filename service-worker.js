@@ -1,4 +1,4 @@
-const CACHE_NAME = "beyond-os-redx-v1";
+const CACHE_NAME = "beyond-os-redx-v5";
 const FILES_TO_CACHE = [
   "./",
   "./index.html",
