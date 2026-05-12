@@ -2,434 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>BEYOND‑OS REDX</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BEYOND‑OS</title>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" />
 
-  <link rel="stylesheet" href="style.css?v=51" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
+  <div id="app">
 
-  <!-- HUD FRAME + SCANLINES -->
-  <div class="hud-frame">
-    <div class="hud-reticle hud-reticle-top"></div>
-    <div class="hud-reticle hud-reticle-bottom"></div>
-    <div class="scanline-layer"></div>
+    <!-- VISOR -->
+    <div id="visor">
+      <div id="visor-overlay"></div>
+      <div id="visor-suit-state"></div>
+      <div id="visor-priority"></div>
+      <div id="visor-directive"></div>
 
-    <!-- BOOT SCREEN -->
-    <div id="bootScreen" class="boot-screen">
-      <div class="boot-box">
-        <div class="boot-title">
-          BEYOND‑OS <span class="tag">AUTONOMOUS</span>
-        </div>
-        <div class="boot-subtitle">WAYNE SYSTEMS PROTOCOL // SUIT LINK</div>
-        <div class="boot-bar">
-          <div id="bootBarFill" class="boot-bar-fill"></div>
-        </div>
-        <div id="bootStatus" class="boot-status">INITIALIZING…</div>
+      <div id="visor-timeline">
+        <div id="visor-timeline-fill"></div>
+      </div>
+
+      <div id="visor-glyphs"></div>
+    </div>
+
+    <!-- CONTROL PANEL -->
+    <div id="control-panel">
+      <h1>BEYOND‑OS REDX</h1>
+
+      <div class="section">
+        <h2>Metrics</h2>
+        <label>Protein <input id="input-protein" type="number" /></label>
+        <label>Calories <input id="input-calories" type="number" /></label>
+        <label>Sleep (hrs) <input id="input-sleep" type="number" step="0.1" /></label>
+        <label>Hydration (L) <input id="input-hydration" type="number" step="0.1" /></label>
+        <label>Steps <input id="input-steps" type="number" /></label>
+      </div>
+
+      <div class="section">
+        <h2>Mission</h2>
+        <select id="mission-select">
+          <option value="BASELINE">Baseline</option>
+          <option value="CUT">Cut</option>
+          <option value="BULK">Bulk</option>
+          <option value="RECOVERY">Recovery</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <h2>System</h2>
+        <button id="btn-sync">Sync REDX</button>
+        <button id="btn-force-tick">Force Tick</button>
+
+        <label class="toggle">
+          <input id="toggle-animations" type="checkbox" checked />
+          <span>Animations</span>
+        </label>
+      </div>
+
+      <div class="section">
+        <h2>Debug</h2>
+        <pre id="debug-output"></pre>
       </div>
     </div>
 
-    <!-- HUD FLASH -->
-    <div id="hudOverlay" class="hud-overlay"></div>
+  </div>
 
-    <!-- TOP BAR -->
-    <div class="top-bar">
-      <div class="brand">
-        BEYOND‑OS <span class="tag">V51</span>
-      </div>
-      <div class="top-center">
-        <span class="visor-label">WAYNE SYSTEMS // GOTHAM NODE</span>
-      </div>
-      <div class="top-right">
-        <div id="syncStatus" class="sync-status">SHEETS: READY</div>
-        <button id="patrolToggle" class="patrol-btn">PATROL: OFF</button>
-      </div>
-    </div>
-
-    <!-- VISOR MODE WRAPPER -->
-    <div class="visor-shell">
-
-      <!-- LEFT STRIP: MISSION / SCENARIO / SIGNALS -->
-      <div class="visor-column visor-left">
-
-        <!-- MISSION CARD -->
-        <div class="panel panel-accent mission-card">
-          <div class="panel-title">MISSION STATE</div>
-          <div class="mission-row">
-            <div class="mission-label">SCENARIO</div>
-            <div class="mission-value" id="signalScenario">—</div>
-          </div>
-          <div class="mission-row">
-            <div class="mission-label">MISSION</div>
-            <div class="mission-value" id="signalMission">—</div>
-          </div>
-          <div class="mission-row">
-            <div class="mission-label">INTENSITY</div>
-            <div class="mission-value" id="signalIntensity">—</div>
-          </div>
-          <div class="mission-row">
-            <div class="mission-label">PROFILE</div>
-            <div class="mission-value" id="signalProfile">—</div>
-          </div>
-          <div class="mission-row mission-recommend">
-            <div class="mission-label">RECOMMEND</div>
-            <div class="mission-value" id="signalRecommendation">—</div>
-          </div>
-        </div>
-
-        <!-- SYSTEM STATE (STRESS / RECOVERY / MOOD) -->
-        <div class="panel panel-slim">
-          <div class="panel-title">SYSTEM STATE</div>
-          <div class="system-row">
-            <span class="system-label">STRESS</span>
-            <span class="system-value" id="sysStress">—</span>
-          </div>
-          <div class="system-row">
-            <span class="system-label">RECOVERY</span>
-            <span class="system-value" id="sysRecovery">—</span>
-          </div>
-          <div class="system-row">
-            <span class="system-label">SLEEP</span>
-            <span class="system-value" id="sysSleepQuality">—</span>
-          </div>
-          <div class="system-row">
-            <span class="system-label">MOOD</span>
-            <span class="system-value" id="sysMood">—</span>
-          </div>
-        </div>
-
-        <!-- DAILY LOG (compact) -->
-        <div class="panel panel-slim">
-          <div class="panel-title">DAILY LOG</div>
-          <form id="dailyForm" class="daily-form">
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Calories</label>
-                <input id="calories" type="number" />
-              </div>
-              <div class="form-group">
-                <label>Protein</label>
-                <input id="protein" type="number" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Hydration</label>
-                <input id="hydration" type="number" />
-              </div>
-              <div class="form-group">
-                <label>Sleep</label>
-                <input id="sleep" type="number" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Readiness</label>
-                <select id="readiness">
-                  <option>LOW</option>
-                  <option>MEDIUM</option>
-                  <option>HIGH</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Threat</label>
-                <select id="threat">
-                  <option>LOW</option>
-                  <option>MEDIUM</option>
-                  <option>HIGH</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Stability</label>
-                <select id="stability">
-                  <option>LOW</option>
-                  <option>MEDIUM</option>
-                  <option>HIGH</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Scenario</label>
-                <select id="scenario">
-                  <option>ACTIVE</option>
-                  <option>RECOVERY</option>
-                  <option>OVERWATCH</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Mission</label>
-                <select id="mission">
-                  <option>NEUTRAL</option>
-                  <option>ENGAGED</option>
-                  <option>AGGRESSIVE</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Emotional</label>
-                <select id="emotional">
-                  <option>STABLE</option>
-                  <option>WIRED</option>
-                  <option>DRAINED</option>
-                </select>
-              </div>
-            </div>
-
-            <button type="submit" class="btn">LOG DAY</button>
-          </form>
-        </div>
-
-        <!-- LAST 7 DAYS -->
-        <div class="panel panel-slim">
-          <div class="panel-title">LAST 7 DAYS</div>
-          <ul id="last7List" class="log-list"></ul>
-        </div>
-
-      </div>
-
-      <!-- CENTER: PREDICTIVE + WEEKLY DASHBOARD -->
-      <div class="visor-column visor-center">
-
-        <!-- PREDICTIVE ENGINE -->
-        <div class="panel panel-accent predictive-card">
-          <div class="panel-title">PREDICTIVE ENGINE</div>
-          <div class="predict-grid">
-            <div class="predict-item">
-              <div class="predict-label">SCENARIO</div>
-              <div class="predict-value" id="predScenario">—</div>
-            </div>
-            <div class="predict-item">
-              <div class="predict-label">MISSION</div>
-              <div class="predict-value" id="predMission">—</div>
-            </div>
-            <div class="predict-item">
-              <div class="predict-label">INTENSITY</div>
-              <div class="predict-value" id="predIntensity">—</div>
-            </div>
-            <div class="predict-item">
-              <div class="predict-label">CALORIES</div>
-              <div class="predict-value" id="predCalories">—</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- WEEKLY DASHBOARD -->
-        <div class="panel weekly-core">
-          <div class="panel-title">WEEKLY DASHBOARD</div>
-          <div class="weekly-grid">
-            <div class="weekly-metric">
-              <div class="metric-label">AVG CALORIES</div>
-              <div class="metric-value" id="wdCalories">—</div>
-              <div class="metric-bar">
-                <div class="metric-fill metric-fill-cal"></div>
-              </div>
-            </div>
-            <div class="weekly-metric">
-              <div class="metric-label">AVG PROTEIN</div>
-              <div class="metric-value" id="wdProtein">—</div>
-              <div class="metric-bar">
-                <div class="metric-fill metric-fill-pro"></div>
-              </div>
-            </div>
-            <div class="weekly-metric">
-              <div class="metric-label">AVG SLEEP</div>
-              <div class="metric-value" id="wdSleep">—</div>
-              <div class="metric-bar">
-                <div class="metric-fill metric-fill-sleep"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- WEEKLY TARGETS -->
-        <div class="panel">
-          <div class="panel-title">WEEKLY TARGETS</div>
-          <form id="targetsForm" class="targets-form">
-
-            <div class="form-row">
-              <div class="form-group">
-                <label>Weekly Calories</label>
-                <input id="targetCalories" type="number" />
-              </div>
-              <div class="form-group">
-                <label>Weekly Protein (g)</label>
-                <input id="targetProtein" type="number" />
-              </div>
-              <div class="form-group">
-                <label>Weekly Training (min)</label>
-                <input id="targetTraining" type="number" />
-              </div>
-            </div>
-
-            <button class="btn">SET TARGETS</button>
-          </form>
-
-          <div class="target-block">
-            <div class="target-label">CALORIES</div>
-            <div class="target-bar">
-              <div id="barCalories" class="bar-fill"></div>
-            </div>
-            <div class="target-value"><span id="valCalories">—</span></div>
-          </div>
-
-          <div class="target-block">
-            <div class="target-label">PROTEIN</div>
-            <div class="target-bar">
-              <div id="barProtein" class="bar-fill"></div>
-            </div>
-            <div class="target-value"><span id="valProtein">—</span></div>
-          </div>
-
-          <div class="target-block">
-            <div class="target-label">TRAINING</div>
-            <div class="target-bar">
-              <div id="barTraining" class="bar-fill"></div>
-            </div>
-            <div class="target-value"><span id="valTraining">—</span></div>
-          </div>
-        </div>
-
-        <!-- AUTONOMOUS SUMMARY -->
-        <div class="panel">
-          <div class="panel-title">AUTONOMOUS MODE</div>
-          <div class="system-row">
-            <span class="system-label">MISSION</span>
-            <span class="system-value" id="autoMission">—</span>
-          </div>
-          <div class="system-row">
-            <span class="system-label">SCENARIO</span>
-            <span class="system-value" id="autoScenario">—</span>
-          </div>
-          <div class="system-row">
-            <span class="system-label">CAL TARGET</span>
-            <span class="system-value" id="autoCalories">—</span>
-          </div>
-          <div class="system-row">
-            <span class="system-label">PROTEIN</span>
-            <span class="system-value" id="autoProtein">—</span>
-          </div>
-          <div class="system-row">
-            <span class="system-label">TRAINING</span>
-            <span class="system-value" id="autoTraining">—</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- RIGHT: TRAINING / MEALS / GROCERY -->
-      <div class="visor-column visor-right">
-
-        <!-- TRAINING LOG -->
-        <div class="panel">
-          <div class="panel-title">TRAINING LOG</div>
-          <form id="trainingForm">
-
-            <label>Session</label>
-            <input id="tSession" type="text" />
-
-            <label>Focus</label>
-            <input id="tFocus" type="text" />
-
-            <label>Duration (min)</label>
-            <input id="tDuration" type="number" />
-
-            <label>RPE</label>
-            <input id="tRPE" type="number" />
-
-            <label>Notes</label>
-            <input id="tNotes" type="text" />
-
-            <button class="btn">LOG TRAINING</button>
-          </form>
-
-          <ul id="trainingList" class="log-list"></ul>
-        </div>
-
-        <!-- MEAL CREATOR -->
-        <div class="panel">
-          <div class="panel-title">MEAL CREATOR</div>
-
-          <label>Name</label>
-          <input id="mealName" type="text" />
-
-          <label>Protein</label>
-          <input id="mealProtein" type="number" />
-
-          <label>Carbs</label>
-          <input id="mealCarbs" type="number" />
-
-          <label>Fat</label>
-          <input id="mealFat" type="number" />
-
-          <label>Calories</label>
-          <input id="mealCalories" type="number" />
-
-          <label>Notes</label>
-          <input id="mealNotes" type="text" />
-
-          <button id="saveMealBtn" class="btn">SAVE MEAL</button>
-
-          <ul id="mealList" class="log-list"></ul>
-        </div>
-
-        <!-- GROCERY DIRECTOR -->
-        <div class="panel">
-          <div class="panel-title">GROCERY DIRECTOR</div>
-
-          <label>Item</label>
-          <input id="gItem" type="text" />
-
-          <label>Category</label>
-          <input id="gCategory" type="text" />
-
-          <label>Unit</label>
-          <input id="gUnit" type="text" />
-
-          <label>Qty</label>
-          <input id="gQty" type="number" />
-
-          <label>Notes</label>
-          <input id="gNotes" type="text" />
-
-          <div class="btn-row">
-            <button id="saveGroceryBtn" class="btn">ADD ITEM</button>
-            <button id="autoGenBtn" class="btn btn-ghost">AUTO‑GEN FROM MEALS</button>
-          </div>
-
-          <ul id="groceryList" class="log-list"></ul>
-        </div>
-
-        <!-- TRAINING & MEAL RECOMMENDATIONS -->
-        <div class="panel">
-          <div class="panel-title">RECOMMENDATIONS</div>
-          <div class="system-row">
-            <span class="system-label">TRAINING</span>
-            <span class="system-value" id="recTraining">—</span>
-          </div>
-          <div class="system-row">
-            <span class="system-label">MEALS</span>
-            <span class="system-value" id="recMeals">—</span>
-          </div>
-        </div>
-
-      </div>
-
-    </div> <!-- /visor-shell -->
-  </div> <!-- /hud-frame -->
-
-  <script src="script.js?v=51"></script>
+  <script src="script.js"></script>
 </body>
 </html>
