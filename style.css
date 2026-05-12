@@ -1,3 +1,4 @@
+/* RESET */
 *,
 *::before,
 *::after {
@@ -6,21 +7,19 @@
   padding: 0;
 }
 
-html,
-body {
+html, body {
   height: 100%;
-  background: #000000;
-  color: #ffffff;
+  background: #000;
+  color: #fff;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 /* OS FRAME */
 #os-frame {
   min-height: 100vh;
-  background: #000000;
-  color: #ffffff;
   display: flex;
   flex-direction: column;
+  background: #000;
 }
 
 /* HEADER */
@@ -56,10 +55,8 @@ body {
 }
 
 /* PANELS */
-#os-visor,
-#os-today,
-#os-system {
-  border: 1px solid #222222;
+.os-panel {
+  border: 1px solid #222;
   background: #050505;
   display: flex;
   flex-direction: column;
@@ -70,7 +67,7 @@ body {
   letter-spacing: 0.16rem;
   text-transform: uppercase;
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #111111;
+  border-bottom: 1px solid #111;
   color: #ff0000;
 }
 
@@ -82,28 +79,28 @@ body {
 /* VISOR */
 .visor-line {
   font-family: monospace;
-  color: #cccccc;
+  color: #ccc;
   margin-bottom: 0.25rem;
 }
 
 /* TODAY */
 .today-line {
   font-family: monospace;
-  color: #ffffff;
+  color: #fff;
   margin-bottom: 0.35rem;
 }
 
 /* SYSTEM LOG */
 #log-panel {
   font-family: monospace;
-  color: #aaaaaa;
+  color: #aaa;
 }
 
 /* COMMAND BAR */
 #os-command {
   display: flex;
   align-items: center;
-  border-top: 1px solid #111111;
+  border-top: 1px solid #111;
   background: #050505;
   padding: 0.5rem 1.25rem;
   font-family: monospace;
@@ -117,14 +114,14 @@ body {
 }
 
 #command-line {
-  color: #cccccc;
+  color: #ccc;
 }
 
-/* BEYOND‑OS Splash Layer */
+/* SPLASH SCREEN */
 #os-splash {
   position: fixed;
   inset: 0;
-  background: #000000;
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,7 +131,6 @@ body {
   animation-delay: 1.2s;
 }
 
-/* Red tactical text */
 #os-splash-text {
   color: #ff0000;
   font-family: monospace;
@@ -146,13 +142,11 @@ body {
   animation-delay: 0.15s;
 }
 
-/* Text fade-in with angular scale */
 @keyframes osSplashText {
   0% { opacity: 0; transform: scale(0.92); }
   100% { opacity: 1; transform: scale(1); }
 }
 
-/* Screen fade-out */
 @keyframes osSplashFade {
   0% { opacity: 1; }
   100% { opacity: 0; visibility: hidden; }
