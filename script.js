@@ -135,7 +135,7 @@ function hudFlash() {
    ============================================================ */
 
 const SHEETS_URL =
-  "YOUR_WEB_APP_URL_HERE"; // replace with deployed Apps Script Web App URL
+  "https://script.google.com/macros/s/AKfycby3ZAPI_9fh8QtV46ZNcZkZrwAxC-F3jiiQmZ9VH0H4KAN975hRIGtrgwS69A_Hm3jrJw/exec";
 
 /* ============================================================
    SYNC STATUS HELPER
