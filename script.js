@@ -1,3 +1,5 @@
+const REDX_ENDPOINT = "https://script.google.com/macros/s/AKfycbzgIbPPTwWsTwazqeuJ2t4-6y8aemY32hr1WzEg7lsqxIHagdGGL3XmkFZVlCa0gyI2LA/exec";
+
 const osState = {
   metrics: {
     protein: { current: 0, target: 160 },
