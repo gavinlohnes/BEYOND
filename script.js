@@ -1,348 +1,385 @@
-:root {
-  --bg: #050509;
-  --bg-panel: #101018;
-  --accent: #ff1b2d;
-  --accent-soft: #ff4b5f33;
-  --text: #f5f5f5;
-  --muted: #888;
-  --border: #262636;
-  --success: #3ddc84;
-  --warning: #ffb347;
+// === CONFIG ==================================================
+
+const SHEETS_ENDPOINT =
+  "https://script.google.com/macros/s/AKfycbxcf9q-Jmbhe_jTKXbAHg7uMNW6g8LR8Jw0l8bM5aT5P9EgxGh1mYN7UY1rxeCSbAxkkg/exec";
+
+// === DOM HOOKS ===============================================
+
+// Boot
+const bootScreen = document.getElementById("bootScreen");
+const bootBarFill = document.getElementById("bootBarFill");
+const bootStatus = document.getElementById("bootStatus");
+
+// Core
+const form = document.getElementById("dailyForm");
+const syncStatus = document.getElementById("syncStatus");
+
+const scenarioEl = document.getElementById("scenario");
+const missionEl = document.getElementById("mission");
+const emotionalEl = document.getElementById("emotional");
+
+const signalScenario = document.getElementById("signalScenario");
+const signalMission = document.getElementById("signalMission");
+const signalEmotional = document.getElementById("signalEmotional");
+const signalProfile = document.getElementById("signalProfile");
+
+const last7List = document.getElementById("last7List");
+
+// Weekly dashboard
+const wdCalories = document.getElementById("wdCalories");
+const wdProtein = document.getElementById("wdProtein");
+const wdSleep = document.getElementById("wdSleep");
+
+// Training
+const trainingForm = document.getElementById("trainingForm");
+const trainingList = document.getElementById("trainingList");
+
+// Meal creator
+const saveMealBtn = document.getElementById("saveMealBtn");
+const mealList = document.getElementById("mealList");
+
+// Grocery director
+const saveGroceryBtn = document.getElementById("saveGroceryBtn");
+const groceryList = document.getElementById("groceryList");
+
+// Drawers
+const drawerButtons = document.querySelectorAll("[data-drawer]");
+const drawerCloseButtons = document.querySelectorAll("[data-drawer-close]");
+
+// === LOCAL STATE =============================================
+
+let last7Local = [];
+let trainingLocal = [];
+let mealLocal = [];
+let groceryLocal = [];
+
+// === HELPERS: STATUS =========================================
+
+function setStatus(text, mode = "idle") {
+  if (!syncStatus) return;
+  syncStatus.textContent = `SHEETS: ${text}`;
+  syncStatus.classList.remove("ok", "error");
+  if (mode === "ok") syncStatus.classList.add("ok");
+  if (mode === "error") syncStatus.classList.add("error");
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-    "Segoe UI", sans-serif;
+// === HELPERS: DAILY LOG ======================================
+
+function pushLocalLog(entry) {
+  last7Local.push(entry);
+  if (last7Local.length > 7) last7Local.shift();
+  renderLast7();
+  updateWeeklyDashboard();
 }
 
-body {
-  background: radial-gradient(circle at top, #1a1a2a 0, #050509 55%);
-  color: var(--text);
-  min-height: 100vh;
+function renderLast7() {
+  if (!last7List) return;
+  last7List.innerHTML = "";
+  last7Local
+    .slice()
+    .reverse()
+    .forEach((e) => {
+      const li = document.createElement("li");
+      li.className = "log-item";
+      li.innerHTML = `
+        <span class="key">${e.date}</span>
+        <span>${e.calories} kcal • ${e.protein}g • ${e.sleep}h</span>
+      `;
+      last7List.appendChild(li);
+    });
 }
 
-/* BOOT SCREEN */
+// === HELPERS: SIGNALS + SCENARIO ENGINE ======================
 
-#bootScreen {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(circle at top, #2a0b12 0, #020206 60%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-  transition: opacity 0.6s ease;
+function updateSignals() {
+  if (signalScenario) signalScenario.textContent = scenarioEl.value;
+  if (signalMission) signalMission.textContent = missionEl.value;
+  if (signalEmotional) signalEmotional.textContent = emotionalEl.value;
+  updateScenarioEngine();
 }
 
-#bootScreen.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
+function updateScenarioEngine() {
+  const scenario = scenarioEl.value;
+  const mission = missionEl.value;
+  const emotional = emotionalEl.value;
 
-.boot-inner {
-  max-width: 420px;
-  width: 90%;
-  text-align: center;
-}
+  let profile = "STABLE / LOW THREAT";
 
-.boot-logo {
-  font-size: 26px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-
-.boot-sub {
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 18px;
-}
-
-.boot-bar {
-  width: 100%;
-  height: 4px;
-  border-radius: 999px;
-  background: #1a1a24;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-
-.boot-bar-fill {
-  width: 0%;
-  height: 100%;
-  background: linear-gradient(90deg, #ff1b2d, #ff4b5f);
-  transition: width 0.8s ease;
-}
-
-.boot-status {
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-/* APP LAYOUT */
-
-#app {
-  max-width: 1200px;
-  margin: 32px auto;
-  padding: 0 16px;
-}
-
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.brand {
-  font-size: 20px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.brand .tag {
-  margin-left: 8px;
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-}
-
-.status-pill {
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  color: var(--muted);
-}
-
-.status-pill.ok {
-  border-color: var(--success);
-  color: var(--success);
-}
-
-.status-pill.error {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1.1fr 0.9fr;
-  gap: 20px;
-}
-
-.panel {
-  background: linear-gradient(145deg, #0b0b12, #151522);
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  padding: 18px 18px 20px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
-}
-
-.panel h2 {
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  margin-bottom: 14px;
-  color: var(--muted);
-}
-
-.panel h3 {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  margin: 18px 0 8px;
-  color: var(--muted);
-}
-
-.subheading {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  margin: 12px 0 6px;
-  color: var(--muted);
-}
-
-.field-row {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 10px;
-}
-
-.field-row label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.field-row input,
-.field-row select {
-  background: #090910;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  padding: 6px 8px;
-  color: var(--text);
-  font-size: 13px;
-}
-
-.field-row input:focus,
-.field-row select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-soft);
-}
-
-.primary-btn {
-  margin-top: 8px;
-  width: 100%;
-  padding: 9px 10px;
-  border-radius: 999px;
-  border: none;
-  background: linear-gradient(135deg, #ff1b2d, #ff4b5f);
-  color: #fff;
-  font-size: 13px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.primary-btn:active {
-  transform: translateY(1px);
-  filter: brightness(0.9);
-}
-
-.secondary-btn {
-  padding: 7px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: #090910;
-  color: var(--text);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.secondary-btn:active {
-  transform: translateY(1px);
-  filter: brightness(0.95);
-}
-
-.signal-block {
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  padding: 10px 10px 8px;
-  background: radial-gradient(circle at top left, #26101855, #090910 55%);
-}
-
-.signal-line {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-
-.signal-line .label {
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 10px;
-}
-
-.signal-line .value {
-  font-weight: 500;
-}
-
-.log-list {
-  list-style: none;
-  max-height: 220px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.log-item {
-  font-size: 11px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  margin-bottom: 6px;
-  display: flex;
-  justify-content: space-between;
-  color: var(--muted);
-}
-
-.log-item span.key {
-  color: var(--text);
-}
-
-/* DRAWERS */
-
-.drawer-controls {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.drawer {
-  margin-top: 8px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: #090910;
-  max-height: 420px;
-  overflow: hidden;
-  transition: max-height 0.3s ease, opacity 0.3s ease;
-  opacity: 1;
-}
-
-.drawer.collapsed {
-  max-height: 0;
-  opacity: 0;
-  border-width: 0;
-}
-
-.drawer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--muted);
-}
-
-.drawer-body {
-  padding: 10px 10px 12px;
-}
-
-.drawer-close {
-  cursor: pointer;
-  font-size: 14px;
-}
-
-/* RESPONSIVE */
-
-@media (max-width: 1000px) {
-  .grid {
-    grid-template-columns: 1fr 1fr;
+  if (scenario === "ACTIVE" && mission === "AGGRESSIVE") {
+    profile = "HIGH OUTPUT / ELEVATED THREAT";
+  } else if (scenario === "OVERWATCH") {
+    profile = "SURVEILLANCE / MODERATE LOAD";
+  } else if (scenario === "RECOVERY") {
+    profile = "RECOVERY PRIORITY / REDUCED LOAD";
   }
+
+  if (emotional === "DRAINED") {
+    profile += " / ENERGY LOW";
+  } else if (emotional === "WIRED") {
+    profile += " / NERVOUS SYSTEM HOT";
+  }
+
+  if (signalProfile) signalProfile.textContent = profile;
 }
 
-@media (max-width: 720px) {
-  .grid {
-    grid-template-columns: 1fr;
+// === HELPERS: WEEKLY DASHBOARD ===============================
+
+function updateWeeklyDashboard() {
+  if (!wdCalories || !wdProtein || !wdSleep) return;
+
+  const data = last7Local;
+  if (!data.length) {
+    wdCalories.textContent = "—";
+    wdProtein.textContent = "—";
+    wdSleep.textContent = "—";
+    return;
   }
+
+  let totalCalories = 0;
+  let totalProtein = 0;
+  let totalSleep = 0;
+
+  data.forEach((e) => {
+    totalCalories += e.calories || 0;
+    totalProtein += e.protein || 0;
+    totalSleep += e.sleep || 0;
+  });
+
+  const days = data.length;
+
+  wdCalories.textContent = Math.round(totalCalories / days) + " kcal";
+  wdProtein.textContent = Math.round(totalProtein / days) + " g";
+  wdSleep.textContent = (totalSleep / days).toFixed(1) + " h";
 }
+
+// === HELPERS: TRAINING LOG ===================================
+
+function pushTraining(entry) {
+  trainingLocal.push(entry);
+  if (trainingLocal.length > 20) trainingLocal.shift();
+  renderTraining();
+}
+
+function renderTraining() {
+  if (!trainingList) return;
+  trainingList.innerHTML = "";
+  trainingLocal
+    .slice()
+    .reverse()
+    .forEach((e) => {
+      const li = document.createElement("li");
+      li.className = "log-item";
+      li.innerHTML = `
+        <span class="key">${e.date}</span>
+        <span>${e.session} • ${e.duration}m • RPE ${e.rpe}</span>
+      `;
+      trainingList.appendChild(li);
+    });
+}
+
+// === HELPERS: MEAL CREATOR ===================================
+
+function pushMeal(entry) {
+  mealLocal.push(entry);
+  if (mealLocal.length > 50) mealLocal.shift();
+  renderMeals();
+}
+
+function renderMeals() {
+  if (!mealList) return;
+  mealList.innerHTML = "";
+  mealLocal
+    .slice()
+    .reverse()
+    .forEach((m) => {
+      const li = document.createElement("li");
+      li.className = "log-item";
+      li.innerHTML = `
+        <span class="key">${m.name}</span>
+        <span>${m.protein}P / ${m.carbs}C / ${m.fat}F • ${m.calories} kcal</span>
+      `;
+      mealList.appendChild(li);
+    });
+}
+
+// === HELPERS: GROCERY DIRECTOR ===============================
+
+function pushGrocery(entry) {
+  groceryLocal.push(entry);
+  if (groceryLocal.length > 100) groceryLocal.shift();
+  renderGroceries();
+}
+
+function renderGroceries() {
+  if (!groceryList) return;
+  groceryList.innerHTML = "";
+  groceryLocal
+    .slice()
+    .reverse()
+    .forEach((g) => {
+      const li = document.createElement("li");
+      li.className = "log-item";
+      li.innerHTML = `
+        <span class="key">${g.item}</span>
+        <span>${g.qty} ${g.unit} • ${g.category}</span>
+      `;
+      groceryList.appendChild(li);
+    });
+}
+
+// === DRAWERS =================================================
+
+function openDrawer(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove("collapsed");
+}
+
+function closeDrawer(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add("collapsed");
+}
+
+// === EVENT WIRING ============================================
+
+if (scenarioEl) scenarioEl.addEventListener("change", updateSignals);
+if (missionEl) missionEl.addEventListener("change", updateSignals);
+if (emotionalEl) emotionalEl.addEventListener("change", updateSignals);
+
+if (form) {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      calories: Number(document.getElementById("calories").value),
+      protein: Number(document.getElementById("protein").value),
+      hydration: Number(document.getElementById("hydration").value),
+      sleep: Number(document.getElementById("sleep").value),
+      readiness: document.getElementById("readiness").value || "",
+      threat: document.getElementById("threat").value || "",
+      stability: document.getElementById("stability").value || "",
+      scenario: scenarioEl.value,
+      mission: missionEl.value,
+      emotional: emotionalEl.value,
+    };
+
+    setStatus("SENDING…");
+
+    try {
+      const res = await fetch(SHEETS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      setStatus("OK", "ok");
+
+      const today = new Date().toISOString().slice(0, 10);
+      pushLocalLog({
+        date: today,
+        calories: payload.calories,
+        protein: payload.protein,
+        sleep: payload.sleep,
+      });
+    } catch (err) {
+      console.error(err);
+      setStatus("ERROR", "error");
+    }
+  });
+}
+
+if (trainingForm) {
+  trainingForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const entry = {
+      date: new Date().toISOString().slice(0, 10),
+      session: document.getElementById("tSession").value || "",
+      focus: document.getElementById("tFocus").value || "",
+      duration: Number(document.getElementById("tDuration").value) || 0,
+      rpe: Number(document.getElementById("tRPE").value) || 0,
+      notes: document.getElementById("tNotes").value || "",
+    };
+
+    pushTraining(entry);
+  });
+}
+
+if (saveMealBtn) {
+  saveMealBtn.addEventListener("click", () => {
+    const entry = {
+      name: document.getElementById("mealName").value || "",
+      protein: Number(document.getElementById("mealProtein").value) || 0,
+      carbs: Number(document.getElementById("mealCarbs").value) || 0,
+      fat: Number(document.getElementById("mealFat").value) || 0,
+      calories: Number(document.getElementById("mealCalories").value) || 0,
+      notes: document.getElementById("mealNotes").value || "",
+    };
+    if (!entry.name) return;
+    pushMeal(entry);
+  });
+}
+
+if (saveGroceryBtn) {
+  saveGroceryBtn.addEventListener("click", () => {
+    const entry = {
+      item: document.getElementById("gItem").value || "",
+      category: document.getElementById("gCategory").value || "",
+      unit: document.getElementById("gUnit").value || "",
+      qty: Number(document.getElementById("gQty").value) || 0,
+      notes: document.getElementById("gNotes").value || "",
+    };
+    if (!entry.item) return;
+    pushGrocery(entry);
+  });
+}
+
+drawerButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const id = btn.getAttribute("data-drawer");
+    openDrawer(id);
+  });
+});
+
+drawerCloseButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const id = btn.getAttribute("data-drawer-close");
+    closeDrawer(id);
+  });
+});
+
+// === BOOT SEQUENCE ===========================================
+
+function runBoot() {
+  if (!bootScreen || !bootBarFill || !bootStatus) return;
+
+  bootBarFill.style.width = "35%";
+  bootStatus.textContent = "SCANNING SYSTEMS…";
+
+  setTimeout(() => {
+    bootBarFill.style.width = "72%";
+    bootStatus.textContent = "LINKING SHEETS BACKEND…";
+  }, 600);
+
+  setTimeout(() => {
+    bootBarFill.style.width = "100%";
+    bootStatus.textContent = "BEYOND‑OS ONLINE";
+  }, 1200);
+
+  setTimeout(() => {
+    bootScreen.classList.add("hidden");
+  }, 1800);
+}
+
+// === INIT ====================================================
+
+updateSignals();
+setStatus("READY");
+updateWeeklyDashboard();
+renderTraining();
+renderMeals();
+renderGroceries();
+runBoot();
