@@ -9,46 +9,50 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- BEYOND‑OS Splash -->
+
+  <!-- BEYOND‑OS REDX SPLASH -->
   <div id="os-splash">
     <div id="os-splash-text">/// BEYOND ONLINE</div>
   </div>
 
   <!-- OS FRAME -->
   <div id="os-frame">
+
+    <!-- HEADER -->
     <header id="os-header">
       <div id="os-brand">BEYOND‑OS REDX</div>
       <div id="os-status">SYSTEM ARMED</div>
     </header>
 
+    <!-- MAIN GRID -->
     <div id="os-main">
-      <!-- LEFT: VISOR / STATUS -->
-      <section id="os-visor">
+
+      <!-- VISOR -->
+      <section class="os-panel" id="os-visor">
         <h2 class="panel-title">VISOR</h2>
-        <div class="panel-body">
-          <p class="visor-line">• LINK: ONLINE</p>
-          <p class="visor-line">• MODE: REDX</p>
-          <p class="visor-line">• SIGNAL: STABLE</p>
+        <div class="panel-body" id="visor-body">
+          <p class="visor-line" id="visor-link">• LINK: ONLINE</p>
+          <p class="visor-line" id="visor-mode">• MODE: REDX</p>
+          <p class="visor-line" id="visor-signal">• SIGNAL: STABLE</p>
         </div>
       </section>
 
-      <!-- CENTER: TODAY / PRIMARY PANEL -->
-      <section id="os-today">
+      <!-- TODAY -->
+      <section class="os-panel" id="os-today">
         <h2 class="panel-title">TODAY</h2>
-        <div class="panel-body">
-          <p class="today-line">/// CORE SHELL ACTIVE</p>
-          <p class="today-line">/// PANELS STANDING BY</p>
-          <p class="today-line">/// READY FOR MODULES</p>
+        <div class="panel-body" id="today-body">
+          <p class="today-line" id="today-core">/// CORE SHELL ACTIVE</p>
+          <p class="today-line" id="today-panels">/// PANELS STANDING BY</p>
+          <p class="today-line" id="today-mission">/// READY FOR MODULES</p>
         </div>
       </section>
 
-      <!-- RIGHT: SYSTEM / LOG -->
-      <section id="os-system">
+      <!-- SYSTEM LOG -->
+      <section class="os-panel" id="os-system">
         <h2 class="panel-title">SYSTEM LOG</h2>
-        <div class="panel-body" id="log-panel">
-          <!-- Filled by script.js -->
-        </div>
+        <div class="panel-body" id="log-panel"></div>
       </section>
+
     </div>
 
     <!-- COMMAND BAR -->
@@ -56,6 +60,7 @@
       <div id="command-label">COMMAND</div>
       <div id="command-line">awaiting input…</div>
     </footer>
+
   </div>
 
   <script src="script.js"></script>
@@ -64,5 +69,6 @@
       navigator.serviceWorker.register("./service-worker.js");
     }
   </script>
+
 </body>
 </html>
