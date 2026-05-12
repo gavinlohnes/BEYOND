@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=50" />
+  <link rel="stylesheet" href="style.css?v=51" />
 </head>
 
 <body>
@@ -41,7 +41,7 @@
     <!-- TOP BAR -->
     <div class="top-bar">
       <div class="brand">
-        BEYOND‑OS <span class="tag">V50</span>
+        BEYOND‑OS <span class="tag">V51</span>
       </div>
       <div class="top-center">
         <span class="visor-label">WAYNE SYSTEMS // GOTHAM NODE</span>
@@ -70,8 +70,8 @@
             <div class="mission-value" id="signalMission">—</div>
           </div>
           <div class="mission-row">
-            <div class="mission-label">EMOTIONAL</div>
-            <div class="mission-value" id="signalEmotional">—</div>
+            <div class="mission-label">INTENSITY</div>
+            <div class="mission-value" id="signalIntensity">—</div>
           </div>
           <div class="mission-row">
             <div class="mission-label">PROFILE</div>
@@ -80,6 +80,27 @@
           <div class="mission-row mission-recommend">
             <div class="mission-label">RECOMMEND</div>
             <div class="mission-value" id="signalRecommendation">—</div>
+          </div>
+        </div>
+
+        <!-- SYSTEM STATE (STRESS / RECOVERY / MOOD) -->
+        <div class="panel panel-slim">
+          <div class="panel-title">SYSTEM STATE</div>
+          <div class="system-row">
+            <span class="system-label">STRESS</span>
+            <span class="system-value" id="sysStress">—</span>
+          </div>
+          <div class="system-row">
+            <span class="system-label">RECOVERY</span>
+            <span class="system-value" id="sysRecovery">—</span>
+          </div>
+          <div class="system-row">
+            <span class="system-label">SLEEP</span>
+            <span class="system-value" id="sysSleepQuality">—</span>
+          </div>
+          <div class="system-row">
+            <span class="system-label">MOOD</span>
+            <span class="system-value" id="sysMood">—</span>
           </div>
         </div>
 
@@ -261,7 +282,7 @@
             <div class="target-bar">
               <div id="barCalories" class="bar-fill"></div>
             </div>
-            <div class="target-value"> <span id="valCalories">—</span></div>
+            <div class="target-value"><span id="valCalories">—</span></div>
           </div>
 
           <div class="target-block">
@@ -269,7 +290,7 @@
             <div class="target-bar">
               <div id="barProtein" class="bar-fill"></div>
             </div>
-            <div class="target-value"> <span id="valProtein">—</span></div>
+            <div class="target-value"><span id="valProtein">—</span></div>
           </div>
 
           <div class="target-block">
@@ -277,7 +298,32 @@
             <div class="target-bar">
               <div id="barTraining" class="bar-fill"></div>
             </div>
-            <div class="target-value"> <span id="valTraining">—</span></div>
+            <div class="target-value"><span id="valTraining">—</span></div>
+          </div>
+        </div>
+
+        <!-- AUTONOMOUS SUMMARY -->
+        <div class="panel">
+          <div class="panel-title">AUTONOMOUS MODE</div>
+          <div class="system-row">
+            <span class="system-label">MISSION</span>
+            <span class="system-value" id="autoMission">—</span>
+          </div>
+          <div class="system-row">
+            <span class="system-label">SCENARIO</span>
+            <span class="system-value" id="autoScenario">—</span>
+          </div>
+          <div class="system-row">
+            <span class="system-label">CAL TARGET</span>
+            <span class="system-value" id="autoCalories">—</span>
+          </div>
+          <div class="system-row">
+            <span class="system-label">PROTEIN</span>
+            <span class="system-value" id="autoProtein">—</span>
+          </div>
+          <div class="system-row">
+            <span class="system-label">TRAINING</span>
+            <span class="system-value" id="autoTraining">—</span>
           </div>
         </div>
 
@@ -366,11 +412,24 @@
           <ul id="groceryList" class="log-list"></ul>
         </div>
 
+        <!-- TRAINING & MEAL RECOMMENDATIONS -->
+        <div class="panel">
+          <div class="panel-title">RECOMMENDATIONS</div>
+          <div class="system-row">
+            <span class="system-label">TRAINING</span>
+            <span class="system-value" id="recTraining">—</span>
+          </div>
+          <div class="system-row">
+            <span class="system-label">MEALS</span>
+            <span class="system-value" id="recMeals">—</span>
+          </div>
+        </div>
+
       </div>
 
     </div> <!-- /visor-shell -->
   </div> <!-- /hud-frame -->
 
-  <script src="script.js?v=50"></script>
+  <script src="script.js?v=51"></script>
 </body>
 </html>
