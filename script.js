@@ -26,6 +26,40 @@ const osState = {
   directiveFinal: "MAINTAIN COURSE."
 };
 
+// =========================
+// REDX SYNC — DAILY LOG
+// =========================
+
+async function syncRedx() {
+  const payload = {
+    type: "daily",
+    calories: osState.metrics.calories.current,
+    protein: osState.metrics.protein.current,
+    hydration: osState.metrics.hydration.current,
+    sleep: osState.metrics.sleep.current,
+    readiness: "MEDIUM",
+    threat: "LOW",
+    stability: "MEDIUM",
+    scenario: "ACTIVE",
+    mission: osState.mission.state,
+    emotional: "STABLE"
+  };
+
+  try {
+    await fetch(REDX_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    console.log("REDX sync sent:", payload);
+  } catch (err) {
+    console.error("REDX sync failed:", err);
+  }
+}
+
+
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
