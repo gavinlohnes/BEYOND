@@ -2,135 +2,139 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BEYOND‑OS REDX V5</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#000000">
-  <link rel="manifest" href="manifest.json">
+  <title>BEYOND.OS</title>
   <link rel="stylesheet" href="styles-v5.css">
 </head>
+
 <body>
 
-  <!-- SPLASH -->
+  <!-- SPLASH SCREEN -->
   <div id="os-splash">
-    <div id="os-splash-text">/// BEYOND V5 KERNEL</div>
+    <div id="os-splash-text">BEYOND.OS</div>
   </div>
 
-  <!-- VISOR 2.0 OVERLAY -->
+  <!-- VISOR OVERLAY -->
   <div id="visor-overlay" class="visor-hidden">
     <div id="visor-overlay-inner">
       <div id="visor-overlay-header">
-        <span>VISOR 2.0</span>
-        <button id="visor-close-btn">×</button>
+        <span>VISOR SYSTEM</span>
+        <button id="visor-close-btn">X</button>
       </div>
+
       <div id="visor-overlay-body">
         <div class="visor-overlay-column">
-          <h3>System Status</h3>
-          <ul id="visor-status-list"></ul>
+          <h3>System</h3>
+          <ul>
+            <li>Core Status: OK</li>
+            <li>Memory: Stable</li>
+            <li>Pulse: Synced</li>
+          </ul>
         </div>
+
         <div class="visor-overlay-column">
-          <h3>Predictions</h3>
-          <ul id="visor-predictions-list"></ul>
+          <h3>Diagnostics</h3>
+          <ul>
+            <li>Scan: Ready</li>
+            <li>Integrity: 100%</li>
+            <li>Latency: 0.2ms</li>
+          </ul>
         </div>
+
         <div class="visor-overlay-column">
-          <h3>Scenarios</h3>
-          <ul id="visor-scenarios-list"></ul>
+          <h3>Network</h3>
+          <ul>
+            <li>Link: Active</li>
+            <li>Nodes: 12</li>
+            <li>Signal: Strong</li>
+          </ul>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- NOTIFICATION STACK -->
-  <div id="notification-stack"></div>
 
   <!-- OS FRAME -->
   <div id="os-frame">
 
     <!-- HEADER -->
-    <header id="os-header">
-      <div id="os-brand">BEYOND‑OS REDX V5</div>
+    <div id="os-header">
+      <div id="os-brand">BEYOND.OS</div>
       <div id="os-header-right">
-        <button id="visor-toggle-btn" class="header-btn">VISOR</button>
-        <button id="apps-toggle-btn" class="header-btn">APPS</button>
-        <div id="os-status">KERNEL ONLINE</div>
+        <div id="os-status">IDLE</div>
+        <button class="header-btn" id="visor-btn">Visor</button>
       </div>
-    </header>
+    </div>
+
+    <!-- 🟥 GLYPH MOUNT POINT (CRITICAL) -->
+    <div id="glyph-root"></div>
 
     <!-- MAIN GRID -->
     <div id="os-main">
 
-      <!-- VISOR PANEL -->
-      <section class="os-panel" id="os-visor">
-        <h2 class="panel-title">VISOR</h2>
-        <div class="panel-body" id="visor-body">
-          <p class="visor-line" id="visor-link">• LINK: ONLINE</p>
-          <p class="visor-line" id="visor-mode">• MODE: REDX V5</p>
-          <p class="visor-line" id="visor-signal">• SIGNAL: STABLE</p>
-          <p class="visor-line" id="visor-mission">• MISSION: IDLE</p>
+      <!-- LEFT PANEL -->
+      <div class="os-panel">
+        <div class="panel-title">Visor Feed</div>
+        <div class="panel-body" id="visor-feed">
+          <div class="visor-line">Initializing...</div>
         </div>
-      </section>
+      </div>
 
-      <!-- TODAY PANEL -->
-      <section class="os-panel" id="os-today">
-        <h2 class="panel-title">TODAY</h2>
-        <div class="panel-body" id="today-body">
-          <p class="today-line" id="today-core">/// CORE KERNEL ACTIVE</p>
-          <p class="today-line" id="today-engines">/// ENGINES ONLINE</p>
-          <p class="today-line" id="today-focus">/// FOCUS: STANDBY</p>
+      <!-- CENTER PANEL -->
+      <div class="os-panel">
+        <div class="panel-title">Today</div>
+        <div class="panel-body" id="today-panel">
+          <div class="today-line">Loading...</div>
         </div>
-      </section>
+      </div>
 
-      <!-- SYSTEM LOG -->
-      <section class="os-panel" id="os-system">
-        <h2 class="panel-title">SYSTEM LOG</h2>
-        <div class="panel-body" id="log-panel"></div>
-      </section>
+      <!-- RIGHT PANEL -->
+      <div class="os-panel">
+        <div class="panel-title">System Log</div>
+        <div class="panel-body" id="log-panel">
+          <div>[BOOT] System online.</div>
+        </div>
+      </div>
 
     </div>
 
     <!-- APP GRID -->
-    <section id="app-grid">
-      <h2 class="panel-title">APPS</h2>
+    <div id="app-grid">
+      <div class="panel-title">Applications</div>
       <div id="app-grid-body">
-        <button class="app-tile" data-app="diagnostics">
+        <div class="app-tile">
           <div class="app-title">Diagnostics</div>
-          <div class="app-subtitle">System health</div>
-        </button>
-        <button class="app-tile" data-app="missions">
-          <div class="app-title">Missions</div>
-          <div class="app-subtitle">Mission state</div>
-        </button>
-        <button class="app-tile" data-app="timeline">
-          <div class="app-title">Timeline</div>
-          <div class="app-subtitle">Engine events</div>
-        </button>
-        <button class="app-tile" data-app="settings">
-          <div class="app-title">Settings</div>
-          <div class="app-subtitle">Kernel flags</div>
-        </button>
+          <div class="app-subtitle">System Scan</div>
+        </div>
+        <div class="app-tile">
+          <div class="app-title">Network</div>
+          <div class="app-subtitle">Node Map</div>
+        </div>
+        <div class="app-tile">
+          <div class="app-title">Memory</div>
+          <div class="app-subtitle">Usage</div>
+        </div>
+        <div class="app-tile">
+          <div class="app-title">Pulse</div>
+          <div class="app-subtitle">Monitor</div>
+        </div>
       </div>
-      <div id="app-grid-output"></div>
-    </section>
+
+      <div id="app-grid-output">Ready.</div>
+    </div>
 
     <!-- COMMAND BAR -->
-    <footer id="os-command">
-      <div id="command-label">COMMAND</div>
-      <input
-        id="command-input"
-        type="text"
-        autocomplete="off"
-        spellcheck="false"
-        placeholder="type a command and press Enter (help, visor, apps, notify, mission arm, mission status)…"
-      />
-    </footer>
+    <div id="os-command">
+      <span id="command-label">CMD:</span>
+      <input id="command-input" type="text" placeholder="Enter command...">
+    </div>
 
   </div>
 
-  <script src="script.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./service-worker.js");
-    }
-  </script>
+  <!-- NOTIFICATION STACK -->
+  <div id="notification-stack"></div>
+
+  <!-- SCRIPT -->
+  <script src="app.js"></script>
 
 </body>
 </html>
