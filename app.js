@@ -660,6 +660,187 @@ bootSequence = function() {
   }, 1200);
 };
 
+// ===============================
+//  HUD EXPANSION PACK
+// ===============================
+
+// Create Vitals Panel (collapsible)
+function createHUDVitals() {
+  const vitals = document.createElement('div');
+  vitals.id = 'hud-vitals';
+  vitals.style.position = 'fixed';
+  vitals.style.top = '56px';
+  vitals.style.right = '12px';
+  vitals.style.width = '220px';
+  vitals.style.padding = '12px';
+  vitals.style.background = 'rgba(0,0,0,0.65)';
+  vitals.style.border = '1px solid #ff1744';
+  vitals.style.backdropFilter = 'blur(6px)';
+  vitals.style.color = '#ff1744';
+  vitals.style.fontFamily = 'monospace';
+  vitals.style.fontSize = '13px';
+  vitals.style.zIndex = '9998';
+  vitals.style.userSelect = 'none';
+  vitals.style.display = 'none';
+
+  vitals.innerHTML = `
+    <div style="margin-bottom:6px;font-weight:bold;">SYSTEM VITALS</div>
+    <div id="vital-cmd">CMD Usage: 0</div>
+    <div id="vital-apps">App Opens: 0</div>
+    <div id="vital-hb">Heartbeat Interval: 0ms</div>
+    <div id="vital-inactive">Inactivity Timeout: 0ms</div>
+    <div id="vital-uptime">Uptime: 0s</div>
+  `;
+
+  document.body.appendChild(vitals);
+}
+
+// Toggle vitals panel with double‑tap on HUD center
+function wireVitalsToggle() {
+  const center = document.getElementById('hud-center');
+  if (!center) return;
+
+  let lastTap = 0;
+  center.addEventListener('click', () => {
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      const vitals = document.getElementById('hud-vitals');
+      if (vitals.style.display === 'none') {
+        vitals.style.display = 'block';
+      } else {
+        vitals.style.display = 'none';
+      }
+    }
+    lastTap = now;
+  });
+}
+
+// Advisor Pulse Overlay
+function createAdvisorPulse() {
+  const pulse = document.createElement('div');
+  pulse.id = 'hud-advisor-pulse';
+  pulse.style.position = 'fixed';
+  pulse.style.top = '0';
+  pulse.style.left = '0';
+  pulse.style.width = '100%';
+  pulse.style.height = '100%';
+  pulse.style.pointerEvents = 'none';
+  pulse.style.zIndex = '9997';
+  pulse.style.opacity = '0';
+  pulse.style.transition = 'opacity 0.3s ease';
+
+  pulse.innerHTML = `
+    <svg viewBox="0 0 200 200" style="width:100%;height:100%;opacity:0.25;">
+      <circle cx="100" cy="100" r="40" stroke="#ff1744" stroke-width="2" fill="none"/>
+      <circle cx="100" cy="100" r="60" stroke="#ff1744" stroke-width="1" fill="none"/>
+      <circle cx="100" cy="100" r="80" stroke="#ff1744" stroke-width="1" fill="none"/>
+    </svg>
+  `;
+
+  document.body.appendChild(pulse);
+}
+
+// Drift Distortion Overlay
+function createDriftDistortion() {
+  const drift = document.createElement('div');
+  drift.id = 'hud-drift-distortion';
+  drift.style.position = 'fixed';
+  drift.style.top = '0';
+  drift.style.left = '0';
+  drift.style.width = '100%';
+  drift.style.height = '100%';
+  drift.style.pointerEvents = 'none';
+  drift.style.zIndex = '9996';
+  drift.style.opacity = '0';
+  drift.style.background = 'repeating-linear-gradient(90deg, rgba(255,23,68,0.05) 0px, rgba(255,23,68,0.05) 2px, transparent 2px, transparent 4px)';
+  drift.style.transition = 'opacity 0.2s ease';
+
+  document.body.appendChild(drift);
+}
+
+// Operator Tag
+function createOperatorTag() {
+  const tag = document.createElement('div');
+  tag.id = 'hud-operator';
+  tag.style.position = 'fixed';
+  tag.style.bottom = '12px';
+  tag.style.right = '12px';
+  tag.style.padding = '6px 10px';
+  tag.style.background = 'rgba(0,0,0,0.55)';
+  tag.style.border = '1px solid #ff1744';
+  tag.style.color = '#ff1744';
+  tag.style.fontFamily = 'monospace';
+  tag.style.fontSize = '12px';
+  tag.style.zIndex = '9998';
+  tag.style.userSelect = 'none';
+
+  tag.textContent = 'OPERATOR: GAVIN — RANK: PRIME';
+
+  document.body.appendChild(tag);
+}
+
+// Notification Dock (persistent)
+function createHUDNotificationDock() {
+  const dock = document.createElement('div');
+  dock.id = 'hud-dock';
+  dock.style.position = 'fixed';
+  dock.style.bottom = '12px';
+  dock.style.left = '12px';
+  dock.style.width = '260px';
+  dock.style.minHeight = '40px';
+  dock.style.background = 'rgba(0,0,0,0.55)';
+  dock.style.border = '1px solid #ff1744';
+  dock.style.backdropFilter = 'blur(6px)';
+  dock.style.color = '#ff1744';
+  dock.style.fontFamily = 'monospace';
+  dock.style.fontSize = '12px';
+  dock.style.padding = '8px';
+  dock.style.zIndex = '9998';
+  dock.style.userSelect = 'none';
+
+  dock.innerHTML = `<div id="dock-log">HUD DOCK ONLINE</div>`;
+
+  document.body.appendChild(dock);
+}
+
+function dockMessage(msg) {
+  const dock = document.getElementById('dock-log');
+  if (!dock) return;
+  const line = document.createElement('div');
+  line.textContent = msg;
+  dock.appendChild(line);
+  dock.parentNode.scrollTop = dock.parentNode.scrollHeight;
+}
+
+// HUD Expansion Loop
+function startHUDExpansionLoop() {
+  const startTime = Date.now();
+
+  setInterval(() => {
+    const pulse = document.getElementById('hud-advisor-pulse');
+    const drift = document.getElementById('hud-drift-distortion');
+
+    // Advisor Pulse
+    if (currentState === 'ADVISOR') {
+      pulse.style.opacity = '0.35';
+    } else {
+      pulse.style.opacity = '0';
+    }
+
+    // Drift Distortion
+    if (currentState === 'DRIFT') {
+      drift.style.opacity = '0.25';
+    } else {
+      drift.style.opacity = '0';
+    }
+
+    // Update vitals
+    const uptime = Math.floor((Date.now() - startTime) / 1000);
+    const vitalCmd = document.getElementById('vital-cmd');
+    const vitalApps = document.getElementById('vital-apps');
+    const vitalHB = document.getElementById('vital-hb');
+    const vitalInactive = document.getElement
+
 // 18. Init
 function initBeyondOS() {
   logInfo('BEYOND.OS core loaded.');
