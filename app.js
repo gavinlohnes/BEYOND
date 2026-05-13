@@ -468,6 +468,88 @@ function bootSequence() {
   }, 1600);
 }
 
+// ===============================
+//  HUD OVERLAY SYSTEM
+// ===============================
+
+// Creates HUD container dynamically so no HTML edits are needed
+function createHUDOverlay() {
+  const hud = document.createElement('div');
+  hud.id = 'hud-overlay';
+  hud.style.position = 'fixed';
+  hud.style.top = '0';
+  hud.style.left = '0';
+  hud.style.width = '100%';
+  hud.style.height = '48px';
+  hud.style.display = 'flex';
+  hud.style.alignItems = 'center';
+  hud.style.justifyContent = 'space-between';
+  hud.style.padding = '0 16px';
+  hud.style.background = 'rgba(0,0,0,0.55)';
+  hud.style.backdropFilter = 'blur(6px)';
+  hud.style.borderBottom = '1px solid #ff1744';
+  hud.style.zIndex = '9999';
+  hud.style.fontFamily = 'monospace';
+  hud.style.color = '#ff1744';
+  hud.style.userSelect = 'none';
+
+  hud.innerHTML = `
+    <div id="hud-left" style="display:flex;gap:16px;align-items:center;">
+      <div id="hud-state" style="font-size:14px;">STATE: IDLE</div>
+      <div id="hud-heartbeat" style="font-size:14px;">HB: ●</div>
+    </div>
+
+    <div id="hud-center" style="font-size:14px;opacity:0.8;">
+      BEYOND.OS HUD ONLINE
+    </div>
+
+    <div id="hud-right" style="display:flex;gap:16px;align-items:center;">
+      <div id="hud-visor" style="font-size:14px;">VISOR: OFF</div>
+      <div id="hud-time" style="font-size:14px;"></div>
+    </div>
+  `;
+
+  document.body.appendChild(hud);
+}
+
+// Updates HUD every 250ms
+function startHUDLoop() {
+  setInterval(() => {
+    const stateEl = document.getElementById('hud-state');
+    const hbEl = document.getElementById('hud-heartbeat');
+    const visorEl = document.getElementById('hud-visor');
+    const timeEl = document.getElementById('hud-time');
+
+    if (!stateEl) return;
+
+    // State
+    stateEl.textContent = `STATE: ${currentState}`;
+
+    // Heartbeat indicator
+    const hbFrames = ['●', '•', '·', '•'];
+    const hbIndex = Math.floor((Date.now() / 200) % hbFrames.length);
+    hbEl.textContent = `HB: ${hbFrames[hbIndex]}`;
+
+    // Visor status
+    visorEl.textContent = visorLocked ? 'VISOR: LOCKED' : 'VISOR: OFF';
+
+    // Time
+    const now = new Date();
+    timeEl.textContent = now.toLocaleTimeString();
+  }, 250);
+}
+
+// Hook HUD into boot sequence
+const originalBoot = bootSequence;
+bootSequence = function() {
+  originalBoot();
+  setTimeout(() => {
+    createHUDOverlay();
+    startHUDLoop();
+    logInfo('HUD OVERLAY ONLINE');
+  }, 1200);
+};
+
 // 18. Init
 function initBeyondOS() {
   logInfo('BEYOND.OS core loaded.');
