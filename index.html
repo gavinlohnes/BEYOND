@@ -1,140 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BEYOND.OS</title>
-  <link rel="stylesheet" href="styles-v5.css">
+  <meta charset="UTF-8" />
+  <title>BEYOND.OS – Redline</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
+  <div id="app">
+    <div class="bg"></div>
 
-  <!-- SPLASH SCREEN -->
-  <div id="os-splash">
-    <div id="os-splash-text">BEYOND.OS</div>
-  </div>
+    <div class="core">
+      <div class="core-inner"></div>
+    </div>
 
-  <!-- VISOR OVERLAY -->
-  <div id="visor-overlay" class="visor-hidden">
-    <div id="visor-overlay-inner">
-      <div id="visor-overlay-header">
-        <span>VISOR SYSTEM</span>
-        <button id="visor-close-btn">X</button>
-      </div>
+    <div class="beam"></div>
 
-      <div id="visor-overlay-body">
-        <div class="visor-overlay-column">
-          <h3>System</h3>
-          <ul>
-            <li>Core Status: OK</li>
-            <li>Memory: Stable</li>
-            <li>Pulse: Synced</li>
-          </ul>
-        </div>
+    <div class="ripples">
+      <div class="ripple ripple-1"></div>
+      <div class="ripple ripple-2"></div>
+      <div class="ripple ripple-3"></div>
+    </div>
 
-        <div class="visor-overlay-column">
-          <h3>Diagnostics</h3>
-          <ul>
-            <li>Scan: Ready</li>
-            <li>Integrity: 100%</li>
-            <li>Latency: 0.2ms</li>
-          </ul>
-        </div>
+    <div class="diamonds">
+      <div class="diamond diamond-1"></div>
+      <div class="diamond diamond-2"></div>
+      <div class="diamond diamond-3"></div>
+    </div>
 
-        <div class="visor-overlay-column">
-          <h3>Network</h3>
-          <ul>
-            <li>Link: Active</li>
-            <li>Nodes: 12</li>
-            <li>Signal: Strong</li>
-          </ul>
-        </div>
-      </div>
+    <div class="hud">
+      <div class="hud-line">BEYOND.OS // REDLINE CONTINUUM</div>
+      <div class="hud-line" id="hud-identity">IDENTITY: —</div>
+      <div class="hud-line" id="hud-presence">PRESENCE: —</div>
+      <div class="hud-line" id="hud-stability">STABILITY: —</div>
+      <div class="hud-line" id="hud-drift">DRIFT: —</div>
     </div>
   </div>
 
-  <!-- OS FRAME -->
-  <div id="os-frame">
-
-    <!-- HEADER -->
-    <div id="os-header">
-      <div id="os-brand">BEYOND.OS</div>
-      <div id="os-header-right">
-        <div id="os-status">IDLE</div>
-        <button class="header-btn" id="visor-btn">Visor</button>
-      </div>
-    </div>
-
-    <!-- 🟥 GLYPH MOUNT POINT (CRITICAL) -->
-    <div id="glyph-root"></div>
-
-    <!-- MAIN GRID -->
-    <div id="os-main">
-
-      <!-- LEFT PANEL -->
-      <div class="os-panel">
-        <div class="panel-title">Visor Feed</div>
-        <div class="panel-body" id="visor-feed">
-          <div class="visor-line">Initializing...</div>
-        </div>
-      </div>
-
-      <!-- CENTER PANEL -->
-      <div class="os-panel">
-        <div class="panel-title">Today</div>
-        <div class="panel-body" id="today-panel">
-          <div class="today-line">Loading...</div>
-        </div>
-      </div>
-
-      <!-- RIGHT PANEL -->
-      <div class="os-panel">
-        <div class="panel-title">System Log</div>
-        <div class="panel-body" id="log-panel">
-          <div>[BOOT] System online.</div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- APP GRID -->
-    <div id="app-grid">
-      <div class="panel-title">Applications</div>
-      <div id="app-grid-body">
-        <div class="app-tile">
-          <div class="app-title">Diagnostics</div>
-          <div class="app-subtitle">System Scan</div>
-        </div>
-        <div class="app-tile">
-          <div class="app-title">Network</div>
-          <div class="app-subtitle">Node Map</div>
-        </div>
-        <div class="app-tile">
-          <div class="app-title">Memory</div>
-          <div class="app-subtitle">Usage</div>
-        </div>
-        <div class="app-tile">
-          <div class="app-title">Pulse</div>
-          <div class="app-subtitle">Monitor</div>
-        </div>
-      </div>
-
-      <div id="app-grid-output">Ready.</div>
-    </div>
-
-    <!-- COMMAND BAR -->
-    <div id="os-command">
-      <span id="command-label">CMD:</span>
-      <input id="command-input" type="text" placeholder="Enter command...">
-    </div>
-
-  </div>
-
-  <!-- NOTIFICATION STACK -->
-  <div id="notification-stack"></div>
-
-  <!-- SCRIPT -->
   <script src="app.js"></script>
-
 </body>
 </html>
