@@ -975,6 +975,98 @@ bootSequence = function() {
   }, 2400);
 };
 
+    // ===============================
+//  SOUND LAYER — SCAFFOLD ONLY
+// ===============================
+
+// Registry of sound names (files not required yet)
+const SoundRegistry = {
+  BOOT: 'sounds/boot.mp3',
+  CLICK: 'sounds/click.mp3',
+  STATE_CHANGE: 'sounds/state_change.mp3',
+  VISOR_OPEN: 'sounds/visor_open.mp3',
+  VISOR_CLOSE: 'sounds/visor_close.mp3',
+  DRIFT: 'sounds/drift.mp3',
+  ADVISOR: 'sounds/advisor.mp3',
+  COMBAT: 'sounds/combat.mp3',
+  STEALTH: 'sounds/stealth.mp3',
+  HEARTBEAT: 'sounds/heartbeat.mp3',
+};
+
+// Sound engine core (safe even with missing files)
+const SoundEngine = {
+  enabled: true,
+  volume: 0.6,
+  cooldowns: {},
+
+  play(name) {
+    if (!this.enabled) return;
+    if (!SoundRegistry[name]) return;
+
+    // Cooldown check
+    const now = Date.now();
+    if (this.cooldowns[name] && now < this.cooldowns[name]) return;
+
+    // Set cooldown (prevents spam)
+    this.cooldowns[name] = now + 150;
+
+    // Create audio element (won't error if file missing)
+    const audio = new Audio(SoundRegistry[name]);
+    audio.volume = this.volume;
+
+    // Try to play, ignore failures (missing file = silent)
+    audio.play().catch(() => {});
+  },
+
+  setVolume(v) {
+    this.volume = Math.max(0, Math.min(1, v));
+  },
+
+  mute() {
+    this.enabled = false;
+  },
+
+  unmute() {
+    this.enabled = true;
+  }
+};
+
+// Hook sound engine into state transitions
+const originalSetState = setState;
+setState = function (newState) {
+  originalSetState(newState);
+
+  // Play state‑specific sound (file not required yet)
+  SoundEngine.play('STATE_CHANGE');
+
+  if (newState === 'DRIFT') SoundEngine.play('DRIFT');
+  if (newState === 'ADVISOR') SoundEngine.play('ADVISOR');
+  if (newState === 'COMBAT') SoundEngine.play('COMBAT');
+  if (newState === 'STEALTH') SoundEngine.play('STEALTH');
+};
+
+// Hook visor sounds
+const originalVisorOpen = visorOpen;
+visorOpen = function () {
+  originalVisorOpen();
+  SoundEngine.play('VISOR_OPEN');
+};
+
+const originalVisorClose = visorClose;
+visorClose = function () {
+  originalVisorClose();
+  SoundEngine.play('VISOR_CLOSE');
+};
+
+// Boot sound (optional, silent until file exists)
+const originalBoot4 = bootSequence;
+bootSequence = function () {
+  originalBoot4();
+  setTimeout(() => {
+    SoundEngine.play('BOOT');
+  }, 300);
+};
+    
 // 18. Init
 function initBeyondOS() {
   logInfo('BEYOND.OS core loaded.');
