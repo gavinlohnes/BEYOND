@@ -539,6 +539,116 @@ function startHUDLoop() {
   }, 250);
 }
 
+// ===============================
+//  FINAL HUD OVERLAY SYSTEM
+// ===============================
+
+// Create HUD container dynamically
+function createHUDOverlay() {
+  const hud = document.createElement('div');
+  hud.id = 'hud-overlay';
+  hud.style.position = 'fixed';
+  hud.style.top = '0';
+  hud.style.left = '0';
+  hud.style.width = '100%';
+  hud.style.height = '52px';
+  hud.style.display = 'flex';
+  hud.style.alignItems = 'center';
+  hud.style.justifyContent = 'space-between';
+  hud.style.padding = '0 18px';
+  hud.style.background = 'rgba(0,0,0,0.55)';
+  hud.style.backdropFilter = 'blur(6px)';
+  hud.style.borderBottom = '1px solid #ff1744';
+  hud.style.zIndex = '9999';
+  hud.style.fontFamily = 'monospace';
+  hud.style.color = '#ff1744';
+  hud.style.userSelect = 'none';
+
+  hud.innerHTML = `
+    <div id="hud-left" style="display:flex;gap:18px;align-items:center;">
+      <div id="hud-mini-glyph" style="width:32px;height:32px;"></div>
+      <div id="hud-state" style="font-size:14px;">STATE: IDLE</div>
+      <div id="hud-heartbeat" style="font-size:14px;">HB: ●</div>
+    </div>
+
+    <div id="hud-center" style="font-size:14px;opacity:0.85;">
+      BEYOND.OS HUD ONLINE
+    </div>
+
+    <div id="hud-right" style="display:flex;gap:18px;align-items:center;">
+      <div id="hud-threat" style="font-size:14px;">THREAT: 0%</div>
+      <div id="hud-visor" style="font-size:14px;">VISOR: OFF</div>
+      <div id="hud-time" style="font-size:14px;"></div>
+    </div>
+  `;
+
+  document.body.appendChild(hud);
+}
+
+// Mini glyph renderer
+function updateMiniGlyph() {
+  const mini = document.getElementById('hud-mini-glyph');
+  if (!mini) return;
+
+  const svg = GlyphSVG[currentState] || '';
+  mini.innerHTML = svg;
+}
+
+// Threat meter logic
+function computeThreatLevel() {
+  switch (currentState) {
+    case 'COMBAT': return 100;
+    case 'DRIFT': return 65;
+    case 'ADVISOR': return 40;
+    case 'ACTIVE': return 20;
+    case 'STEALTH': return 10;
+    case 'IDLE': return 0;
+    default: return 0;
+  }
+}
+
+// HUD update loop
+function startHUDLoop() {
+  setInterval(() => {
+    const stateEl = document.getElementById('hud-state');
+    const hbEl = document.getElementById('hud-heartbeat');
+    const visorEl = document.getElementById('hud-visor');
+    const timeEl = document.getElementById('hud-time');
+    const threatEl = document.getElementById('hud-threat');
+
+    if (!stateEl) return;
+
+    // State
+    stateEl.textContent = `STATE: ${currentState}`;
+
+    // Mini glyph
+    updateMiniGlyph();
+
+    // Heartbeat indicator
+    const hbFrames = ['●', '•', '·', '•'];
+    const hbIndex = Math.floor((Date.now() / 200) % hbFrames.length);
+    hbEl.textContent = `HB: ${hbFrames[hbIndex]}`;
+
+    // Visor status
+    visorEl.textContent = visorLocked ? 'VISOR: LOCKED' : 'VISOR: OFF';
+
+    // Threat meter
+    const threat = computeThreatLevel();
+    threatEl.textContent = `THREAT: ${threat}%`;
+
+    // Time
+    const now = new Date();
+    timeEl.textContent = now.toLocaleTimeString();
+
+    // Adaptive HUD glow
+    const hud = document.getElementById('hud-overlay');
+    if (hud) {
+      hud.style.borderBottom = `1px solid rgba(255,23,68,${0.4 + threat / 200})`;
+    }
+
+  }, 250);
+}
+
 // Hook HUD into boot sequence
 const originalBoot = bootSequence;
 bootSequence = function() {
