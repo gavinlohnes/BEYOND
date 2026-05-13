@@ -1,1966 +1,463 @@
-// BEYOND.OS core brain — app.js
+// BEYOND.OS V150+ — Core Kernel
+// Gavin / RED — Batcomputer Build
 
-// 1. Glyph registry (SVGs will plug in later)
-const GlyphSVG = {
-  IDLE: ``,
-  ACTIVE: ``,
-  COMBAT: ``,
-  STEALTH: ``,
-  DRIFT: ``,
-  ADVISOR: ``,
-  BOOT_START: ``,
-  BOOT_MID: ``,
-  BOOT_END: ``,
-  VISOR_COMPRESS: ``,
-  VISOR_EXPAND: ``,
-  VISOR_LOCK: ``,
-  HEARTBEAT_REST: ``,
-  HEARTBEAT_MID: ``,
-  HEARTBEAT_PEAK: ``,
-};
-
-const GLYPH_ROOT_ID = 'glyph-root';
-
-// 2. State + timers + engine internals
-let currentState = 'IDLE';
-let heartbeatTimer = null;
-let inactivityTimer = null;
-let lastInteractionTs = Date.now();
-let visorLocked = false;
-let visorPrevState = 'IDLE';
-let transitionCooldown = false;
-let lastTransitionTs = 0;
-
-// 3. System memory (session‑level)
-const SystemMemory = {
-  lastCommand: null,
-  commandHistory: [],
-  maxHistory: 32,
-  lastAppOpened: null,
-  lastStateBeforeVisor: null,
-  usageCounters: {
-    commands: 0,
-    visorOpens: 0,
-    appOpens: 0,
+const BeyondOS = {
+  version: "V150+",
+  operator: "RED",
+  state: {
+    booted: false,
+    mode: "IDLE", // IDLE | PATROL | INVESTIGATION | COMBAT | STEALTH | EMERGENCY
+    caveMode: "STANDBY", // STANDBY | ACTIVE | COMBAT | LOCKDOWN
   },
-  settings: {
-    inactivityTimeoutMs: 30_000,
-    heartbeatBaseMs: 600,
-  },
+  log: [],
 };
 
-const TRANSITION_COOLDOWN_MS = 600;
+// DOM refs
+const dom = {};
 
-// 4. OS states
-const OS_STATES = {
-  IDLE:   { key: 'IDLE',   loopHeartbeat: true,  label: 'IDLE' },
-  ACTIVE: { key: 'ACTIVE', loopHeartbeat: true,  label: 'ACTIVE' },
-  COMBAT: { key: 'COMBAT', loopHeartbeat: false, label: 'COMBAT' },
-  STEALTH:{ key: 'STEALTH',loopHeartbeat: false, label: 'STEALTH' },
-  DRIFT:  { key: 'DRIFT',  loopHeartbeat: false, label: 'DRIFT' },
-  ADVISOR:{ key: 'ADVISOR',loopHeartbeat: true,  label: 'ADVISOR' },
-};
-
-// 5. Log system (with levels + timestamps)
-function formatTimestamp() {
-  const d = new Date();
-  return d.toLocaleTimeString();
+function $(id) {
+  return document.getElementById(id);
 }
 
-function logLine(text, level = 'INFO') {
-  const logPanel = document.getElementById('log-panel');
-  if (!logPanel) return;
+function cacheDom() {
+  dom.bootOverlay = $("boot-overlay");
+  dom.bootStatus = $("boot-status");
+  dom.hudModeLabel = $("hud-mode-label");
+  dom.systemModeLabel = $("system-mode-label");
 
-  const line = document.createElement('div');
-  line.className = `log-line log-${level.toLowerCase()}`;
-  line.textContent = `[${formatTimestamp()}] [${level}] ${text}`;
-  logPanel.appendChild(line);
-  logPanel.scrollTop = logPanel.scrollHeight;
+  dom.vitalsBody = $("vitals-body");
+  dom.threatGridBody = $("threat-grid-body");
+  dom.missionFeedBody = $("mission-feed-body");
+  dom.suitAlertsBody = $("suit-alerts-body");
+
+  dom.diagnosticsBody = $("diagnostics-body");
+  dom.vehicleBayBody = $("vehicle-bay-body");
+  dom.evidenceBoardBody = $("evidence-board-body");
+  dom.trainingRoomBody = $("training-room-body");
+
+  dom.missionFlowBody = $("mission-flow-body");
+  dom.threatModuleBody = $("threat-module-body");
+  dom.operatorStatusBody = $("operator-status-body");
+
+  dom.terminalOutput = $("terminal-output");
+  dom.terminalInput = $("terminal-input");
+  dom.terminalStatus = $("terminal-status");
+
+  dom.aiModulePanel = $("ai-module-panel");
+  dom.aiModuleBody = $("ai-module-body");
 }
 
-function logInfo(msg) { logLine(msg, 'INFO'); }
-function logWarn(msg) { logLine(msg, 'WARN'); }
-function logError(msg) { logLine(msg, 'ERROR'); }
+// Utility logging
+function log(line, options = {}) {
+  const { type = "info" } = options;
+  const entry = { ts: new Date(), type, line };
+  BeyondOS.log.push(entry);
 
-// 6. Notifications
-function pushNotification(message, timeout = 3500) {
-  const stack = document.getElementById('notification-stack');
-  if (!stack) return;
+  if (!dom.terminalOutput) return;
 
-  const note = document.createElement('div');
-  note.className = 'notification';
-  note.textContent = message;
-  stack.appendChild(note);
-
-  setTimeout(() => {
-    note.style.opacity = '0';
-    setTimeout(() => {
-      if (note.parentNode) note.parentNode.removeChild(note);
-    }, 250);
-  }, timeout);
+  const div = document.createElement("div");
+  div.className = `terminal-line terminal-${type}`;
+  div.textContent = line;
+  dom.terminalOutput.appendChild(div);
+  dom.terminalOutput.scrollTop = dom.terminalOutput.scrollHeight;
 }
 
-// 7. Render helper
-function renderGlyph(key) {
-  const root = document.getElementById(GLYPH_ROOT_ID);
-  if (!root) return;
-  const svg = GlyphSVG[key] || '';
-  root.innerHTML = svg;
-}
+// Boot sequence
+function startBootSequence() {
+  let step = 0;
+  const steps = [
+    "Initializing BEYOND.OS kernel...",
+    "Syncing cave environment...",
+    "Bringing dual-monitor Batcomputer online...",
+    "Linking Suit Core and AI Bruce...",
+    "Loading mission, threat, and operator systems...",
+    "Finalizing integration layer...",
+    "All systems nominal. Awaiting operator.",
+  ];
 
-// 8. Heartbeat loop (adaptive)
-function getHeartbeatInterval() {
-  const base = SystemMemory.settings.heartbeatBaseMs;
-  const cmdUse = SystemMemory.usageCounters.commands;
-  if (cmdUse > 50) return Math.max(250, base - 250);
-  if (cmdUse > 20) return Math.max(350, base - 150);
-  return base;
-}
-
-function startHeartbeat() {
-  stopHeartbeat();
-  const root = document.getElementById(GLYPH_ROOT_ID);
-  if (!root) return;
-
-  const frames = ['.', '·', '•', '·'];
-  let idx = 0;
-  const interval = getHeartbeatInterval();
-
-  heartbeatTimer = setInterval(() => {
-    root.textContent = `[HEARTBEAT ${frames[idx]}]`;
-    idx = (idx + 1) % frames.length;
-  }, interval);
-}
-
-function stopHeartbeat() {
-  if (heartbeatTimer) {
-    clearInterval(heartbeatTimer);
-    heartbeatTimer = null;
-  }
-}
-
-// 9. Transition engine core
-function markInteraction(source = 'unknown') {
-  lastInteractionTs = Date.now();
-  resetInactivityTimer();
-}
-
-function canTransition() {
-  const now = Date.now();
-  if (transitionCooldown && now - lastTransitionTs < TRANSITION_COOLDOWN_MS) {
-    return false;
-  }
-  return true;
-}
-
-function setTransitionCooldown() {
-  transitionCooldown = true;
-  lastTransitionTs = Date.now();
-  setTimeout(() => {
-    transitionCooldown = false;
-  }, TRANSITION_COOLDOWN_MS);
-}
-
-function applyStateInternal(stateKey, reason = '') {
-  const meta = OS_STATES[stateKey];
-  if (!meta) return;
-
-  currentState = stateKey;
-
-  const statusEl = document.getElementById('os-status');
-  if (statusEl) statusEl.textContent = meta.label;
-
-  renderGlyph(meta.key);
-
-  if (meta.loopHeartbeat) {
-    startHeartbeat();
-  } else {
-    stopHeartbeat();
-  }
-
-  logInfo(`STATE → ${meta.label}${reason ? ` (${reason})` : ''}`);
-}
-
-function transitionTo(stateKey, reason = '') {
-  if (!OS_STATES[stateKey]) return;
-  if (visorLocked) {
-    logWarn(`STATE transition blocked (visor lock) → ${stateKey}`);
-    return;
-  }
-  if (!canTransition()) {
-    logWarn(`STATE transition throttled → ${stateKey}`);
-    return;
-  }
-
-  setTransitionCooldown();
-  applyStateInternal(stateKey, reason);
-}
-
-// 10. Inactivity handling (adaptive)
-function getInactivityTimeout() {
-  const base = SystemMemory.settings.inactivityTimeoutMs;
-  const cmdUse = SystemMemory.usageCounters.commands;
-  if (cmdUse > 50) return base * 0.5;
-  if (cmdUse > 20) return base * 0.75;
-  return base;
-}
-
-function resetInactivityTimer() {
-  if (inactivityTimer) {
-    clearTimeout(inactivityTimer);
-    inactivityTimer = null;
-  }
-  const timeout = getInactivityTimeout();
-  inactivityTimer = setTimeout(() => {
-    if (currentState === 'ACTIVE') {
-      transitionTo('IDLE', 'Inactivity');
-      pushNotification('SYSTEM → IDLE (inactivity)');
-    }
-  }, timeout);
-}
-
-// 11. Visor overlay controls
-function openVisor() {
-  const overlay = document.getElementById('visor-overlay');
-  if (!overlay) return;
-
-  if (!visorLocked) {
-    visorPrevState = currentState;
-    SystemMemory.lastStateBeforeVisor = currentState;
-    visorLocked = true;
-  }
-
-  overlay.classList.remove('visor-hidden');
-  logInfo('VISOR overlay opened.');
-  pushNotification('VISOR ONLINE');
-  SystemMemory.usageCounters.visorOpens += 1;
-  markInteraction('visor-open');
-}
-
-function closeVisor() {
-  const overlay = document.getElementById('visor-overlay');
-  if (!overlay) return;
-
-  overlay.classList.add('visor-hidden');
-  logInfo('VISOR overlay closed.');
-
-  if (visorLocked) {
-    visorLocked = false;
-    const restore = visorPrevState || 'ACTIVE';
-    transitionTo(restore, 'Visor close restore');
-  }
-
-  markInteraction('visor-close');
-}
-
-// 12. CMD handling (CMD 2.0)
-function addToCommandHistory(cmd) {
-  SystemMemory.lastCommand = cmd;
-  SystemMemory.commandHistory.push(cmd);
-  if (SystemMemory.commandHistory.length > SystemMemory.maxHistory) {
-    SystemMemory.commandHistory.shift();
-  }
-}
-
-function dumpSystemMemory() {
-  logInfo('SYSTEM MEMORY DUMP BEGIN');
-  logInfo(`Last command: ${SystemMemory.lastCommand || 'none'}`);
-  logInfo(`Last app opened: ${SystemMemory.lastAppOpened || 'none'}`);
-  logInfo(`Last state before visor: ${SystemMemory.lastStateBeforeVisor || 'none'}`);
-  logInfo(`Usage: CMD=${SystemMemory.usageCounters.commands}, VISOR=${SystemMemory.usageCounters.visorOpens}, APPS=${SystemMemory.usageCounters.appOpens}`);
-  logInfo('SYSTEM MEMORY DUMP END');
-}
-
-function clearLogPanel() {
-  const logPanel = document.getElementById('log-panel');
-  if (!logPanel) return;
-  logPanel.innerHTML = '';
-  logInfo('LOG CLEARED');
-}
-
-function handleCommand(raw) {
-  const cmd = raw.trim();
-  if (!cmd) return;
-
-  logInfo(`CMD> ${cmd}`);
-  markInteraction('cmd');
-  addToCommandHistory(cmd);
-  SystemMemory.usageCounters.commands += 1;
-
-  const lower = cmd.toLowerCase();
-
-  if (lower === 'help') {
-    logInfo('Available: help, ping, state idle|active|drift|advisor|stealth|combat, visor open|close, clear, history, inspect');
-    pushNotification('HELP: See system log.');
-    return;
-  }
-
-  if (lower === 'ping') {
-    logInfo('PONG');
-    pushNotification('PONG');
-    transitionTo('ACTIVE', 'Ping');
-    return;
-  }
-
-  if (lower === 'clear') {
-    clearLogPanel();
-    return;
-  }
-
-  if (lower === 'history') {
-    if (!SystemMemory.commandHistory.length) {
-      logInfo('No command history.');
-      return;
-    }
-    logInfo('COMMAND HISTORY BEGIN');
-    SystemMemory.commandHistory.forEach((c, i) => {
-      logInfo(`#${i + 1}: ${c}`);
-    });
-    logInfo('COMMAND HISTORY END');
-    return;
-  }
-
-  if (lower === 'inspect') {
-    dumpSystemMemory();
-    return;
-  }
-
-  if (lower.startsWith('state ')) {
-    const target = lower.split(' ')[1]?.toUpperCase();
-    if (OS_STATES[target]) {
-      transitionTo(target, 'CMD');
-      pushNotification(`STATE → ${target}`);
+  const interval = setInterval(() => {
+    if (step < steps.length) {
+      dom.bootStatus.textContent = steps[step];
+      step++;
     } else {
-      logWarn(`Unknown state: ${target}`);
+      clearInterval(interval);
+      completeBoot();
     }
-    return;
-  }
-
-  if (lower === 'visor open') {
-    openVisor();
-    return;
-  }
-
-  if (lower === 'visor close') {
-    closeVisor();
-    return;
-  }
-
-  logWarn('Unknown command. Type "help".');
+  }, 550);
 }
 
-// 13. App tile behavior (with chained transitions)
-function wireAppTiles() {
-  const tiles = document.querySelectorAll('.app-tile');
-  const output = document.getElementById('app-grid-output');
-  if (!tiles.length || !output) return;
-
-  tiles.forEach((tile, index) => {
-    tile.addEventListener('click', () => {
-      const title = tile.querySelector('.app-title')?.textContent || `App ${index + 1}`;
-      const subtitle = tile.querySelector('.app-subtitle')?.textContent || '';
-      output.textContent = `${title} — ${subtitle || 'Activated'}`;
-      logInfo(`APP opened: ${title}`);
-      SystemMemory.lastAppOpened = title;
-      SystemMemory.usageCounters.appOpens += 1;
-      markInteraction(`app-${title.toLowerCase()}`);
-
-      switch (title.toLowerCase()) {
-        case 'diagnostics':
-          transitionTo('ACTIVE', 'Diagnostics');
-          break;
-        case 'network':
-          transitionTo('ADVISOR', 'Network');
-          break;
-        case 'memory':
-          transitionTo('DRIFT', 'Memory');
-          setTimeout(() => {
-            if (currentState === 'DRIFT') {
-              transitionTo('ADVISOR', 'Drift resolve');
-            }
-          }, 5000);
-          break;
-        case 'pulse':
-          transitionTo('IDLE', 'Pulse');
-          break;
-        default:
-          break;
-      }
-
-      pushNotification(`${title.toUpperCase()} ONLINE`);
-    });
-  });
-}
-
-// 14. Visor button wiring
-function wireVisorButton() {
-  const btn = document.getElementById('visor-btn');
-  const closeBtn = document.getElementById('visor-close-btn');
-  if (btn) {
-    btn.addEventListener('click', () => {
-      openVisor();
-    });
-  }
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      closeVisor();
-    });
-  }
-}
-
-// 15. CMD input wiring
-function wireCommandInput() {
-  const input = document.getElementById('command-input');
-  if (!input) return;
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      handleCommand(input.value);
-      input.value = '';
-    }
-  });
-
-  input.addEventListener('input', () => {
-    markInteraction('cmd-typing');
-    if (currentState === 'IDLE') {
-      transitionTo('ACTIVE', 'CMD typing');
-    }
-  });
-}
-
-// 16. Panels init
-function initPanels() {
-  const today = document.getElementById('today-panel');
-  const visorFeed = document.getElementById('visor-feed');
-
-  if (today) {
-    const now = new Date();
-    today.innerHTML = '';
-    const line = document.createElement('div');
-    line.className = 'today-line';
-    line.textContent = `System date: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
-    today.appendChild(line);
-  }
-
-  if (visorFeed) {
-    visorFeed.innerHTML = '';
-    const line = document.createElement('div');
-    line.className = 'visor-line';
-    line.textContent = 'VISOR CHANNEL: STANDBY';
-    visorFeed.appendChild(line);
-  }
-}
-
-// 17. Boot sequence
-function bootSequence() {
-  logInfo('BEYOND.OS initializing...');
-  applyStateInternal('IDLE', 'Boot');
-  resetInactivityTimer();
-
+function completeBoot() {
+  BeyondOS.state.booted = true;
+  dom.bootOverlay.style.opacity = "0";
   setTimeout(() => {
-    logInfo('Core systems online.');
+    dom.bootOverlay.style.display = "none";
   }, 600);
 
-  setTimeout(() => {
-    transitionTo('ACTIVE', 'Post-boot');
-    logInfo('Handing control to operator.');
-    pushNotification('BEYOND.OS ONLINE');
-  }, 1600);
+  log("BEYOND.OS V150+ online.", { type: "system" });
+  log("Operator: RED. Cave: synchronized.", { type: "system" });
+
+  initializeSystems();
 }
 
-// ===============================
-//  HUD OVERLAY SYSTEM
-// ===============================
+// INITIALIZATION OF SYSTEMS
 
-// Creates HUD container dynamically so no HTML edits are needed
-function createHUDOverlay() {
-  const hud = document.createElement('div');
-  hud.id = 'hud-overlay';
-  hud.style.position = 'fixed';
-  hud.style.top = '0';
-  hud.style.left = '0';
-  hud.style.width = '100%';
-  hud.style.height = '48px';
-  hud.style.display = 'flex';
-  hud.style.alignItems = 'center';
-  hud.style.justifyContent = 'space-between';
-  hud.style.padding = '0 16px';
-  hud.style.background = 'rgba(0,0,0,0.55)';
-  hud.style.backdropFilter = 'blur(6px)';
-  hud.style.borderBottom = '1px solid #ff1744';
-  hud.style.zIndex = '9999';
-  hud.style.fontFamily = 'monospace';
-  hud.style.color = '#ff1744';
-  hud.style.userSelect = 'none';
+function initializeSystems() {
+  renderVitals();
+  renderThreatGrid();
+  renderMissionFeed();
+  renderSuitAlerts();
 
-  hud.innerHTML = `
-    <div id="hud-left" style="display:flex;gap:16px;align-items:center;">
-      <div id="hud-state" style="font-size:14px;">STATE: IDLE</div>
-      <div id="hud-heartbeat" style="font-size:14px;">HB: ●</div>
-    </div>
+  renderDiagnostics();
+  renderVehicleBay();
+  renderEvidenceBoard();
+  renderTrainingRoom();
 
-    <div id="hud-center" style="font-size:14px;opacity:0.8;">
-      BEYOND.OS HUD ONLINE
-    </div>
+  renderMissionFlow();
+  renderThreatModule();
+  renderOperatorStatus();
 
-    <div id="hud-right" style="display:flex;gap:16px;align-items:center;">
-      <div id="hud-visor" style="font-size:14px;">VISOR: OFF</div>
-      <div id="hud-time" style="font-size:14px;"></div>
-    </div>
-  `;
-
-  document.body.appendChild(hud);
+  dom.terminalInput.addEventListener("keydown", handleTerminalInput);
+  dom.terminalInput.focus();
 }
 
-// Updates HUD every 250ms
-function startHUDLoop() {
-  setInterval(() => {
-    const stateEl = document.getElementById('hud-state');
-    const hbEl = document.getElementById('hud-heartbeat');
-    const visorEl = document.getElementById('hud-visor');
-    const timeEl = document.getElementById('hud-time');
+// SUIT / OPERATOR MOCK DATA
 
-    if (!stateEl) return;
-
-    // State
-    stateEl.textContent = `STATE: ${currentState}`;
-
-    // Heartbeat indicator
-    const hbFrames = ['●', '•', '·', '•'];
-    const hbIndex = Math.floor((Date.now() / 200) % hbFrames.length);
-    hbEl.textContent = `HB: ${hbFrames[hbIndex]}`;
-
-    // Visor status
-    visorEl.textContent = visorLocked ? 'VISOR: LOCKED' : 'VISOR: OFF';
-
-    // Time
-    const now = new Date();
-    timeEl.textContent = now.toLocaleTimeString();
-  }, 250);
-}
-
-// ===============================
-//  FINAL HUD OVERLAY SYSTEM
-// ===============================
-
-// Create HUD container dynamically
-function createHUDOverlay() {
-  const hud = document.createElement('div');
-  hud.id = 'hud-overlay';
-  hud.style.position = 'fixed';
-  hud.style.top = '0';
-  hud.style.left = '0';
-  hud.style.width = '100%';
-  hud.style.height = '52px';
-  hud.style.display = 'flex';
-  hud.style.alignItems = 'center';
-  hud.style.justifyContent = 'space-between';
-  hud.style.padding = '0 18px';
-  hud.style.background = 'rgba(0,0,0,0.55)';
-  hud.style.backdropFilter = 'blur(6px)';
-  hud.style.borderBottom = '1px solid #ff1744';
-  hud.style.zIndex = '9999';
-  hud.style.fontFamily = 'monospace';
-  hud.style.color = '#ff1744';
-  hud.style.userSelect = 'none';
-
-  hud.innerHTML = `
-    <div id="hud-left" style="display:flex;gap:18px;align-items:center;">
-      <div id="hud-mini-glyph" style="width:32px;height:32px;"></div>
-      <div id="hud-state" style="font-size:14px;">STATE: IDLE</div>
-      <div id="hud-heartbeat" style="font-size:14px;">HB: ●</div>
-    </div>
-
-    <div id="hud-center" style="font-size:14px;opacity:0.85;">
-      BEYOND.OS HUD ONLINE
-    </div>
-
-    <div id="hud-right" style="display:flex;gap:18px;align-items:center;">
-      <div id="hud-threat" style="font-size:14px;">THREAT: 0%</div>
-      <div id="hud-visor" style="font-size:14px;">VISOR: OFF</div>
-      <div id="hud-time" style="font-size:14px;"></div>
-    </div>
-  `;
-
-  document.body.appendChild(hud);
-}
-
-// Mini glyph renderer
-function updateMiniGlyph() {
-  const mini = document.getElementById('hud-mini-glyph');
-  if (!mini) return;
-
-  const svg = GlyphSVG[currentState] || '';
-  mini.innerHTML = svg;
-}
-
-// Threat meter logic
-function computeThreatLevel() {
-  switch (currentState) {
-    case 'COMBAT': return 100;
-    case 'DRIFT': return 65;
-    case 'ADVISOR': return 40;
-    case 'ACTIVE': return 20;
-    case 'STEALTH': return 10;
-    case 'IDLE': return 0;
-    default: return 0;
-  }
-}
-
-// HUD update loop
-function startHUDLoop() {
-  setInterval(() => {
-    const stateEl = document.getElementById('hud-state');
-    const hbEl = document.getElementById('hud-heartbeat');
-    const visorEl = document.getElementById('hud-visor');
-    const timeEl = document.getElementById('hud-time');
-    const threatEl = document.getElementById('hud-threat');
-
-    if (!stateEl) return;
-
-    // State
-    stateEl.textContent = `STATE: ${currentState}`;
-
-    // Mini glyph
-    updateMiniGlyph();
-
-    // Heartbeat indicator
-    const hbFrames = ['●', '•', '·', '•'];
-    const hbIndex = Math.floor((Date.now() / 200) % hbFrames.length);
-    hbEl.textContent = `HB: ${hbFrames[hbIndex]}`;
-
-    // Visor status
-    visorEl.textContent = visorLocked ? 'VISOR: LOCKED' : 'VISOR: OFF';
-
-    // Threat meter
-    const threat = computeThreatLevel();
-    threatEl.textContent = `THREAT: ${threat}%`;
-
-    // Time
-    const now = new Date();
-    timeEl.textContent = now.toLocaleTimeString();
-
-    // Adaptive HUD glow
-    const hud = document.getElementById('hud-overlay');
-    if (hud) {
-      hud.style.borderBottom = `1px solid rgba(255,23,68,${0.4 + threat / 200})`;
-    }
-
-  }, 250);
-}
-
-// Hook HUD into boot sequence
-const originalBoot = bootSequence;
-bootSequence = function() {
-  originalBoot();
-  setTimeout(() => {
-    createHUDOverlay();
-    startHUDLoop();
-    logInfo('HUD OVERLAY ONLINE');
-  }, 1200);
+const Operator = {
+  name: "RED",
+  status: "READY",
+  focus: "HIGH",
+  fatigue: "LOW",
+  mode: "IDLE",
 };
 
-// ===============================
-//  HUD EXPANSION PACK
-// ===============================
-
-// Create Vitals Panel (collapsible)
-function createHUDVitals() {
-  const vitals = document.createElement('div');
-  vitals.id = 'hud-vitals';
-  vitals.style.position = 'fixed';
-  vitals.style.top = '56px';
-  vitals.style.right = '12px';
-  vitals.style.width = '220px';
-  vitals.style.padding = '12px';
-  vitals.style.background = 'rgba(0,0,0,0.65)';
-  vitals.style.border = '1px solid #ff1744';
-  vitals.style.backdropFilter = 'blur(6px)';
-  vitals.style.color = '#ff1744';
-  vitals.style.fontFamily = 'monospace';
-  vitals.style.fontSize = '13px';
-  vitals.style.zIndex = '9998';
-  vitals.style.userSelect = 'none';
-  vitals.style.display = 'none';
-
-  vitals.innerHTML = `
-    <div style="margin-bottom:6px;font-weight:bold;">SYSTEM VITALS</div>
-    <div id="vital-cmd">CMD Usage: 0</div>
-    <div id="vital-apps">App Opens: 0</div>
-    <div id="vital-hb">Heartbeat Interval: 0ms</div>
-    <div id="vital-inactive">Inactivity Timeout: 0ms</div>
-    <div id="vital-uptime">Uptime: 0s</div>
-  `;
-
-  document.body.appendChild(vitals);
-}
-
-// Toggle vitals panel with double‑tap on HUD center
-function wireVitalsToggle() {
-  const center = document.getElementById('hud-center');
-  if (!center) return;
-
-  let lastTap = 0;
-  center.addEventListener('click', () => {
-    const now = Date.now();
-    if (now - lastTap < 300) {
-      const vitals = document.getElementById('hud-vitals');
-      if (vitals.style.display === 'none') {
-        vitals.style.display = 'block';
-      } else {
-        vitals.style.display = 'none';
-      }
-    }
-    lastTap = now;
-  });
-}
-
-// Advisor Pulse Overlay
-function createAdvisorPulse() {
-  const pulse = document.createElement('div');
-  pulse.id = 'hud-advisor-pulse';
-  pulse.style.position = 'fixed';
-  pulse.style.top = '0';
-  pulse.style.left = '0';
-  pulse.style.width = '100%';
-  pulse.style.height = '100%';
-  pulse.style.pointerEvents = 'none';
-  pulse.style.zIndex = '9997';
-  pulse.style.opacity = '0';
-  pulse.style.transition = 'opacity 0.3s ease';
-
-  pulse.innerHTML = `
-    <svg viewBox="0 0 200 200" style="width:100%;height:100%;opacity:0.25;">
-      <circle cx="100" cy="100" r="40" stroke="#ff1744" stroke-width="2" fill="none"/>
-      <circle cx="100" cy="100" r="60" stroke="#ff1744" stroke-width="1" fill="none"/>
-      <circle cx="100" cy="100" r="80" stroke="#ff1744" stroke-width="1" fill="none"/>
-    </svg>
-  `;
-
-  document.body.appendChild(pulse);
-}
-
-// Drift Distortion Overlay
-function createDriftDistortion() {
-  const drift = document.createElement('div');
-  drift.id = 'hud-drift-distortion';
-  drift.style.position = 'fixed';
-  drift.style.top = '0';
-  drift.style.left = '0';
-  drift.style.width = '100%';
-  drift.style.height = '100%';
-  drift.style.pointerEvents = 'none';
-  drift.style.zIndex = '9996';
-  drift.style.opacity = '0';
-  drift.style.background = 'repeating-linear-gradient(90deg, rgba(255,23,68,0.05) 0px, rgba(255,23,68,0.05) 2px, transparent 2px, transparent 4px)';
-  drift.style.transition = 'opacity 0.2s ease';
-
-  document.body.appendChild(drift);
-}
-
-// Operator Tag
-function createOperatorTag() {
-  const tag = document.createElement('div');
-  tag.id = 'hud-operator';
-  tag.style.position = 'fixed';
-  tag.style.bottom = '12px';
-  tag.style.right = '12px';
-  tag.style.padding = '6px 10px';
-  tag.style.background = 'rgba(0,0,0,0.55)';
-  tag.style.border = '1px solid #ff1744';
-  tag.style.color = '#ff1744';
-  tag.style.fontFamily = 'monospace';
-  tag.style.fontSize = '12px';
-  tag.style.zIndex = '9998';
-  tag.style.userSelect = 'none';
-
-  tag.textContent = 'OPERATOR: GAVIN — RANK: PRIME';
-
-  document.body.appendChild(tag);
-}
-
-// Notification Dock (persistent)
-function createHUDNotificationDock() {
-  const dock = document.createElement('div');
-  dock.id = 'hud-dock';
-  dock.style.position = 'fixed';
-  dock.style.bottom = '12px';
-  dock.style.left = '12px';
-  dock.style.width = '260px';
-  dock.style.minHeight = '40px';
-  dock.style.background = 'rgba(0,0,0,0.55)';
-  dock.style.border = '1px solid #ff1744';
-  dock.style.backdropFilter = 'blur(6px)';
-  dock.style.color = '#ff1744';
-  dock.style.fontFamily = 'monospace';
-  dock.style.fontSize = '12px';
-  dock.style.padding = '8px';
-  dock.style.zIndex = '9998';
-  dock.style.userSelect = 'none';
-
-  dock.innerHTML = `<div id="dock-log">HUD DOCK ONLINE</div>`;
-
-  document.body.appendChild(dock);
-}
-
-function dockMessage(msg) {
-  const dock = document.getElementById('dock-log');
-  if (!dock) return;
-  const line = document.createElement('div');
-  line.textContent = msg;
-  dock.appendChild(line);
-  dock.parentNode.scrollTop = dock.parentNode.scrollHeight;
-}
-
-// HUD Expansion Loop
-function startHUDExpansionLoop() {
-  const startTime = Date.now();
-
-  setInterval(() => {
-    const pulse = document.getElementById('hud-advisor-pulse');
-    const drift = document.getElementById('hud-drift-distortion');
-
-    // Advisor Pulse
-    if (currentState === 'ADVISOR') {
-      pulse.style.opacity = '0.35';
-    } else {
-      pulse.style.opacity = '0';
-    }
-
-    // Drift Distortion
-    if (currentState === 'DRIFT') {
-      drift.style.opacity = '0.25';
-    } else {
-      drift.style.opacity = '0';
-    }
-
-    // Update vitals
-    const uptime = Math.floor((Date.now() - startTime) / 1000);
-    const vitalCmd = document.getElementById('vital-cmd');
-    const vitalApps = document.getElementById('vital-apps');
-    const vitalHB = document.getElementById('vital-hb');
-    const vitalInactive = document.getElement
-
-    // ===============================
-//  HUD PHASE 3 — DYNAMIC THEMES
-// ===============================
-
-// Theme definitions
-const HUDThemes = {
-  IDLE: {
-    glow: 0.25,
-    opacity: 0.65,
-    pulseSpeed: 1200,
-    color: '#ff1744',
-  },
-  ACTIVE: {
-    glow: 0.45,
-    opacity: 0.85,
-    pulseSpeed: 600,
-    color: '#ff1744',
-  },
-  COMBAT: {
-    glow: 0.9,
-    opacity: 1.0,
-    pulseSpeed: 250,
-    color: '#ff0022',
-  },
-  STEALTH: {
-    glow: 0.15,
-    opacity: 0.35,
-    pulseSpeed: 1400,
-    color: '#ff1744',
-  },
-  DRIFT: {
-    glow: 0.75,
-    opacity: 0.9,
-    pulseSpeed: 400,
-    color: '#ff1744',
-  },
-  ADVISOR: {
-    glow: 0.55,
-    opacity: 0.95,
-    pulseSpeed: 500,
-    color: '#ff1744',
-  }
+const Suit = {
+  integrity: 0.97,
+  stealthMesh: 0.92,
+  flightSystems: 0.95,
+  neuralLink: 0.98,
+  autoRepair: "STANDBY",
 };
 
-// Apply theme to HUD
-function applyHUDTheme() {
-  const hud = document.getElementById('hud-overlay');
-  if (!hud) return;
-
-  const theme = HUDThemes[currentState] || HUDThemes.IDLE;
-
-  // Opacity
-  hud.style.background = `rgba(0,0,0,${theme.opacity})`;
-
-  // Glow
-  hud.style.borderBottom = `1px solid rgba(255,23,68,${theme.glow})`;
-
-  // Color
-  hud.style.color = theme.color;
-
-  // Mini glyph color override
-  const mini = document.getElementById('hud-mini-glyph');
-  if (mini) {
-    mini.style.filter = `drop-shadow(0 0 ${theme.glow * 12}px ${theme.color})`;
-  }
-
-  // Advisor pulse intensity
-  const pulse = document.getElementById('hud-advisor-pulse');
-  if (pulse) {
-    pulse.style.opacity = currentState === 'ADVISOR' ? theme.glow : 0;
-  }
-
-  // Drift distortion intensity
-  const drift = document.getElementById('hud-drift-distortion');
-  if (drift) {
-    drift.style.opacity = currentState === 'DRIFT' ? theme.glow * 0.5 : 0;
-  }
-}
-
-// HUD pulse animation
-function startHUDPulse() {
-  setInterval(() => {
-    const hud = document.getElementById('hud-overlay');
-    if (!hud) return;
-
-    const theme = HUDThemes[currentState] || HUDThemes.IDLE;
-
-    hud.animate(
-      [
-        { borderBottomColor: `rgba(255,23,68,${theme.glow})` },
-        { borderBottomColor: `rgba(255,23,68,${theme.glow * 0.4})` },
-        { borderBottomColor: `rgba(255,23,68,${theme.glow})` }
-      ],
-      {
-        duration: theme.pulseSpeed,
-        iterations: 1,
-        easing: 'ease-in-out'
-      }
-    );
-  }, 300);
-}
-
-// Visor auto‑dimming
-function updateVisorHUD() {
-  const hud = document.getElementById('hud-overlay');
-  if (!hud) return;
-
-  if (visorLocked) {
-    hud.style.opacity = '0.35';
-  } else {
-    const theme = HUDThemes[currentState] || HUDThemes.IDLE;
-    hud.style.opacity = theme.opacity;
-  }
-}
-
-// Phase 3 loop
-function startHUDThemeLoop() {
-  setInterval(() => {
-    applyHUDTheme();
-    updateVisorHUD();
-  }, 200);
-}
-
-// Inject Phase 3 after Phase 2
-const originalBoot3 = bootSequence;
-bootSequence = function() {
-  originalBoot3();
-  setTimeout(() => {
-    startHUDPulse();
-    startHUDThemeLoop();
-    dockMessage('HUD THEME ENGINE ONLINE');
-  }, 2400);
-};
-
-    // ===============================
-//  SOUND LAYER — SCAFFOLD ONLY
-// ===============================
-
-// Registry of sound names (files not required yet)
-const SoundRegistry = {
-  BOOT: 'sounds/boot.mp3',
-  CLICK: 'sounds/click.mp3',
-  STATE_CHANGE: 'sounds/state_change.mp3',
-  VISOR_OPEN: 'sounds/visor_open.mp3',
-  VISOR_CLOSE: 'sounds/visor_close.mp3',
-  DRIFT: 'sounds/drift.mp3',
-  ADVISOR: 'sounds/advisor.mp3',
-  COMBAT: 'sounds/combat.mp3',
-  STEALTH: 'sounds/stealth.mp3',
-  HEARTBEAT: 'sounds/heartbeat.mp3',
-};
-
-// Sound engine core (safe even with missing files)
-const SoundEngine = {
-  enabled: true,
-  volume: 0.6,
-  cooldowns: {},
-
-  play(name) {
-    if (!this.enabled) return;
-    if (!SoundRegistry[name]) return;
-
-    // Cooldown check
-    const now = Date.now();
-    if (this.cooldowns[name] && now < this.cooldowns[name]) return;
-
-    // Set cooldown (prevents spam)
-    this.cooldowns[name] = now + 150;
-
-    // Create audio element (won't error if file missing)
-    const audio = new Audio(SoundRegistry[name]);
-    audio.volume = this.volume;
-
-    // Try to play, ignore failures (missing file = silent)
-    audio.play().catch(() => {});
-  },
-
-  setVolume(v) {
-    this.volume = Math.max(0, Math.min(1, v));
-  },
-
-  mute() {
-    this.enabled = false;
-  },
-
-  unmute() {
-    this.enabled = true;
-  }
-};
-
-// Hook sound engine into state transitions
-const originalSetState = setState;
-setState = function (newState) {
-  originalSetState(newState);
-
-  // Play state‑specific sound (file not required yet)
-  SoundEngine.play('STATE_CHANGE');
-
-  if (newState === 'DRIFT') SoundEngine.play('DRIFT');
-  if (newState === 'ADVISOR') SoundEngine.play('ADVISOR');
-  if (newState === 'COMBAT') SoundEngine.play('COMBAT');
-  if (newState === 'STEALTH') SoundEngine.play('STEALTH');
-};
-
-// Hook visor sounds
-const originalVisorOpen = visorOpen;
-visorOpen = function () {
-  originalVisorOpen();
-  SoundEngine.play('VISOR_OPEN');
-};
-
-const originalVisorClose = visorClose;
-visorClose = function () {
-  originalVisorClose();
-  SoundEngine.play('VISOR_CLOSE');
-};
-
-// Boot sound (optional, silent until file exists)
-const originalBoot4 = bootSequence;
-bootSequence = function () {
-  originalBoot4();
-  setTimeout(() => {
-    SoundEngine.play('BOOT');
-  }, 300);
-};
-
-    // ===============================
-//  HUD PHASE 4 — BOOT ANIMATION
-// ===============================
-
-// Create boot overlay
-function createBootOverlay() {
-  const boot = document.createElement('div');
-  boot.id = 'boot-overlay';
-  boot.style.position = 'fixed';
-  boot.style.top = '0';
-  boot.style.left = '0';
-  boot.style.width = '100%';
-  boot.style.height = '100%';
-  boot.style.background = 'black';
-  boot.style.display = 'flex';
-  boot.style.flexDirection = 'column';
-  boot.style.alignItems = 'center';
-  boot.style.justifyContent = 'center';
-  boot.style.zIndex = '10000';
-  boot.style.color = '#ff1744';
-  boot.style.fontFamily = 'monospace';
-  boot.style.userSelect = 'none';
-  boot.style.opacity = '1';
-  boot.style.transition = 'opacity 1.2s ease';
-
-  boot.innerHTML = `
-    <div id="boot-glyph" style="width:120px;height:120px;margin-bottom:24px;opacity:0;">
-      ${GlyphSVG.BOOT_START}
-    </div>
-
-    <div id="boot-text" style="font-size:18px;opacity:0;">
-      INITIALIZING BEYOND.OS
-    </div>
-
-    <div id="boot-progress" style="margin-top:18px;font-size:14px;opacity:0;">
-      [ ■□□□□□□□□□ ]
-    </div>
-  `;
-
-  document.body.appendChild(boot);
-}
-
-// Boot animation sequence
-function startBootAnimation() {
-  const boot = document.getElementById('boot-overlay');
-  const glyph = document.getElementById('boot-glyph');
-  const text = document.getElementById('boot-text');
-  const progress = document.getElementById('boot-progress');
-
-  if (!boot) return;
-
-  // Step 1: Fade in glyph
-  setTimeout(() => {
-    glyph.style.opacity = '1';
-  }, 300);
-
-  // Step 2: Swap glyph to mid
-  setTimeout(() => {
-    glyph.innerHTML = GlyphSVG.BOOT_MID;
-  }, 900);
-
-  // Step 3: Show text
-  setTimeout(() => {
-    text.style.opacity = '1';
-  }, 1200);
-
-  // Step 4: Progress bar animation
-  const frames = [
-    '[ ■□□□□□□□□□ ]',
-    '[ ■■□□□□□□□□ ]',
-    '[ ■■■□□□□□□□ ]',
-    '[ ■■■■□□□□□□ ]',
-    '[ ■■■■■□□□□□ ]',
-    '[ ■■■■■■□□□□ ]',
-    '[ ■■■■■■■□□□ ]',
-    '[ ■■■■■■■■□□ ]',
-    '[ ■■■■■■■■■□ ]',
-    '[ ■■■■■■■■■■ ]'
-  ];
-
-  frames.forEach((f, i) => {
-    setTimeout(() => {
-      progress.style.opacity = '1';
-      progress.textContent = f;
-    }, 1400 + i * 120);
-  });
-
-  // Step 5: Final glyph
-  setTimeout(() => {
-    glyph.innerHTML = GlyphSVG.BOOT_END;
-  }, 3000);
-
-  // Step 6: Fade out boot overlay
-  setTimeout(() => {
-    boot.style.opacity = '0';
-  }, 3600);
-
-  // Step 7: Remove from DOM
-  setTimeout(() => {
-    boot.remove();
-  }, 5000);
-}
-
-// Inject boot animation before everything else
-const originalBootPhase4 = bootSequence;
-bootSequence = function () {
-  createBootOverlay();
-  startBootAnimation();
-
-  // Continue normal boot
-  originalBootPhase4();
-};
-
-    // ===============================
-//  HUD PHASE 5 — COMMAND PALETTE
-// ===============================
-
-function createCommandPalette() {
-  const palette = document.createElement('div');
-  palette.id = 'command-palette';
-  palette.style.position = 'fixed';
-  palette.style.top = '50%';
-  palette.style.left = '50%';
-  palette.style.transform = 'translate(-50%, -50%)';
-  palette.style.width = '420px';
-  palette.style.padding = '18px';
-  palette.style.background = 'rgba(0,0,0,0.85)';
-  palette.style.border = '1px solid #ff1744';
-  palette.style.backdropFilter = 'blur(8px)';
-  palette.style.color = '#ff1744';
-  palette.style.fontFamily = 'monospace';
-  palette.style.fontSize = '14px';
-  palette.style.zIndex = '99999';
-  palette.style.display = 'none';
-  palette.style.userSelect = 'none';
-
-  palette.innerHTML = `
-    <div style="margin-bottom:10px;font-weight:bold;">COMMAND PALETTE</div>
-    <input id="palette-input" 
-           style="width:100%;padding:8px;background:black;border:1px solid #ff1744;color:#ff1744;font-family:monospace;"
-           placeholder="Type a command...">
-    <div id="palette-suggestions" style="margin-top:12px;max-height:180px;overflow-y:auto;"></div>
-  `;
-
-  document.body.appendChild(palette);
-}
-
-const PaletteCommands = [
-  { cmd: 'state idle', desc: 'Switch to IDLE mode' },
-  { cmd: 'state active', desc: 'Switch to ACTIVE mode' },
-  { cmd: 'state drift', desc: 'Enter DRIFT mode' },
-  { cmd: 'state advisor', desc: 'Enter ADVISOR mode' },
-  { cmd: 'state stealth', desc: 'Enter STEALTH mode' },
-  { cmd: 'state combat', desc: 'Enter COMBAT mode' },
-  { cmd: 'visor open', desc: 'Open visor' },
-  { cmd: 'visor close', desc: 'Close visor' },
-  { cmd: 'clear', desc: 'Clear CMD log' },
-  { cmd: 'help', desc: 'Show help' }
+const Threats = [
+  { id: "T-001", label: "Shift Schedule / Duty Window", level: "MODERATE" },
+  { id: "T-002", label: "Sleep / Recovery Debt", level: "HIGH" },
+  { id: "T-003", label: "Training Consistency", level: "MODERATE" },
+  { id: "T-004", label: "Long-Term Weight Target (160)", level: "LOW" },
 ];
 
-function wireCommandPalette() {
-  const palette = document.getElementById('command-palette');
-  const input = document.getElementById('palette-input');
-  const suggestions = document.getElementById('palette-suggestions');
-
-  // Toggle with SHIFT + SPACE
-  document.addEventListener('keydown', (e) => {
-    if (e.key === ' ' && e.shiftKey) {
-      palette.style.display = palette.style.display === 'none' ? 'block' : 'none';
-      input.value = '';
-      suggestions.innerHTML = '';
-      input.focus();
-      e.preventDefault();
-    }
-  });
-
-  // Live suggestions
-  input.addEventListener('input', () => {
-    const q = input.value.toLowerCase();
-    suggestions.innerHTML = '';
-
-    PaletteCommands.filter(c => c.cmd.includes(q)).forEach(c => {
-      const el = document.createElement('div');
-      el.style.padding = '6px';
-      el.style.cursor = 'pointer';
-      el.textContent = `${c.cmd} — ${c.desc}`;
-      el.onclick = () => {
-        runCommand(c.cmd);
-        palette.style.display = 'none';
-      };
-      suggestions.appendChild(el);
-    });
-  });
-
-  // Enter to run
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      runCommand(input.value);
-      palette.style.display = 'none';
-    }
-  });
-}
-
-const originalBootPhase5 = bootSequence;
-bootSequence = function () {
-  originalBootPhase5();
-  setTimeout(() => {
-    createCommandPalette();
-    wireCommandPalette();
-    dockMessage('COMMAND PALETTE ONLINE');
-  }, 2800);
-};
-
-    // ===============================
-//  HUD PHASE 6 — INPUT LAYER
-// ===============================
-
-let inputHistory = [];
-let historyIndex = -1;
-
-function enhanceInputLayer() {
-  const input = document.getElementById('command-input');
-  if (!input) return;
-
-  // History navigation
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp') {
-      if (historyIndex < inputHistory.length - 1) {
-        historyIndex++;
-        input.value = inputHistory[inputHistory.length - 1 - historyIndex];
-      }
-      e.preventDefault();
-    }
-
-    if (e.key === 'ArrowDown') {
-      if (historyIndex > 0) {
-        historyIndex--;
-        input.value = inputHistory[inputHistory.length - 1 - historyIndex];
-      } else {
-        historyIndex = -1;
-        input.value = '';
-      }
-      e.preventDefault();
-    }
-  });
-
-  // Auto‑completion (TAB)
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
-      const q = input.value.toLowerCase();
-      const match = PaletteCommands.find(c => c.cmd.startsWith(q));
-      if (match) input.value = match.cmd;
-      e.preventDefault();
-    }
-  });
-
-  // Store history + visual feedback
-  const originalRun = runCommand;
-  runCommand = function (cmd) {
-    if (cmd.trim() !== '') {
-      inputHistory.push(cmd);
-      historyIndex = -1;
-    }
-
-    // Flash success/error
-    input.style.transition = 'box-shadow 0.3s ease';
-
-    if (PaletteCommands.some(c => c.cmd === cmd)) {
-      input.style.boxShadow = '0 0 12px #00ff88';
-    } else {
-      input.style.boxShadow = '0 0 12px #ff1744';
-    }
-
-    setTimeout(() => {
-      input.style.boxShadow = 'none';
-    }, 400);
-
-    originalRun(cmd);
-  };
-}
-
-const originalBootPhase6 = bootSequence;
-bootSequence = function () {
-  originalBootPhase6();
-  setTimeout(() => {
-    enhanceInputLayer();
-    dockMessage('INPUT LAYER ONLINE');
-  }, 3200);
-};
-
-    // ===============================
-//  HUD PHASE 7 — SYSTEM MAP
-// ===============================
-
-function createSystemMap() {
-  const map = document.createElement('div');
-  map.id = 'system-map';
-  map.style.position = 'fixed';
-  map.style.top = '50%';
-  map.style.left = '50%';
-  map.style.transform = 'translate(-50%, -50%)';
-  map.style.width = '480px';
-  map.style.height = '480px';
-  map.style.borderRadius = '50%';
-  map.style.background = 'rgba(0,0,0,0.85)';
-  map.style.border = '2px solid #ff1744';
-  map.style.backdropFilter = 'blur(10px)';
-  map.style.zIndex = '99998';
-  map.style.display = 'none';
-  map.style.userSelect = 'none';
-
-  // Center label
-  const center = document.createElement('div');
-  center.style.position = 'absolute';
-  center.style.top = '50%';
-  center.style.left = '50%';
-  center.style.transform = 'translate(-50%, -50%)';
-  center.style.color = '#ff1744';
-  center.style.fontFamily = 'monospace';
-  center.style.fontSize = '18px';
-  center.textContent = 'SYSTEM MAP';
-  map.appendChild(center);
-
-  // Subsystems
-  const subsystems = [
-    { name: 'HUD', angle: 0 },
-    { name: 'VISOR', angle: 45 },
-    { name: 'CMD', angle: 90 },
-    { name: 'STATE', angle: 135 },
-    { name: 'MEMORY', angle: 180 },
-    { name: 'PANELS', angle: 225 },
-    { name: 'APPS', angle: 270 },
-    { name: 'SOUND', angle: 315 }
-  ];
-
-  subsystems.forEach(sys => {
-    const node = document.createElement('div');
-    node.className = 'system-node';
-    node.dataset.sys = sys.name;
-
-    const radius = 180;
-    const rad = (sys.angle * Math.PI) / 180;
-
-    const x = 240 + radius * Math.cos(rad) - 40;
-    const y = 240 + radius * Math.sin(rad) - 40;
-
-    node.style.position = 'absolute';
-    node.style.left = `${x}px`;
-    node.style.top = `${y}px`;
-    node.style.width = '80px';
-    node.style.height = '80px';
-    node.style.borderRadius = '50%';
-    node.style.background = 'rgba(0,0,0,0.65)';
-    node.style.border = '1px solid #ff1744';
-    node.style.color = '#ff1744';
-    node.style.display = 'flex';
-    node.style.alignItems = 'center';
-    node.style.justifyContent = 'center';
-    node.style.fontFamily = 'monospace';
-    node.style.fontSize = '12px';
-    node.style.transition = 'box-shadow 0.3s ease, border-color 0.3s ease';
-
-    node.textContent = sys.name;
-    map.appendChild(node);
-  });
-
-  document.body.appendChild(map);
-}
-
-function wireSystemMapToggle() {
-  const map = document.getElementById('system-map');
-
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key.toLowerCase() === 'm') {
-      map.style.display = map.style.display === 'none' ? 'block' : 'none';
-    }
-  });
-}
-
-function updateSystemMap() {
-  const nodes = document.querySelectorAll('.system-node');
-
-  nodes.forEach(node => {
-    const sys = node.dataset.sys;
-
-    // Default glow
-    let glow = '0 0 8px #ff1744';
-
-    // State-based highlight
-    if (sys === 'STATE') {
-      glow = '0 0 14px #ff1744';
-    }
-
-    if (sys === 'VISOR' && visorLocked) {
-      glow = '0 0 14px #ff1744';
-    }
-
-    if (sys === 'SOUND' && SoundEngine.enabled) {
-      glow = '0 0 14px #ff1744';
-    }
-
-    if (sys === 'CMD' && SystemMemory.usageCounters.commands > 0) {
-      glow = '0 0 14px #ff1744';
-    }
-
-    if (sys === 'APPS' && SystemMemory.usageCounters.appOpens > 0) {
-      glow = '0 0 14px #ff1744';
-    }
-
-    // Drift mode flicker
-    if (currentState === 'DRIFT') {
-      const flicker = Math.random() > 0.5 ? '#ff1744' : '#ff0022';
-      node.style.borderColor = flicker;
-    }
-
-    node.style.boxShadow = glow;
-  });
-}
-
-function startSystemMapLoop() {
-  setInterval(updateSystemMap, 250);
-}
-
-const originalBootPhase7 = bootSequence;
-bootSequence = function () {
-  originalBootPhase7();
-  setTimeout(() => {
-    createSystemMap();
-    wireSystemMapToggle();
-    startSystemMapLoop();
-    dockMessage('SYSTEM MAP ONLINE');
-  }, 3600);
-};
-
-    // ===============================
-//  HUD PHASE 8 — TACTICAL NOTIFICATIONS
-// ===============================
-
-function createNotificationCenter() {
-  const center = document.createElement('div');
-  center.id = 'notification-center';
-  center.style.position = 'fixed';
-  center.style.top = '20px';
-  center.style.right = '20px';
-  center.style.width = '300px';
-  center.style.zIndex = '99999';
-  center.style.display = 'flex';
-  center.style.flexDirection = 'column';
-  center.style.gap = '10px';
-  center.style.pointerEvents = 'none';
-  document.body.appendChild(center);
-}
-
-function pushNotification(message, level = 'INFO', timeout = 3000) {
-  const center = document.getElementById('notification-center');
-  if (!center) return;
-
-  const note = document.createElement('div');
-  note.className = 'hud-notification';
-  note.style.padding = '12px';
-  note.style.background = 'rgba(0,0,0,0.85)';
-  note.style.border = '1px solid #ff1744';
-  note.style.color = '#ff1744';
-  note.style.fontFamily = 'monospace';
-  note.style.fontSize = '13px';
-  note.style.backdropFilter = 'blur(6px)';
-  note.style.pointerEvents = 'auto';
-  note.style.opacity = '0';
-  note.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-  note.style.transform = 'translateY(-10px)';
-
-  // Priority colors
-  if (level === 'WARN') note.style.borderColor = '#ff8800';
-  if (level === 'ERROR') note.style.borderColor = '#ff0022';
-  if (level === 'SUCCESS') note.style.borderColor = '#00ff88';
-
-  note.innerHTML = `
-    <div style="font-weight:bold;margin-bottom:4px;">${level}</div>
-    <div>${message}</div>
-  `;
-
-  // Dismiss on click
-  note.addEventListener('click', () => {
-    note.style.opacity = '0';
-    note.style.transform = 'translateY(-10px)';
-    setTimeout(() => note.remove(), 300);
-  });
-
-  center.appendChild(note);
-
-  // Animate in
-  requestAnimationFrame(() => {
-    note.style.opacity = '1';
-    note.style.transform = 'translateY(0)';
-  });
-
-  // Auto-dismiss
-  setTimeout(() => {
-    note.style.opacity = '0';
-    note.style.transform = 'translateY(-10px)';
-    setTimeout(() => note.remove(), 300);
-  }, timeout);
-}
-
-// Hook notifications into system events
-function wireNotificationEvents() {
-  const originalSetState = setState;
-  setState = function (newState) {
-    originalSetState(newState);
-    pushNotification(`STATE CHANGED → ${newState}`, 'INFO', 2000);
-  };
-
-  const originalVisorOpen = visorOpen;
-  visorOpen = function () {
-    originalVisorOpen();
-    pushNotification('VISOR OPENED', 'SUCCESS', 2000);
-  };
-
-  const originalVisorClose = visorClose;
-  visorClose = function () {
-    originalVisorClose();
-    pushNotification('VISOR CLOSED', 'WARN', 2000);
-  };
-}
-
-const originalBootPhase8 = bootSequence;
-bootSequence = function () {
-  originalBootPhase8();
-  setTimeout(() => {
-    createNotificationCenter();
-    wireNotificationEvents();
-    pushNotification('NOTIFICATION SYSTEM ONLINE', 'SUCCESS', 2500);
-    dockMessage('NOTIFICATION ENGINE ONLINE');
-  }, 4000);
-};
-
-    // ===============================
-//  HUD PHASE 9 — TACTICAL OVERLAYS
-// ===============================
-
-function createTacticalOverlays() {
-  // Reticle
-  const reticle = document.createElement('div');
-  reticle.id = 'hud-reticle';
-  reticle.style.position = 'fixed';
-  reticle.style.top = '50%';
-  reticle.style.left = '50%';
-  reticle.style.transform = 'translate(-50%, -50%)';
-  reticle.style.width = '120px';
-  reticle.style.height = '120px';
-  reticle.style.border = '2px solid #ff1744';
-  reticle.style.borderRadius = '50%';
-  reticle.style.opacity = '0';
-  reticle.style.transition = 'opacity 0.3s ease';
-  reticle.style.pointerEvents = 'none';
-  reticle.style.zIndex = '99990';
-  document.body.appendChild(reticle);
-
-  // Scan grid
-  const grid = document.createElement('div');
-  grid.id = 'hud-scan-grid';
-  grid.style.position = 'fixed';
-  grid.style.top = '0';
-  grid.style.left = '0';
-  grid.style.width = '100%';
-  grid.style.height = '100%';
-  grid.style.background = `
-    repeating-linear-gradient(
-      0deg,
-      rgba(255,23,68,0.05) 0px,
-      rgba(255,23,68,0.05) 1px,
-      transparent 1px,
-      transparent 40px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgba(255,23,68,0.05) 0px,
-      rgba(255,23,68,0.05) 1px,
-      transparent 1px,
-      transparent 40px
-    )
-  `;
-  grid.style.opacity = '0';
-  grid.style.transition = 'opacity 0.3s ease';
-  grid.style.pointerEvents = 'none';
-  grid.style.zIndex = '99989';
-  document.body.appendChild(grid);
-
-  // Sweep pulse
-  const sweep = document.createElement('div');
-  sweep.id = 'hud-sweep';
-  sweep.style.position = 'fixed';
-  sweep.style.top = '0';
-  sweep.style.left = '0';
-  sweep.style.width = '100%';
-  sweep.style.height = '100%';
-  sweep.style.background = 'radial-gradient(circle, rgba(255,23,68,0.15), transparent 70%)';
-  sweep.style.opacity = '0';
-  sweep.style.pointerEvents = 'none';
-  sweep.style.zIndex = '99988';
-  sweep.style.transition = 'opacity 0.3s ease';
-  document.body.appendChild(sweep);
-}
-
-let overlaysEnabled = false;
-
-function toggleOverlays() {
-  overlaysEnabled = !overlaysEnabled;
-
-  const reticle = document.getElementById('hud-reticle');
-  const grid = document.getElementById('hud-scan-grid');
-  const sweep = document.getElementById('hud-sweep');
-
-  const op = overlaysEnabled ? '1' : '0';
-
-  reticle.style.opacity = op;
-  grid.style.opacity = op;
-  sweep.style.opacity = op;
-}
-
-function wireOverlayToggle() {
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'o') {
-      toggleOverlays();
-      pushNotification(`TACTICAL OVERLAYS ${overlaysEnabled ? 'ENABLED' : 'DISABLED'}`, 'INFO', 2000);
-    }
-  });
-}
-
-function startOverlaySweepLoop() {
-  const sweep = document.getElementById('hud-sweep');
-  setInterval(() => {
-    if (!overlaysEnabled) return;
-    sweep.style.opacity = '0.25';
-    setTimeout(() => sweep.style.opacity = '0', 300);
-  }, 2000);
-}
-
-const originalBootPhase9 = bootSequence;
-bootSequence = function () {
-  originalBootPhase9();
-  setTimeout(() => {
-    createTacticalOverlays();
-    wireOverlayToggle();
-    startOverlaySweepLoop();
-    dockMessage('TACTICAL OVERLAYS ONLINE');
-  }, 4400);
-};
-
-    // ===============================
-//  HUD PHASE 10 — TELEMETRY PANEL
-// ===============================
-
-function createTelemetryPanel() {
-  const panel = document.createElement('div');
-  panel.id = 'telemetry-panel';
-  panel.style.position = 'fixed';
-  panel.style.bottom = '20px';
-  panel.style.left = '50%';
-  panel.style.transform = 'translateX(-50%)';
-  panel.style.width = '340px';
-  panel.style.padding = '14px';
-  panel.style.background = 'rgba(0,0,0,0.85)';
-  panel.style.border = '1px solid #ff1744';
-  panel.style.backdropFilter = 'blur(8px)';
-  panel.style.color = '#ff1744';
-  panel.style.fontFamily = 'monospace';
-  panel.style.fontSize = '13px';
-  panel.style.zIndex = '99999';
-  panel.style.display = 'none';
-  panel.style.userSelect = 'none';
-
-  panel.innerHTML = `
-    <div style="font-weight:bold;margin-bottom:6px;">SYSTEM TELEMETRY</div>
-    <div id="tele-fps">FPS: 0</div>
-    <div id="tele-cpu">CPU Load: 0%</div>
-    <div id="tele-mem">Memory Load: 0%</div>
-    <div id="tele-loop">Loop Time: 0ms</div>
-    <div id="tele-events">Events/sec: 0</div>
-    <div id="tele-uptime">Uptime: 0s</div>
-  `;
-
-  document.body.appendChild(panel);
-}
-
-let telemetryVisible = false;
-let lastFrameTime = performance.now();
-let eventCounter = 0;
-
-function wireTelemetryToggle() {
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 't') {
-      telemetryVisible = !telemetryVisible;
-      document.getElementById('telemetry-panel').style.display =
-        telemetryVisible ? 'block' : 'none';
-    }
-  });
-}
-
-function startTelemetryLoop() {
-  const fpsEl = document.getElementById('tele-fps');
-  const cpuEl = document.getElementById('tele-cpu');
-  const memEl = document.getElementById('tele-mem');
-  const loopEl = document.getElementById('tele-loop');
-  const eventsEl = document.getElementById('tele-events');
-  const uptimeEl = document.getElementById('tele-uptime');
-
-  const startTime = Date.now();
-
-  setInterval(() => {
-    const now = performance.now();
-    const delta = now - lastFrameTime;
-    lastFrameTime = now;
-
-    const fps = Math.round(1000 / delta);
-    const cpu = Math.floor(Math.random() * 20) + 10; // simulated
-    const mem = Math.floor(Math.random() * 30) + 20; // simulated
-    const loop = Math.round(delta);
-    const events = eventCounter;
-    const uptime = Math.floor((Date.now() - startTime) / 1000);
-
-    eventCounter = 0;
-
-    fpsEl.textContent = `FPS: ${fps}`;
-    cpuEl.textContent = `CPU Load: ${cpu}%`;
-    memEl.textContent = `Memory Load: ${mem}%`;
-    loopEl.textContent = `Loop Time: ${loop}ms`;
-    eventsEl.textContent = `Events/sec: ${events}`;
-    uptimeEl.textContent = `Uptime: ${uptime}s`;
-  }, 250);
-
-  // Count events
-  document.addEventListener('keydown', () => eventCounter++);
-  document.addEventListener('click', () => eventCounter++);
-}
-
-const originalBootPhase10 = bootSequence;
-bootSequence = function () {
-  originalBootPhase10();
-  setTimeout(() => {
-    createTelemetryPanel();
-    wireTelemetryToggle();
-    startTelemetryLoop();
-    dockMessage('TELEMETRY PANEL ONLINE');
-  }, 4800);
-};
-
-    // ===============================
-//  HUD PHASE 11 — HUD PROFILES
-// ===============================
-
-const HUDProfile = {
-  data: {
-    overlaysEnabled: false,
-    telemetryVisible: false,
-    soundEnabled: true,
-    theme: 'ACTIVE'
+const Missions = [
+  {
+    id: "M-101",
+    title: "Anchor Meal System — Weekly",
+    status: "ACTIVE",
+    progress: 0.7,
   },
-
-  load() {
-    const saved = localStorage.getItem('BEYOND_HUD_PROFILE');
-    if (saved) {
-      this.data = JSON.parse(saved);
-    }
+  {
+    id: "M-102",
+    title: "BEYOND.OS — Integration Layer",
+    status: "ACTIVE",
+    progress: 0.85,
   },
+  {
+    id: "M-103",
+    title: "Sleep / Recovery Stabilization",
+    status: "PLANNED",
+    progress: 0.2,
+  },
+];
 
-  save() {
-    localStorage.setItem('BEYOND_HUD_PROFILE', JSON.stringify(this.data));
-  }
+const Diagnostics = {
+  cavePower: "STABLE",
+  network: "ELGA — SECURE",
+  latency: "LOW",
+  errorCount: 0,
 };
 
-function applyHUDProfile() {
-  // Tactical overlays
-  overlaysEnabled = HUDProfile.data.overlaysEnabled;
-  toggleOverlays();
+const VehicleBay = {
+  batmobile: "STANDBY",
+  flightRig: "READY",
+  stealthCycle: "OFFLINE",
+};
 
-  // Telemetry
-  telemetryVisible = HUDProfile.data.telemetryVisible;
-  const panel = document.getElementById('telemetry-panel');
-  if (panel) panel.style.display = telemetryVisible ? 'block' : 'none';
+const TrainingRoom = {
+  status: "IDLE",
+  lastSession: "Stealth / Focus Drill",
+  readiness: "READY",
+};
 
-  // Sound
-  SoundEngine.enabled = HUDProfile.data.soundEnabled;
+// RENDER FUNCTIONS
 
-  // Theme
-  if (HUDThemes[HUDProfile.data.theme]) {
-    currentState = HUDProfile.data.theme;
+function renderVitals() {
+  dom.vitalsBody.innerHTML = `
+    <div>Operator: <span class="text-dim">${Operator.name}</span></div>
+    <div>Status: <span class="text-dim">${Operator.status}</span></div>
+    <div>Focus: <span class="text-dim">${Operator.focus}</span></div>
+    <div>Fatigue: <span class="text-dim">${Operator.fatigue}</span></div>
+    <div class="text-dim" style="margin-top:0.4rem;">Suit Integrity: ${(Suit.integrity * 100).toFixed(0)}%</div>
+    <div class="text-dim">Stealth Mesh: ${(Suit.stealthMesh * 100).toFixed(0)}%</div>
+    <div class="text-dim">Neural Link: ${(Suit.neuralLink * 100).toFixed(0)}%</div>
+  `;
+}
+
+function renderThreatGrid() {
+  dom.threatGridBody.innerHTML = Threats.map((t) => {
+    const cls = threatClass(t.level);
+    return `
+      <div>
+        <span class="badge ${cls}">${t.level}</span>
+        <span style="margin-left:0.4rem;">${t.label}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+function threatClass(level) {
+  switch (level) {
+    case "LOW":
+      return "threat-low";
+    case "MODERATE":
+      return "threat-moderate";
+    case "HIGH":
+      return "threat-high";
+    case "CRITICAL":
+      return "threat-critical";
+    default:
+      return "";
   }
 }
 
-function wireProfileUpdates() {
-  // Overlays
-  const originalToggleOverlays = toggleOverlays;
-  toggleOverlays = function () {
-    originalToggleOverlays();
-    HUDProfile.data.overlaysEnabled = overlaysEnabled;
-    HUDProfile.save();
-  };
-
-  // Telemetry
-  const originalTelemetryToggle = wireTelemetryToggle;
-  wireTelemetryToggle = function () {
-    originalTelemetryToggle();
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 't') {
-        HUDProfile.data.telemetryVisible = telemetryVisible;
-        HUDProfile.save();
-      }
-    });
-  };
-
-  // Sound
-  const originalMute = SoundEngine.mute;
-  SoundEngine.mute = function () {
-    originalMute.call(SoundEngine);
-    HUDProfile.data.soundEnabled = false;
-    HUDProfile.save();
-  };
-
-  const originalUnmute = SoundEngine.unmute;
-  SoundEngine.unmute = function () {
-    originalUnmute.call(SoundEngine);
-    HUDProfile.data.soundEnabled = true;
-    HUDProfile.save();
-  };
+function renderMissionFeed() {
+  dom.missionFeedBody.innerHTML = Missions.map((m) => {
+    const pct = (m.progress * 100).toFixed(0);
+    return `
+      <div style="margin-bottom:0.25rem;">
+        <div>${m.id} — ${m.title}</div>
+        <div class="text-dim">${m.status} — ${pct}%</div>
+      </div>
+    `;
+  }).join("");
 }
 
-const originalBootPhase11 = bootSequence;
-bootSequence = function () {
-  originalBootPhase11();
-  setTimeout(() => {
-    HUDProfile.load();
-    applyHUDProfile();
-    wireProfileUpdates();
-    dockMessage('HUD PROFILES ONLINE');
-  }, 5200);
-};
+function renderSuitAlerts() {
+  const alerts = [];
 
-    // ===============================
-//  HUD PHASE 12 — FINAL INTEGRATION PASS
-// ===============================
+  if (Suit.stealthMesh < 0.9) {
+    alerts.push("Stealth mesh integrity below optimal threshold.");
+  }
+  if (Suit.autoRepair !== "ACTIVE" && Suit.integrity < 0.95) {
+    alerts.push("Auto-repair recommended. Suit integrity trending downward.");
+  }
 
-function optimizeHUD() {
-  // Throttle dock messages
-  let lastDock = 0;
-  const originalDock = dockMessage;
-  dockMessage = function (msg) {
-    const now = Date.now();
-    if (now - lastDock < 300) return;
-    lastDock = now;
-    originalDock(msg);
-  };
+  if (!alerts.length) {
+    dom.suitAlertsBody.innerHTML = `<span class="text-dim">No active alerts. Suit Core nominal.</span>`;
+    return;
+  }
 
-  // Smooth drift flicker
-  const originalUpdateMap = updateSystemMap;
-  updateSystemMap = function () {
-    if (currentState === 'DRIFT') {
-      if (Math.random() > 0.7) {
-        originalUpdateMap();
-      }
+  dom.suitAlertsBody.innerHTML = alerts
+    .map((a) => `<div>• ${a}</div>`)
+    .join("");
+}
+
+function renderDiagnostics() {
+  dom.diagnosticsBody.innerHTML = `
+    <div>Cave Power: <span class="text-dim">${Diagnostics.cavePower}</span></div>
+    <div>Network: <span class="text-dim">${Diagnostics.network}</span></div>
+    <div>Latency: <span class="text-dim">${Diagnostics.latency}</span></div>
+    <div>Errors: <span class="text-dim">${Diagnostics.errorCount}</span></div>
+  `;
+}
+
+function renderVehicleBay() {
+  dom.vehicleBayBody.innerHTML = `
+    <div>Batmobile: <span class="text-dim">${VehicleBay.batmobile}</span></div>
+    <div>Flight Rig: <span class="text-dim">${VehicleBay.flightRig}</span></div>
+    <div>Stealth Cycle: <span class="text-dim">${VehicleBay.stealthCycle}</span></div>
+  `;
+}
+
+function renderEvidenceBoard() {
+  dom.evidenceBoardBody.innerHTML = `
+    <div class="text-dim">Evidence board online.</div>
+    <div class="text-dim">Awaiting mission-specific data.</div>
+  `;
+}
+
+function renderTrainingRoom() {
+  dom.trainingRoomBody.innerHTML = `
+    <div>Status: <span class="text-dim">${TrainingRoom.status}</span></div>
+    <div>Last Session: <span class="text-dim">${TrainingRoom.lastSession}</span></div>
+    <div>Readiness: <span class="text-dim">${TrainingRoom.readiness}</span></div>
+  `;
+}
+
+function renderMissionFlow() {
+  dom.missionFlowBody.innerHTML = Missions.map((m) => {
+    const pct = (m.progress * 100).toFixed(0);
+    return `
+      <div style="margin-bottom:0.25rem;">
+        <span>${m.id}</span> — <span>${m.title}</span>
+        <div class="text-dim">${m.status} — ${pct}%</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderThreatModule() {
+  dom.threatModuleBody.innerHTML = Threats.map((t) => {
+    const cls = threatClass(t.level);
+    return `
+      <div style="margin-bottom:0.25rem;">
+        <span class="badge ${cls}">${t.level}</span>
+        <span style="margin-left:0.4rem;">${t.label}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderOperatorStatus() {
+  dom.operatorStatusBody.innerHTML = `
+    <div>Mode: <span class="text-dim">${Operator.mode}</span></div>
+    <div>Focus: <span class="text-dim">${Operator.focus}</span></div>
+    <div>Fatigue: <span class="text-dim">${Operator.fatigue}</span></div>
+    <div>Status: <span class="text-dim">${Operator.status}</span></div>
+  `;
+}
+
+// TERMINAL
+
+const commands = {
+  help() {
+    log("Available commands:", { type: "system" });
+    log("  mode [idle|patrol|investigation|combat|stealth|emergency]", { type: "info" });
+    log("  cave [standby|active|combat|lockdown]", { type: "info" });
+    log("  ai show", { type: "info" });
+    log("  ai hide", { type: "info" });
+    log("  packet", { type: "info" });
+    log("  clear", { type: "info" });
+  },
+
+  clear() {
+    dom.terminalOutput.innerHTML = "";
+  },
+
+  mode(args) {
+    const target = (args[0] || "").toUpperCase();
+    const valid = ["IDLE", "PATROL", "INVESTIGATION", "COMBAT", "STEALTH", "EMERGENCY"];
+    if (!valid.includes(target)) {
+      log("Invalid mode. Valid: idle, patrol, investigation, combat, stealth, emergency.", { type: "error" });
+      return;
+    }
+    BeyondOS.state.mode = target;
+    Operator.mode = target;
+    dom.hudModeLabel.textContent = `MODE: ${target}`;
+    renderOperatorStatus();
+    log(`Operator mode set to ${target}.`, { type: "system" });
+  },
+
+  cave(args) {
+    const target = (args[0] || "").toUpperCase();
+    const valid = ["STANDBY", "ACTIVE", "COMBAT", "LOCKDOWN"];
+    if (!valid.includes(target)) {
+      log("Invalid cave mode. Valid: standby, active, combat, lockdown.", { type: "error" });
+      return;
+    }
+    BeyondOS.state.caveMode = target;
+    dom.systemModeLabel.textContent = `CAVE: ${target}`;
+    log(`Cave mode set to ${target}.`, { type: "system" });
+  },
+
+  ai(args) {
+    const sub = (args[0] || "").toLowerCase();
+    if (sub === "show") {
+      dom.aiModulePanel.classList.remove("hidden");
+      log("Batcomputer AI module panel revealed.", { type: "system" });
+    } else if (sub === "hide") {
+      dom.aiModulePanel.classList.add("hidden");
+      log("Batcomputer AI module panel hidden.", { type: "system" });
     } else {
-      originalUpdateMap();
+      log("Usage: ai [show|hide]", { type: "error" });
     }
-  };
+  },
 
-  // Unified HUD refresh loop
-  setInterval(() => {
-    applyHUDTheme();
-    updateVisorHUD();
-  }, 200);
-}
-
-const originalBootPhase12 = bootSequence;
-bootSequence = function () {
-  originalBootPhase12();
-  setTimeout(() => {
-    optimizeHUD();
-    dockMessage('HUD INTEGRATION COMPLETE');
-  }, 5600);
+  packet() {
+    const packet = batAI.generateStatePacket();
+    log("State packet generated. Copy from below:", { type: "system" });
+    log(JSON.stringify(packet, null, 2), { type: "info" });
+  },
 };
-    
-// 18. Init
-function initBeyondOS() {
-  logInfo('BEYOND.OS core loaded.');
-  initPanels();
-  wireVisorButton();
-  wireCommandInput();
-  wireAppTiles();
-  bootSequence();
+
+function handleTerminalInput(e) {
+  if (e.key === "Enter") {
+    const value = dom.terminalInput.value.trim();
+    if (!value) return;
+    log(`RED> ${value}`, { type: "input" });
+    dom.terminalInput.value = "";
+
+    const [cmd, ...args] = value.split(/\s+/);
+    const fn = commands[cmd.toLowerCase()];
+    if (fn) {
+      fn(args);
+    } else {
+      log(`Unknown command: ${cmd}. Type 'help' for options.`, { type: "error" });
+    }
+  }
 }
 
-// 19. DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initBeyondOS);
-} else {
-  initBeyondOS();
-    }
+// BATCOMPUTER AI MODULE (SHELL FOR OUR LOOP)
+
+const batAI = {
+  core: {
+    name: "Batcomputer AI",
+    version: "1.0",
+    persona: "Analytical, clipped, cave-bound.",
+  },
+  memory: {
+    osVersion: BeyondOS.version,
+    operator: BeyondOS.operator,
+    modes: ["IDLE", "PATROL", "INVESTIGATION", "COMBAT", "STEALTH", "EMERGENCY"],
+    caveModes: ["STANDBY", "ACTIVE", "COMBAT", "LOCKDOWN"],
+  },
+  modules: {
+    missions: Missions,
+    threats: Threats,
+    diagnostics: Diagnostics,
+    suit: Suit,
+    operator: Operator,
+  },
+
+  generateStatePacket() {
+    return {
+      meta: {
+        label: "BEYOND.OS_STATE_PACKET",
+        version: BeyondOS.version,
+        timestamp: new Date().toISOString(),
+      },
+      state: {
+        mode: BeyondOS.state.mode,
+        caveMode: BeyondOS.state.caveMode,
+      },
+      operator: { ...Operator },
+      suit: { ...Suit },
+      missions: Missions.map((m) => ({ ...m })),
+      threats: Threats.map((t) => ({ ...t })),
+      diagnostics: { ...Diagnostics },
+      vehicleBay: { ...VehicleBay },
+      trainingRoom: { ...TrainingRoom },
+    };
+  },
+
+  absorbUpdate(update) {
+    // This is where you paste back evolved data from me in the future.
+    // For now, we just log that the AI is ready to accept it.
+    log("AI module ready to absorb external update payload.", { type: "system" });
+    if (!update) return;
+    // Example: if update.missions, update threats, etc.
+  },
+};
+
+// INIT
+
+window.addEventListener("DOMContentLoaded", () => {
+  cacheDom();
+  startBootSequence();
+});
