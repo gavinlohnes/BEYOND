@@ -1500,6 +1500,453 @@ bootSequence = function () {
     dockMessage('SYSTEM MAP ONLINE');
   }, 3600);
 };
+
+    // ===============================
+//  HUD PHASE 8 — TACTICAL NOTIFICATIONS
+// ===============================
+
+function createNotificationCenter() {
+  const center = document.createElement('div');
+  center.id = 'notification-center';
+  center.style.position = 'fixed';
+  center.style.top = '20px';
+  center.style.right = '20px';
+  center.style.width = '300px';
+  center.style.zIndex = '99999';
+  center.style.display = 'flex';
+  center.style.flexDirection = 'column';
+  center.style.gap = '10px';
+  center.style.pointerEvents = 'none';
+  document.body.appendChild(center);
+}
+
+function pushNotification(message, level = 'INFO', timeout = 3000) {
+  const center = document.getElementById('notification-center');
+  if (!center) return;
+
+  const note = document.createElement('div');
+  note.className = 'hud-notification';
+  note.style.padding = '12px';
+  note.style.background = 'rgba(0,0,0,0.85)';
+  note.style.border = '1px solid #ff1744';
+  note.style.color = '#ff1744';
+  note.style.fontFamily = 'monospace';
+  note.style.fontSize = '13px';
+  note.style.backdropFilter = 'blur(6px)';
+  note.style.pointerEvents = 'auto';
+  note.style.opacity = '0';
+  note.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+  note.style.transform = 'translateY(-10px)';
+
+  // Priority colors
+  if (level === 'WARN') note.style.borderColor = '#ff8800';
+  if (level === 'ERROR') note.style.borderColor = '#ff0022';
+  if (level === 'SUCCESS') note.style.borderColor = '#00ff88';
+
+  note.innerHTML = `
+    <div style="font-weight:bold;margin-bottom:4px;">${level}</div>
+    <div>${message}</div>
+  `;
+
+  // Dismiss on click
+  note.addEventListener('click', () => {
+    note.style.opacity = '0';
+    note.style.transform = 'translateY(-10px)';
+    setTimeout(() => note.remove(), 300);
+  });
+
+  center.appendChild(note);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    note.style.opacity = '1';
+    note.style.transform = 'translateY(0)';
+  });
+
+  // Auto-dismiss
+  setTimeout(() => {
+    note.style.opacity = '0';
+    note.style.transform = 'translateY(-10px)';
+    setTimeout(() => note.remove(), 300);
+  }, timeout);
+}
+
+// Hook notifications into system events
+function wireNotificationEvents() {
+  const originalSetState = setState;
+  setState = function (newState) {
+    originalSetState(newState);
+    pushNotification(`STATE CHANGED → ${newState}`, 'INFO', 2000);
+  };
+
+  const originalVisorOpen = visorOpen;
+  visorOpen = function () {
+    originalVisorOpen();
+    pushNotification('VISOR OPENED', 'SUCCESS', 2000);
+  };
+
+  const originalVisorClose = visorClose;
+  visorClose = function () {
+    originalVisorClose();
+    pushNotification('VISOR CLOSED', 'WARN', 2000);
+  };
+}
+
+const originalBootPhase8 = bootSequence;
+bootSequence = function () {
+  originalBootPhase8();
+  setTimeout(() => {
+    createNotificationCenter();
+    wireNotificationEvents();
+    pushNotification('NOTIFICATION SYSTEM ONLINE', 'SUCCESS', 2500);
+    dockMessage('NOTIFICATION ENGINE ONLINE');
+  }, 4000);
+};
+
+    // ===============================
+//  HUD PHASE 9 — TACTICAL OVERLAYS
+// ===============================
+
+function createTacticalOverlays() {
+  // Reticle
+  const reticle = document.createElement('div');
+  reticle.id = 'hud-reticle';
+  reticle.style.position = 'fixed';
+  reticle.style.top = '50%';
+  reticle.style.left = '50%';
+  reticle.style.transform = 'translate(-50%, -50%)';
+  reticle.style.width = '120px';
+  reticle.style.height = '120px';
+  reticle.style.border = '2px solid #ff1744';
+  reticle.style.borderRadius = '50%';
+  reticle.style.opacity = '0';
+  reticle.style.transition = 'opacity 0.3s ease';
+  reticle.style.pointerEvents = 'none';
+  reticle.style.zIndex = '99990';
+  document.body.appendChild(reticle);
+
+  // Scan grid
+  const grid = document.createElement('div');
+  grid.id = 'hud-scan-grid';
+  grid.style.position = 'fixed';
+  grid.style.top = '0';
+  grid.style.left = '0';
+  grid.style.width = '100%';
+  grid.style.height = '100%';
+  grid.style.background = `
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,23,68,0.05) 0px,
+      rgba(255,23,68,0.05) 1px,
+      transparent 1px,
+      transparent 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,23,68,0.05) 0px,
+      rgba(255,23,68,0.05) 1px,
+      transparent 1px,
+      transparent 40px
+    )
+  `;
+  grid.style.opacity = '0';
+  grid.style.transition = 'opacity 0.3s ease';
+  grid.style.pointerEvents = 'none';
+  grid.style.zIndex = '99989';
+  document.body.appendChild(grid);
+
+  // Sweep pulse
+  const sweep = document.createElement('div');
+  sweep.id = 'hud-sweep';
+  sweep.style.position = 'fixed';
+  sweep.style.top = '0';
+  sweep.style.left = '0';
+  sweep.style.width = '100%';
+  sweep.style.height = '100%';
+  sweep.style.background = 'radial-gradient(circle, rgba(255,23,68,0.15), transparent 70%)';
+  sweep.style.opacity = '0';
+  sweep.style.pointerEvents = 'none';
+  sweep.style.zIndex = '99988';
+  sweep.style.transition = 'opacity 0.3s ease';
+  document.body.appendChild(sweep);
+}
+
+let overlaysEnabled = false;
+
+function toggleOverlays() {
+  overlaysEnabled = !overlaysEnabled;
+
+  const reticle = document.getElementById('hud-reticle');
+  const grid = document.getElementById('hud-scan-grid');
+  const sweep = document.getElementById('hud-sweep');
+
+  const op = overlaysEnabled ? '1' : '0';
+
+  reticle.style.opacity = op;
+  grid.style.opacity = op;
+  sweep.style.opacity = op;
+}
+
+function wireOverlayToggle() {
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'o') {
+      toggleOverlays();
+      pushNotification(`TACTICAL OVERLAYS ${overlaysEnabled ? 'ENABLED' : 'DISABLED'}`, 'INFO', 2000);
+    }
+  });
+}
+
+function startOverlaySweepLoop() {
+  const sweep = document.getElementById('hud-sweep');
+  setInterval(() => {
+    if (!overlaysEnabled) return;
+    sweep.style.opacity = '0.25';
+    setTimeout(() => sweep.style.opacity = '0', 300);
+  }, 2000);
+}
+
+const originalBootPhase9 = bootSequence;
+bootSequence = function () {
+  originalBootPhase9();
+  setTimeout(() => {
+    createTacticalOverlays();
+    wireOverlayToggle();
+    startOverlaySweepLoop();
+    dockMessage('TACTICAL OVERLAYS ONLINE');
+  }, 4400);
+};
+
+    // ===============================
+//  HUD PHASE 10 — TELEMETRY PANEL
+// ===============================
+
+function createTelemetryPanel() {
+  const panel = document.createElement('div');
+  panel.id = 'telemetry-panel';
+  panel.style.position = 'fixed';
+  panel.style.bottom = '20px';
+  panel.style.left = '50%';
+  panel.style.transform = 'translateX(-50%)';
+  panel.style.width = '340px';
+  panel.style.padding = '14px';
+  panel.style.background = 'rgba(0,0,0,0.85)';
+  panel.style.border = '1px solid #ff1744';
+  panel.style.backdropFilter = 'blur(8px)';
+  panel.style.color = '#ff1744';
+  panel.style.fontFamily = 'monospace';
+  panel.style.fontSize = '13px';
+  panel.style.zIndex = '99999';
+  panel.style.display = 'none';
+  panel.style.userSelect = 'none';
+
+  panel.innerHTML = `
+    <div style="font-weight:bold;margin-bottom:6px;">SYSTEM TELEMETRY</div>
+    <div id="tele-fps">FPS: 0</div>
+    <div id="tele-cpu">CPU Load: 0%</div>
+    <div id="tele-mem">Memory Load: 0%</div>
+    <div id="tele-loop">Loop Time: 0ms</div>
+    <div id="tele-events">Events/sec: 0</div>
+    <div id="tele-uptime">Uptime: 0s</div>
+  `;
+
+  document.body.appendChild(panel);
+}
+
+let telemetryVisible = false;
+let lastFrameTime = performance.now();
+let eventCounter = 0;
+
+function wireTelemetryToggle() {
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 't') {
+      telemetryVisible = !telemetryVisible;
+      document.getElementById('telemetry-panel').style.display =
+        telemetryVisible ? 'block' : 'none';
+    }
+  });
+}
+
+function startTelemetryLoop() {
+  const fpsEl = document.getElementById('tele-fps');
+  const cpuEl = document.getElementById('tele-cpu');
+  const memEl = document.getElementById('tele-mem');
+  const loopEl = document.getElementById('tele-loop');
+  const eventsEl = document.getElementById('tele-events');
+  const uptimeEl = document.getElementById('tele-uptime');
+
+  const startTime = Date.now();
+
+  setInterval(() => {
+    const now = performance.now();
+    const delta = now - lastFrameTime;
+    lastFrameTime = now;
+
+    const fps = Math.round(1000 / delta);
+    const cpu = Math.floor(Math.random() * 20) + 10; // simulated
+    const mem = Math.floor(Math.random() * 30) + 20; // simulated
+    const loop = Math.round(delta);
+    const events = eventCounter;
+    const uptime = Math.floor((Date.now() - startTime) / 1000);
+
+    eventCounter = 0;
+
+    fpsEl.textContent = `FPS: ${fps}`;
+    cpuEl.textContent = `CPU Load: ${cpu}%`;
+    memEl.textContent = `Memory Load: ${mem}%`;
+    loopEl.textContent = `Loop Time: ${loop}ms`;
+    eventsEl.textContent = `Events/sec: ${events}`;
+    uptimeEl.textContent = `Uptime: ${uptime}s`;
+  }, 250);
+
+  // Count events
+  document.addEventListener('keydown', () => eventCounter++);
+  document.addEventListener('click', () => eventCounter++);
+}
+
+const originalBootPhase10 = bootSequence;
+bootSequence = function () {
+  originalBootPhase10();
+  setTimeout(() => {
+    createTelemetryPanel();
+    wireTelemetryToggle();
+    startTelemetryLoop();
+    dockMessage('TELEMETRY PANEL ONLINE');
+  }, 4800);
+};
+
+    // ===============================
+//  HUD PHASE 11 — HUD PROFILES
+// ===============================
+
+const HUDProfile = {
+  data: {
+    overlaysEnabled: false,
+    telemetryVisible: false,
+    soundEnabled: true,
+    theme: 'ACTIVE'
+  },
+
+  load() {
+    const saved = localStorage.getItem('BEYOND_HUD_PROFILE');
+    if (saved) {
+      this.data = JSON.parse(saved);
+    }
+  },
+
+  save() {
+    localStorage.setItem('BEYOND_HUD_PROFILE', JSON.stringify(this.data));
+  }
+};
+
+function applyHUDProfile() {
+  // Tactical overlays
+  overlaysEnabled = HUDProfile.data.overlaysEnabled;
+  toggleOverlays();
+
+  // Telemetry
+  telemetryVisible = HUDProfile.data.telemetryVisible;
+  const panel = document.getElementById('telemetry-panel');
+  if (panel) panel.style.display = telemetryVisible ? 'block' : 'none';
+
+  // Sound
+  SoundEngine.enabled = HUDProfile.data.soundEnabled;
+
+  // Theme
+  if (HUDThemes[HUDProfile.data.theme]) {
+    currentState = HUDProfile.data.theme;
+  }
+}
+
+function wireProfileUpdates() {
+  // Overlays
+  const originalToggleOverlays = toggleOverlays;
+  toggleOverlays = function () {
+    originalToggleOverlays();
+    HUDProfile.data.overlaysEnabled = overlaysEnabled;
+    HUDProfile.save();
+  };
+
+  // Telemetry
+  const originalTelemetryToggle = wireTelemetryToggle;
+  wireTelemetryToggle = function () {
+    originalTelemetryToggle();
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 't') {
+        HUDProfile.data.telemetryVisible = telemetryVisible;
+        HUDProfile.save();
+      }
+    });
+  };
+
+  // Sound
+  const originalMute = SoundEngine.mute;
+  SoundEngine.mute = function () {
+    originalMute.call(SoundEngine);
+    HUDProfile.data.soundEnabled = false;
+    HUDProfile.save();
+  };
+
+  const originalUnmute = SoundEngine.unmute;
+  SoundEngine.unmute = function () {
+    originalUnmute.call(SoundEngine);
+    HUDProfile.data.soundEnabled = true;
+    HUDProfile.save();
+  };
+}
+
+const originalBootPhase11 = bootSequence;
+bootSequence = function () {
+  originalBootPhase11();
+  setTimeout(() => {
+    HUDProfile.load();
+    applyHUDProfile();
+    wireProfileUpdates();
+    dockMessage('HUD PROFILES ONLINE');
+  }, 5200);
+};
+
+    // ===============================
+//  HUD PHASE 12 — FINAL INTEGRATION PASS
+// ===============================
+
+function optimizeHUD() {
+  // Throttle dock messages
+  let lastDock = 0;
+  const originalDock = dockMessage;
+  dockMessage = function (msg) {
+    const now = Date.now();
+    if (now - lastDock < 300) return;
+    lastDock = now;
+    originalDock(msg);
+  };
+
+  // Smooth drift flicker
+  const originalUpdateMap = updateSystemMap;
+  updateSystemMap = function () {
+    if (currentState === 'DRIFT') {
+      if (Math.random() > 0.7) {
+        originalUpdateMap();
+      }
+    } else {
+      originalUpdateMap();
+    }
+  };
+
+  // Unified HUD refresh loop
+  setInterval(() => {
+    applyHUDTheme();
+    updateVisorHUD();
+  }, 200);
+}
+
+const originalBootPhase12 = bootSequence;
+bootSequence = function () {
+  originalBootPhase12();
+  setTimeout(() => {
+    optimizeHUD();
+    dockMessage('HUD INTEGRATION COMPLETE');
+  }, 5600);
+};
     
 // 18. Init
 function initBeyondOS() {
