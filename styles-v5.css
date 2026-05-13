@@ -239,8 +239,9 @@ html, body {
   100% { opacity: 0; visibility: hidden; }
 }
 
-/* VISOR 2.0 OVERLAY */
-#visor-overlay {
+/ VISOR 2.0 OVERLAY /
+
+visor-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.92);
@@ -252,19 +253,19 @@ html, body {
   transition: opacity 0.25s ease-out, visibility 0.25s ease-out;
 }
 
-#visor-overlay.visor-hidden {
+visor-overlay.visor-hidden {
   opacity: 0;
   visibility: hidden;
 }
 
-#visor-overlay-inner {
+visor-overlay-inner {
   width: min(960px, 96vw);
   border: 1px solid #ff0000;
   background: #050505;
   padding: 0.75rem;
 }
 
-#visor-overlay-header {
+visor-overlay-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -277,7 +278,7 @@ html, body {
   text-transform: uppercase;
 }
 
-#visor-close-btn {
+visor-close-btn {
   border: 1px solid #ff0000;
   background: #050505;
   color: #ff0000;
@@ -286,7 +287,7 @@ html, body {
   cursor: pointer;
 }
 
-#visor-overlay-body {
+visor-overlay-body {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
@@ -307,8 +308,9 @@ html, body {
   color: #ccc;
 }
 
-/* NOTIFICATION STACK */
-#notification-stack {
+/ NOTIFICATION STACK /
+
+notification-stack {
   position: fixed;
   right: 1rem;
   bottom: 3.5rem;
@@ -329,15 +331,19 @@ html, body {
   font-size: 0.75rem;
 }
 
-/* RESPONSIVE */
+/ RESPONSIVE /
 @media (max-width: 900px) {
-  #os-main {
+
+os-main {
     grid-template-columns: 1fr;
   }
-  #app-grid-body {
+
+app-grid-body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  #visor-overlay-body {
+
+visor-overlay-body {
     grid-template-columns: 1fr;
   }
 }
+`
