@@ -7,13 +7,12 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
   <!-- Boot Overlay -->
   <div id="boot-overlay">
     <div id="boot-logo">BEYOND.OS</div>
     <div id="boot-subtitle">Batcomputer Terminal — Operator: RED</div>
-    <div id="boot-progress">
-      <div class="boot-bar"></div>
-    </div>
+    <div id="boot-progress"><div class="boot-bar"></div></div>
     <div id="boot-status"></div>
   </div>
 
@@ -22,87 +21,100 @@
 
   <!-- Main Layout -->
   <div id="batcomputer">
-    <!-- Left Monitor: Tactical HUD -->
+
+    <!-- LEFT MONITOR -->
     <section id="monitor-left" class="monitor">
       <header class="monitor-header">
         <span class="monitor-title">TACTICAL HUD</span>
         <span class="monitor-status" id="hud-mode-label">MODE: IDLE</span>
       </header>
 
-      <div id="hud-vitals" class="panel">
+      <!-- OPERATOR VITALS -->
+      <div class="panel">
         <div class="panel-title">OPERATOR VITALS</div>
         <div class="panel-body" id="vitals-body"></div>
       </div>
 
-      <div id="hud-recovery" class="panel">
+      <!-- RECOVERY PANEL -->
+      <div class="panel">
         <div class="panel-title">READINESS / RECOVERY</div>
         <div class="panel-body" id="recovery-panel-body"></div>
       </div>
 
-      <div id="hud-threat-grid" class="panel">
+      <!-- ADAPTIVE PROTOCOL ENGINE -->
+      <div class="panel">
+        <div class="panel-title">ADAPTIVE STATE</div>
+        <div class="panel-body" id="protocols-panel-body"></div>
+      </div>
+
+      <!-- THREAT GRID -->
+      <div class="panel">
         <div class="panel-title">THREAT GRID</div>
         <div class="panel-body" id="threat-grid-body"></div>
       </div>
 
-      <div id="hud-mission-feed" class="panel">
+      <!-- MISSION FEED -->
+      <div class="panel">
         <div class="panel-title">MISSION FEED</div>
         <div class="panel-body" id="mission-feed-body"></div>
       </div>
 
-      <div id="hud-suit-alerts" class="panel">
+      <!-- SUIT ALERTS -->
+      <div class="panel">
         <div class="panel-title">SUIT CORE ALERTS</div>
         <div class="panel-body" id="suit-alerts-body"></div>
       </div>
     </section>
 
-    <!-- Right Monitor: Systems Console -->
+    <!-- RIGHT MONITOR -->
     <section id="monitor-right" class="monitor">
       <header class="monitor-header">
         <span class="monitor-title">SYSTEMS CONSOLE</span>
         <span class="monitor-status" id="system-mode-label">CAVE: STANDBY</span>
       </header>
 
-      <div id="console-diagnostics" class="panel">
+      <div class="panel">
         <div class="panel-title">DIAGNOSTICS</div>
         <div class="panel-body" id="diagnostics-body"></div>
       </div>
 
-      <div id="console-vehicle-bay" class="panel">
+      <div class="panel">
         <div class="panel-title">VEHICLE BAY</div>
         <div class="panel-body" id="vehicle-bay-body"></div>
       </div>
 
-      <div id="console-evidence-board" class="panel">
+      <div class="panel">
         <div class="panel-title">EVIDENCE BOARD</div>
         <div class="panel-body" id="evidence-board-body"></div>
       </div>
 
-      <div id="console-training-room" class="panel">
+      <div class="panel">
         <div class="panel-title">TRAINING ROOM</div>
         <div class="panel-body" id="training-room-body"></div>
       </div>
     </section>
+
   </div>
 
-  <!-- Lower Console: Mission / Threat / Operator -->
+  <!-- LOWER CONSOLE -->
   <section id="lower-console">
-    <div id="mission-panel" class="panel">
+    <div class="panel">
       <div class="panel-title">MISSION FLOW</div>
       <div class="panel-body" id="mission-flow-body"></div>
     </div>
 
-    <div id="threat-panel" class="panel">
+    <div class="panel">
       <div class="panel-title">THREAT MODULE</div>
       <div class="panel-body" id="threat-module-body"></div>
     </div>
 
-    <div id="operator-panel" class="panel">
+    <div class="panel">
       <div class="panel-title">OPERATOR STATUS</div>
       <div class="panel-body" id="operator-status-body"></div>
     </div>
   </section>
 
-  <!-- Console Terminal -->
+  <!-- TERMINAL -->
   <section id="terminal-section">
     <div id="terminal-header">
       <span>BEYOND.OS CONSOLE</span>
@@ -115,7 +127,7 @@
     </div>
   </section>
 
-  <!-- Hidden AI Module Panel (for future) -->
+  <!-- AI MODULE PANEL -->
   <section id="ai-module-panel" class="panel hidden">
     <div class="panel-title">BATCOMPUTER AI MODULE</div>
     <div class="panel-body" id="ai-module-body">
