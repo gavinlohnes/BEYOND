@@ -1,5 +1,5 @@
-// BEYOND.OS V150+ — Core Kernel
-// Gavin / RED — Batcomputer Build
+// BEYOND.OS V150+ — Beyond Tower / Recovery Upgrade
+// RED — Batcomputer Build
 
 const BeyondOS = {
   version: "V150+",
@@ -26,6 +26,7 @@ function cacheDom() {
   dom.systemModeLabel = $("system-mode-label");
 
   dom.vitalsBody = $("vitals-body");
+  dom.recoveryPanelBody = $("recovery-panel-body");
   dom.threatGridBody = $("threat-grid-body");
   dom.missionFeedBody = $("mission-feed-body");
   dom.suitAlertsBody = $("suit-alerts-body");
@@ -69,9 +70,9 @@ function startBootSequence() {
     "Initializing BEYOND.OS kernel...",
     "Syncing cave environment...",
     "Bringing dual-monitor Batcomputer online...",
-    "Linking Suit Core and AI Bruce...",
+    "Linking Suit Core and AI module...",
     "Loading mission, threat, and operator systems...",
-    "Finalizing integration layer...",
+    "Calibrating readiness and recovery engine...",
     "All systems nominal. Awaiting operator.",
   ];
 
@@ -99,27 +100,6 @@ function completeBoot() {
   initializeSystems();
 }
 
-// INITIALIZATION OF SYSTEMS
-
-function initializeSystems() {
-  renderVitals();
-  renderThreatGrid();
-  renderMissionFeed();
-  renderSuitAlerts();
-
-  renderDiagnostics();
-  renderVehicleBay();
-  renderEvidenceBoard();
-  renderTrainingRoom();
-
-  renderMissionFlow();
-  renderThreatModule();
-  renderOperatorStatus();
-
-  dom.terminalInput.addEventListener("keydown", handleTerminalInput);
-  dom.terminalInput.focus();
-}
-
 // SUIT / OPERATOR MOCK DATA
 
 const Operator = {
@@ -128,6 +108,10 @@ const Operator = {
   focus: "HIGH",
   fatigue: "LOW",
   mode: "IDLE",
+  // readiness inputs (simple mock values for now)
+  sleepHours: 7.0,   // 0–10
+  stress: 35,        // 0–100 (higher = worse)
+  fatigueScore: 30,  // 0–100 (higher = worse)
 };
 
 const Suit = {
@@ -185,6 +169,71 @@ const TrainingRoom = {
   readiness: "READY",
 };
 
+// Recovery / Readiness state
+
+const Recovery = {
+  score: 0,              // 0–100
+  lastUpdate: null,      // ISO string
+  modeLabel: "STANDARD LOAD",
+  message: "Baseline training load.",
+};
+
+// RECOVERY LOGIC
+
+function computeRecoveryScore() {
+  const sleepHours = Operator.sleepHours || 0;
+  const stress = Operator.stress || 0;
+  const fatigue = Operator.fatigueScore || 0;
+
+  const sleepNorm = Math.min(100, (sleepHours / 9) * 100);
+  const stressNorm = Math.max(0, 100 - stress);
+  const fatigueNorm = Math.max(0, 100 - fatigue);
+
+  const score = (sleepNorm * 0.4) + (stressNorm * 0.3) + (fatigueNorm * 0.3);
+  return Math.round(Math.max(0, Math.min(100, score)));
+}
+
+function getTrainingSuggestionFromRecovery(score) {
+  const s = typeof score === "number" ? score : Recovery.score;
+
+  if (s >= 85) {
+    return {
+      label: "HIGH OUTPUT",
+      message: "Excellent recovery — time to push.",
+    };
+  }
+  if (s >= 65) {
+    return {
+      label: "STANDARD LOAD",
+      message: "Solid recovery — good training day.",
+    };
+  }
+  if (s >= 45) {
+    return {
+      label: "REDUCED VOLUME",
+      message: "Dial it back and keep it controlled.",
+    };
+  }
+  return {
+    label: "RECOVERY PRIORITY",
+    message: "Prioritize rest and low-intensity work.",
+  };
+}
+
+function updateRecoveryState() {
+  const score = computeRecoveryScore();
+  const suggestion = getTrainingSuggestionFromRecovery(score);
+
+  Recovery.score = score;
+  Recovery.lastUpdate = new Date().toISOString();
+  Recovery.modeLabel = suggestion.label;
+  Recovery.message = suggestion.message;
+
+  renderRecoveryPanel();
+
+  return score;
+}
+
 // RENDER FUNCTIONS
 
 function renderVitals() {
@@ -196,6 +245,28 @@ function renderVitals() {
     <div class="text-dim" style="margin-top:0.4rem;">Suit Integrity: ${(Suit.integrity * 100).toFixed(0)}%</div>
     <div class="text-dim">Stealth Mesh: ${(Suit.stealthMesh * 100).toFixed(0)}%</div>
     <div class="text-dim">Neural Link: ${(Suit.neuralLink * 100).toFixed(0)}%</div>
+  `;
+}
+
+function renderRecoveryPanel() {
+  if (!dom.recoveryPanelBody) return;
+
+  const score = Recovery.score;
+  const label = Recovery.modeLabel;
+  const message = Recovery.message;
+
+  dom.recoveryPanelBody.innerHTML = `
+    <div class="recovery-score-block">
+      <div class="recovery-score-circle">
+        <div>${score}</div>
+        <span>RECOVERY</span>
+      </div>
+      <div class="recovery-meta">
+        <div class="recovery-meta-label">TRAINING MODE</div>
+        <div class="recovery-meta-mode">${label}</div>
+        <div class="recovery-meta-message">${message}</div>
+      </div>
+    </div>
   `;
 }
 
@@ -330,9 +401,9 @@ const commands = {
     log("Available commands:", { type: "system" });
     log("  mode [idle|patrol|investigation|combat|stealth|emergency]", { type: "info" });
     log("  cave [standby|active|combat|lockdown]", { type: "info" });
-    log("  ai show", { type: "info" });
-    log("  ai hide", { type: "info" });
+    log("  ai [show|hide]", { type: "info" });
     log("  packet", { type: "info" });
+    log("  recovery", { type: "info" });
     log("  clear", { type: "info" });
   },
 
@@ -384,6 +455,15 @@ const commands = {
     log("State packet generated. Copy from below:", { type: "system" });
     log(JSON.stringify(packet, null, 2), { type: "info" });
   },
+
+  recovery() {
+    const score = updateRecoveryState();
+    const suggestion = getTrainingSuggestionFromRecovery(score);
+
+    log(`Recovery Score: ${score}/100`, { type: "system" });
+    log(`Training Mode: ${suggestion.label}`, { type: "info" });
+    log(suggestion.message, { type: "info" });
+  },
 };
 
 function handleTerminalInput(e) {
@@ -403,7 +483,7 @@ function handleTerminalInput(e) {
   }
 }
 
-// BATCOMPUTER AI MODULE (SHELL FOR OUR LOOP)
+// BATCOMPUTER AI MODULE (SHELL)
 
 const batAI = {
   core: {
@@ -423,6 +503,7 @@ const batAI = {
     diagnostics: Diagnostics,
     suit: Suit,
     operator: Operator,
+    recovery: Recovery,
   },
 
   generateStatePacket() {
@@ -443,19 +524,40 @@ const batAI = {
       diagnostics: { ...Diagnostics },
       vehicleBay: { ...VehicleBay },
       trainingRoom: { ...TrainingRoom },
+      recovery: { ...Recovery },
     };
   },
 
   absorbUpdate(update) {
-    // This is where you paste back evolved data from me in the future.
-    // For now, we just log that the AI is ready to accept it.
     log("AI module ready to absorb external update payload.", { type: "system" });
     if (!update) return;
-    // Example: if update.missions, update threats, etc.
+    // Future: merge updated missions/threats/recovery/etc.
   },
 };
 
-// INIT
+// INITIALIZATION
+
+function initializeSystems() {
+  updateRecoveryState(); // compute initial score
+
+  renderVitals();
+  renderRecoveryPanel();
+  renderThreatGrid();
+  renderMissionFeed();
+  renderSuitAlerts();
+
+  renderDiagnostics();
+  renderVehicleBay();
+  renderEvidenceBoard();
+  renderTrainingRoom();
+
+  renderMissionFlow();
+  renderThreatModule();
+  renderOperatorStatus();
+
+  dom.terminalInput.addEventListener("keydown", handleTerminalInput);
+  dom.terminalInput.focus();
+}
 
 window.addEventListener("DOMContentLoaded", () => {
   cacheDom();
