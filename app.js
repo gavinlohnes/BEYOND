@@ -1,6 +1,6 @@
 // BEYOND.OS core brain — app.js
 
-// 1. Glyph registry (placeholders for future SVGs)
+// 1. Glyph registry (SVGs will plug in later)
 const GlyphSVG = {
   IDLE: ``,
   ACTIVE: ``,
@@ -19,23 +19,39 @@ const GlyphSVG = {
   HEARTBEAT_PEAK: ``,
 };
 
-// DOM mount
 const GLYPH_ROOT_ID = 'glyph-root';
 
-// current state + timers
+// 2. State + timers + engine internals
 let currentState = 'IDLE';
 let heartbeatTimer = null;
+let inactivityTimer = null;
+let lastInteractionTs = Date.now();
+let visorLocked = false;
+let visorPrevState = 'IDLE';
+let transitionCooldown = false;
+let lastTransitionTs = 0;
 
-// 2. Render helper
-function renderGlyph(key) {
-  const root = document.getElementById(GLYPH_ROOT_ID);
-  if (!root) return;
+// 3. System memory (session‑level)
+const SystemMemory = {
+  lastCommand: null,
+  commandHistory: [],
+  maxHistory: 32,
+  lastAppOpened: null,
+  lastStateBeforeVisor: null,
+  usageCounters: {
+    commands: 0,
+    visorOpens: 0,
+    appOpens: 0,
+  },
+  settings: {
+    inactivityTimeoutMs: 30_000,
+    heartbeatBaseMs: 600,
+  },
+};
 
-  const svg = GlyphSVG[key] || '';
-  root.innerHTML = svg;
-}
+const TRANSITION_COOLDOWN_MS = 600;
 
-// 3. OS states + metadata
+// 4. OS states
 const OS_STATES = {
   IDLE:   { key: 'IDLE',   loopHeartbeat: true,  label: 'IDLE' },
   ACTIVE: { key: 'ACTIVE', loopHeartbeat: true,  label: 'ACTIVE' },
@@ -45,65 +61,28 @@ const OS_STATES = {
   ADVISOR:{ key: 'ADVISOR',loopHeartbeat: true,  label: 'ADVISOR' },
 };
 
-// 4. Heartbeat loop (placeholder visuals for now)
-function startHeartbeat() {
-  stopHeartbeat();
-  const root = document.getElementById(GLYPH_ROOT_ID);
-  if (!root) return;
-
-  const frames = ['.', '·', '•', '·'];
-  let idx = 0;
-
-  heartbeatTimer = setInterval(() => {
-    root.textContent = `[HEARTBEAT ${frames[idx]}]`;
-    idx = (idx + 1) % frames.length;
-  }, 600);
+// 5. Log system (with levels + timestamps)
+function formatTimestamp() {
+  const d = new Date();
+  return d.toLocaleTimeString();
 }
 
-function stopHeartbeat() {
-  if (heartbeatTimer) {
-    clearInterval(heartbeatTimer);
-    heartbeatTimer = null;
-  }
-}
-
-// 5. State application
-function applyState(stateKey, reason = '') {
-  const meta = OS_STATES[stateKey];
-  if (!meta) return;
-
-  currentState = stateKey;
-
-  // header status
-  const statusEl = document.getElementById('os-status');
-  if (statusEl) statusEl.textContent = meta.label;
-
-  // glyph render (placeholder)
-  renderGlyph(meta.key);
-
-  // heartbeat
-  if (meta.loopHeartbeat) {
-    startHeartbeat();
-  } else {
-    stopHeartbeat();
-  }
-
-  // log
-  logLine(`[STATE] → ${meta.label}${reason ? ` (${reason})` : ''}`);
-}
-
-// 6. Logging
-function logLine(text) {
+function logLine(text, level = 'INFO') {
   const logPanel = document.getElementById('log-panel');
   if (!logPanel) return;
 
   const line = document.createElement('div');
-  line.textContent = text;
+  line.className = `log-line log-${level.toLowerCase()}`;
+  line.textContent = `[${formatTimestamp()}] [${level}] ${text}`;
   logPanel.appendChild(line);
   logPanel.scrollTop = logPanel.scrollHeight;
 }
 
-// 7. Notifications
+function logInfo(msg) { logLine(msg, 'INFO'); }
+function logWarn(msg) { logLine(msg, 'WARN'); }
+function logError(msg) { logLine(msg, 'ERROR'); }
+
+// 6. Notifications
 function pushNotification(message, timeout = 3500) {
   const stack = document.getElementById('notification-stack');
   if (!stack) return;
@@ -121,50 +100,238 @@ function pushNotification(message, timeout = 3500) {
   }, timeout);
 }
 
-// 8. Visor overlay controls
+// 7. Render helper
+function renderGlyph(key) {
+  const root = document.getElementById(GLYPH_ROOT_ID);
+  if (!root) return;
+  const svg = GlyphSVG[key] || '';
+  root.innerHTML = svg;
+}
+
+// 8. Heartbeat loop (adaptive)
+function getHeartbeatInterval() {
+  const base = SystemMemory.settings.heartbeatBaseMs;
+  const cmdUse = SystemMemory.usageCounters.commands;
+  if (cmdUse > 50) return Math.max(250, base - 250);
+  if (cmdUse > 20) return Math.max(350, base - 150);
+  return base;
+}
+
+function startHeartbeat() {
+  stopHeartbeat();
+  const root = document.getElementById(GLYPH_ROOT_ID);
+  if (!root) return;
+
+  const frames = ['.', '·', '•', '·'];
+  let idx = 0;
+  const interval = getHeartbeatInterval();
+
+  heartbeatTimer = setInterval(() => {
+    root.textContent = `[HEARTBEAT ${frames[idx]}]`;
+    idx = (idx + 1) % frames.length;
+  }, interval);
+}
+
+function stopHeartbeat() {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+}
+
+// 9. Transition engine core
+function markInteraction(source = 'unknown') {
+  lastInteractionTs = Date.now();
+  resetInactivityTimer();
+}
+
+function canTransition() {
+  const now = Date.now();
+  if (transitionCooldown && now - lastTransitionTs < TRANSITION_COOLDOWN_MS) {
+    return false;
+  }
+  return true;
+}
+
+function setTransitionCooldown() {
+  transitionCooldown = true;
+  lastTransitionTs = Date.now();
+  setTimeout(() => {
+    transitionCooldown = false;
+  }, TRANSITION_COOLDOWN_MS);
+}
+
+function applyStateInternal(stateKey, reason = '') {
+  const meta = OS_STATES[stateKey];
+  if (!meta) return;
+
+  currentState = stateKey;
+
+  const statusEl = document.getElementById('os-status');
+  if (statusEl) statusEl.textContent = meta.label;
+
+  renderGlyph(meta.key);
+
+  if (meta.loopHeartbeat) {
+    startHeartbeat();
+  } else {
+    stopHeartbeat();
+  }
+
+  logInfo(`STATE → ${meta.label}${reason ? ` (${reason})` : ''}`);
+}
+
+function transitionTo(stateKey, reason = '') {
+  if (!OS_STATES[stateKey]) return;
+  if (visorLocked) {
+    logWarn(`STATE transition blocked (visor lock) → ${stateKey}`);
+    return;
+  }
+  if (!canTransition()) {
+    logWarn(`STATE transition throttled → ${stateKey}`);
+    return;
+  }
+
+  setTransitionCooldown();
+  applyStateInternal(stateKey, reason);
+}
+
+// 10. Inactivity handling (adaptive)
+function getInactivityTimeout() {
+  const base = SystemMemory.settings.inactivityTimeoutMs;
+  const cmdUse = SystemMemory.usageCounters.commands;
+  if (cmdUse > 50) return base * 0.5;
+  if (cmdUse > 20) return base * 0.75;
+  return base;
+}
+
+function resetInactivityTimer() {
+  if (inactivityTimer) {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = null;
+  }
+  const timeout = getInactivityTimeout();
+  inactivityTimer = setTimeout(() => {
+    if (currentState === 'ACTIVE') {
+      transitionTo('IDLE', 'Inactivity');
+      pushNotification('SYSTEM → IDLE (inactivity)');
+    }
+  }, timeout);
+}
+
+// 11. Visor overlay controls
 function openVisor() {
   const overlay = document.getElementById('visor-overlay');
   if (!overlay) return;
+
+  if (!visorLocked) {
+    visorPrevState = currentState;
+    SystemMemory.lastStateBeforeVisor = currentState;
+    visorLocked = true;
+  }
+
   overlay.classList.remove('visor-hidden');
-  logLine('[VISOR] Overlay opened.');
+  logInfo('VISOR overlay opened.');
   pushNotification('VISOR ONLINE');
+  SystemMemory.usageCounters.visorOpens += 1;
+  markInteraction('visor-open');
 }
 
 function closeVisor() {
   const overlay = document.getElementById('visor-overlay');
   if (!overlay) return;
+
   overlay.classList.add('visor-hidden');
-  logLine('[VISOR] Overlay closed.');
+  logInfo('VISOR overlay closed.');
+
+  if (visorLocked) {
+    visorLocked = false;
+    const restore = visorPrevState || 'ACTIVE';
+    transitionTo(restore, 'Visor close restore');
+  }
+
+  markInteraction('visor-close');
 }
 
-// 9. CMD handling
+// 12. CMD handling (CMD 2.0)
+function addToCommandHistory(cmd) {
+  SystemMemory.lastCommand = cmd;
+  SystemMemory.commandHistory.push(cmd);
+  if (SystemMemory.commandHistory.length > SystemMemory.maxHistory) {
+    SystemMemory.commandHistory.shift();
+  }
+}
+
+function dumpSystemMemory() {
+  logInfo('SYSTEM MEMORY DUMP BEGIN');
+  logInfo(`Last command: ${SystemMemory.lastCommand || 'none'}`);
+  logInfo(`Last app opened: ${SystemMemory.lastAppOpened || 'none'}`);
+  logInfo(`Last state before visor: ${SystemMemory.lastStateBeforeVisor || 'none'}`);
+  logInfo(`Usage: CMD=${SystemMemory.usageCounters.commands}, VISOR=${SystemMemory.usageCounters.visorOpens}, APPS=${SystemMemory.usageCounters.appOpens}`);
+  logInfo('SYSTEM MEMORY DUMP END');
+}
+
+function clearLogPanel() {
+  const logPanel = document.getElementById('log-panel');
+  if (!logPanel) return;
+  logPanel.innerHTML = '';
+  logInfo('LOG CLEARED');
+}
+
 function handleCommand(raw) {
   const cmd = raw.trim();
   if (!cmd) return;
 
-  logLine(`CMD> ${cmd}`);
+  logInfo(`CMD> ${cmd}`);
+  markInteraction('cmd');
+  addToCommandHistory(cmd);
+  SystemMemory.usageCounters.commands += 1;
 
   const lower = cmd.toLowerCase();
 
   if (lower === 'help') {
-    logLine('Available: help, state idle|active|drift|advisor|stealth|combat, visor open|close, ping');
+    logInfo('Available: help, ping, state idle|active|drift|advisor|stealth|combat, visor open|close, clear, history, inspect');
     pushNotification('HELP: See system log.');
     return;
   }
 
   if (lower === 'ping') {
-    logLine('PONG');
+    logInfo('PONG');
     pushNotification('PONG');
+    transitionTo('ACTIVE', 'Ping');
+    return;
+  }
+
+  if (lower === 'clear') {
+    clearLogPanel();
+    return;
+  }
+
+  if (lower === 'history') {
+    if (!SystemMemory.commandHistory.length) {
+      logInfo('No command history.');
+      return;
+    }
+    logInfo('COMMAND HISTORY BEGIN');
+    SystemMemory.commandHistory.forEach((c, i) => {
+      logInfo(`#${i + 1}: ${c}`);
+    });
+    logInfo('COMMAND HISTORY END');
+    return;
+  }
+
+  if (lower === 'inspect') {
+    dumpSystemMemory();
     return;
   }
 
   if (lower.startsWith('state ')) {
     const target = lower.split(' ')[1]?.toUpperCase();
     if (OS_STATES[target]) {
-      applyState(target, 'CMD');
+      transitionTo(target, 'CMD');
       pushNotification(`STATE → ${target}`);
     } else {
-      logLine(`Unknown state: ${target}`);
+      logWarn(`Unknown state: ${target}`);
     }
     return;
   }
@@ -179,10 +346,10 @@ function handleCommand(raw) {
     return;
   }
 
-  logLine('Unknown command. Type "help".');
+  logWarn('Unknown command. Type "help".');
 }
 
-// 10. App tile behavior
+// 13. App tile behavior (with chained transitions)
 function wireAppTiles() {
   const tiles = document.querySelectorAll('.app-tile');
   const output = document.getElementById('app-grid-output');
@@ -193,21 +360,28 @@ function wireAppTiles() {
       const title = tile.querySelector('.app-title')?.textContent || `App ${index + 1}`;
       const subtitle = tile.querySelector('.app-subtitle')?.textContent || '';
       output.textContent = `${title} — ${subtitle || 'Activated'}`;
-      logLine(`[APP] ${title} opened.`);
+      logInfo(`APP opened: ${title}`);
+      SystemMemory.lastAppOpened = title;
+      SystemMemory.usageCounters.appOpens += 1;
+      markInteraction(`app-${title.toLowerCase()}`);
 
-      // simple mapping to states for fun
       switch (title.toLowerCase()) {
         case 'diagnostics':
-          applyState('ACTIVE', 'Diagnostics');
+          transitionTo('ACTIVE', 'Diagnostics');
           break;
         case 'network':
-          applyState('ADVISOR', 'Network');
+          transitionTo('ADVISOR', 'Network');
           break;
         case 'memory':
-          applyState('DRIFT', 'Memory');
+          transitionTo('DRIFT', 'Memory');
+          setTimeout(() => {
+            if (currentState === 'DRIFT') {
+              transitionTo('ADVISOR', 'Drift resolve');
+            }
+          }, 5000);
           break;
         case 'pulse':
-          applyState('IDLE', 'Pulse');
+          transitionTo('IDLE', 'Pulse');
           break;
         default:
           break;
@@ -218,7 +392,7 @@ function wireAppTiles() {
   });
 }
 
-// 11. Visor button wiring
+// 14. Visor button wiring
 function wireVisorButton() {
   const btn = document.getElementById('visor-btn');
   const closeBtn = document.getElementById('visor-close-btn');
@@ -234,7 +408,7 @@ function wireVisorButton() {
   }
 }
 
-// 12. CMD input wiring
+// 15. CMD input wiring
 function wireCommandInput() {
   const input = document.getElementById('command-input');
   if (!input) return;
@@ -245,9 +419,16 @@ function wireCommandInput() {
       input.value = '';
     }
   });
+
+  input.addEventListener('input', () => {
+    markInteraction('cmd-typing');
+    if (currentState === 'IDLE') {
+      transitionTo('ACTIVE', 'CMD typing');
+    }
+  });
 }
 
-// 13. Today + visor feed placeholders
+// 16. Panels init
 function initPanels() {
   const today = document.getElementById('today-panel');
   const visorFeed = document.getElementById('visor-feed');
@@ -270,25 +451,26 @@ function initPanels() {
   }
 }
 
-// 14. Boot sequence
+// 17. Boot sequence
 function bootSequence() {
-  logLine('[BOOT] BEYOND.OS initializing...');
-  applyState('IDLE', 'Boot');
+  logInfo('BEYOND.OS initializing...');
+  applyStateInternal('IDLE', 'Boot');
+  resetInactivityTimer();
 
   setTimeout(() => {
-    logLine('[BOOT] Core systems online.');
+    logInfo('Core systems online.');
   }, 600);
 
   setTimeout(() => {
-    applyState('ACTIVE', 'Post-boot');
-    logLine('[BOOT] Handing control to operator.');
+    transitionTo('ACTIVE', 'Post-boot');
+    logInfo('Handing control to operator.');
     pushNotification('BEYOND.OS ONLINE');
   }, 1600);
 }
 
-// 15. Init
+// 18. Init
 function initBeyondOS() {
-  logLine('[SYSTEM] BEYOND.OS core loaded.');
+  logInfo('BEYOND.OS core loaded.');
   initPanels();
   wireVisorButton();
   wireCommandInput();
@@ -296,10 +478,9 @@ function initBeyondOS() {
   bootSequence();
 }
 
-// 16. DOM ready
+// 19. DOM ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initBeyondOS);
 } else {
   initBeyondOS();
-}
-`
+    }
