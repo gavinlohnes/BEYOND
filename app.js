@@ -1179,6 +1179,327 @@ bootSequence = function () {
   // Continue normal boot
   originalBootPhase4();
 };
+
+    // ===============================
+//  HUD PHASE 5 — COMMAND PALETTE
+// ===============================
+
+function createCommandPalette() {
+  const palette = document.createElement('div');
+  palette.id = 'command-palette';
+  palette.style.position = 'fixed';
+  palette.style.top = '50%';
+  palette.style.left = '50%';
+  palette.style.transform = 'translate(-50%, -50%)';
+  palette.style.width = '420px';
+  palette.style.padding = '18px';
+  palette.style.background = 'rgba(0,0,0,0.85)';
+  palette.style.border = '1px solid #ff1744';
+  palette.style.backdropFilter = 'blur(8px)';
+  palette.style.color = '#ff1744';
+  palette.style.fontFamily = 'monospace';
+  palette.style.fontSize = '14px';
+  palette.style.zIndex = '99999';
+  palette.style.display = 'none';
+  palette.style.userSelect = 'none';
+
+  palette.innerHTML = `
+    <div style="margin-bottom:10px;font-weight:bold;">COMMAND PALETTE</div>
+    <input id="palette-input" 
+           style="width:100%;padding:8px;background:black;border:1px solid #ff1744;color:#ff1744;font-family:monospace;"
+           placeholder="Type a command...">
+    <div id="palette-suggestions" style="margin-top:12px;max-height:180px;overflow-y:auto;"></div>
+  `;
+
+  document.body.appendChild(palette);
+}
+
+const PaletteCommands = [
+  { cmd: 'state idle', desc: 'Switch to IDLE mode' },
+  { cmd: 'state active', desc: 'Switch to ACTIVE mode' },
+  { cmd: 'state drift', desc: 'Enter DRIFT mode' },
+  { cmd: 'state advisor', desc: 'Enter ADVISOR mode' },
+  { cmd: 'state stealth', desc: 'Enter STEALTH mode' },
+  { cmd: 'state combat', desc: 'Enter COMBAT mode' },
+  { cmd: 'visor open', desc: 'Open visor' },
+  { cmd: 'visor close', desc: 'Close visor' },
+  { cmd: 'clear', desc: 'Clear CMD log' },
+  { cmd: 'help', desc: 'Show help' }
+];
+
+function wireCommandPalette() {
+  const palette = document.getElementById('command-palette');
+  const input = document.getElementById('palette-input');
+  const suggestions = document.getElementById('palette-suggestions');
+
+  // Toggle with SHIFT + SPACE
+  document.addEventListener('keydown', (e) => {
+    if (e.key === ' ' && e.shiftKey) {
+      palette.style.display = palette.style.display === 'none' ? 'block' : 'none';
+      input.value = '';
+      suggestions.innerHTML = '';
+      input.focus();
+      e.preventDefault();
+    }
+  });
+
+  // Live suggestions
+  input.addEventListener('input', () => {
+    const q = input.value.toLowerCase();
+    suggestions.innerHTML = '';
+
+    PaletteCommands.filter(c => c.cmd.includes(q)).forEach(c => {
+      const el = document.createElement('div');
+      el.style.padding = '6px';
+      el.style.cursor = 'pointer';
+      el.textContent = `${c.cmd} — ${c.desc}`;
+      el.onclick = () => {
+        runCommand(c.cmd);
+        palette.style.display = 'none';
+      };
+      suggestions.appendChild(el);
+    });
+  });
+
+  // Enter to run
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      runCommand(input.value);
+      palette.style.display = 'none';
+    }
+  });
+}
+
+const originalBootPhase5 = bootSequence;
+bootSequence = function () {
+  originalBootPhase5();
+  setTimeout(() => {
+    createCommandPalette();
+    wireCommandPalette();
+    dockMessage('COMMAND PALETTE ONLINE');
+  }, 2800);
+};
+
+    // ===============================
+//  HUD PHASE 6 — INPUT LAYER
+// ===============================
+
+let inputHistory = [];
+let historyIndex = -1;
+
+function enhanceInputLayer() {
+  const input = document.getElementById('command-input');
+  if (!input) return;
+
+  // History navigation
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp') {
+      if (historyIndex < inputHistory.length - 1) {
+        historyIndex++;
+        input.value = inputHistory[inputHistory.length - 1 - historyIndex];
+      }
+      e.preventDefault();
+    }
+
+    if (e.key === 'ArrowDown') {
+      if (historyIndex > 0) {
+        historyIndex--;
+        input.value = inputHistory[inputHistory.length - 1 - historyIndex];
+      } else {
+        historyIndex = -1;
+        input.value = '';
+      }
+      e.preventDefault();
+    }
+  });
+
+  // Auto‑completion (TAB)
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      const q = input.value.toLowerCase();
+      const match = PaletteCommands.find(c => c.cmd.startsWith(q));
+      if (match) input.value = match.cmd;
+      e.preventDefault();
+    }
+  });
+
+  // Store history + visual feedback
+  const originalRun = runCommand;
+  runCommand = function (cmd) {
+    if (cmd.trim() !== '') {
+      inputHistory.push(cmd);
+      historyIndex = -1;
+    }
+
+    // Flash success/error
+    input.style.transition = 'box-shadow 0.3s ease';
+
+    if (PaletteCommands.some(c => c.cmd === cmd)) {
+      input.style.boxShadow = '0 0 12px #00ff88';
+    } else {
+      input.style.boxShadow = '0 0 12px #ff1744';
+    }
+
+    setTimeout(() => {
+      input.style.boxShadow = 'none';
+    }, 400);
+
+    originalRun(cmd);
+  };
+}
+
+const originalBootPhase6 = bootSequence;
+bootSequence = function () {
+  originalBootPhase6();
+  setTimeout(() => {
+    enhanceInputLayer();
+    dockMessage('INPUT LAYER ONLINE');
+  }, 3200);
+};
+
+    // ===============================
+//  HUD PHASE 7 — SYSTEM MAP
+// ===============================
+
+function createSystemMap() {
+  const map = document.createElement('div');
+  map.id = 'system-map';
+  map.style.position = 'fixed';
+  map.style.top = '50%';
+  map.style.left = '50%';
+  map.style.transform = 'translate(-50%, -50%)';
+  map.style.width = '480px';
+  map.style.height = '480px';
+  map.style.borderRadius = '50%';
+  map.style.background = 'rgba(0,0,0,0.85)';
+  map.style.border = '2px solid #ff1744';
+  map.style.backdropFilter = 'blur(10px)';
+  map.style.zIndex = '99998';
+  map.style.display = 'none';
+  map.style.userSelect = 'none';
+
+  // Center label
+  const center = document.createElement('div');
+  center.style.position = 'absolute';
+  center.style.top = '50%';
+  center.style.left = '50%';
+  center.style.transform = 'translate(-50%, -50%)';
+  center.style.color = '#ff1744';
+  center.style.fontFamily = 'monospace';
+  center.style.fontSize = '18px';
+  center.textContent = 'SYSTEM MAP';
+  map.appendChild(center);
+
+  // Subsystems
+  const subsystems = [
+    { name: 'HUD', angle: 0 },
+    { name: 'VISOR', angle: 45 },
+    { name: 'CMD', angle: 90 },
+    { name: 'STATE', angle: 135 },
+    { name: 'MEMORY', angle: 180 },
+    { name: 'PANELS', angle: 225 },
+    { name: 'APPS', angle: 270 },
+    { name: 'SOUND', angle: 315 }
+  ];
+
+  subsystems.forEach(sys => {
+    const node = document.createElement('div');
+    node.className = 'system-node';
+    node.dataset.sys = sys.name;
+
+    const radius = 180;
+    const rad = (sys.angle * Math.PI) / 180;
+
+    const x = 240 + radius * Math.cos(rad) - 40;
+    const y = 240 + radius * Math.sin(rad) - 40;
+
+    node.style.position = 'absolute';
+    node.style.left = `${x}px`;
+    node.style.top = `${y}px`;
+    node.style.width = '80px';
+    node.style.height = '80px';
+    node.style.borderRadius = '50%';
+    node.style.background = 'rgba(0,0,0,0.65)';
+    node.style.border = '1px solid #ff1744';
+    node.style.color = '#ff1744';
+    node.style.display = 'flex';
+    node.style.alignItems = 'center';
+    node.style.justifyContent = 'center';
+    node.style.fontFamily = 'monospace';
+    node.style.fontSize = '12px';
+    node.style.transition = 'box-shadow 0.3s ease, border-color 0.3s ease';
+
+    node.textContent = sys.name;
+    map.appendChild(node);
+  });
+
+  document.body.appendChild(map);
+}
+
+function wireSystemMapToggle() {
+  const map = document.getElementById('system-map');
+
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key.toLowerCase() === 'm') {
+      map.style.display = map.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+}
+
+function updateSystemMap() {
+  const nodes = document.querySelectorAll('.system-node');
+
+  nodes.forEach(node => {
+    const sys = node.dataset.sys;
+
+    // Default glow
+    let glow = '0 0 8px #ff1744';
+
+    // State-based highlight
+    if (sys === 'STATE') {
+      glow = '0 0 14px #ff1744';
+    }
+
+    if (sys === 'VISOR' && visorLocked) {
+      glow = '0 0 14px #ff1744';
+    }
+
+    if (sys === 'SOUND' && SoundEngine.enabled) {
+      glow = '0 0 14px #ff1744';
+    }
+
+    if (sys === 'CMD' && SystemMemory.usageCounters.commands > 0) {
+      glow = '0 0 14px #ff1744';
+    }
+
+    if (sys === 'APPS' && SystemMemory.usageCounters.appOpens > 0) {
+      glow = '0 0 14px #ff1744';
+    }
+
+    // Drift mode flicker
+    if (currentState === 'DRIFT') {
+      const flicker = Math.random() > 0.5 ? '#ff1744' : '#ff0022';
+      node.style.borderColor = flicker;
+    }
+
+    node.style.boxShadow = glow;
+  });
+}
+
+function startSystemMapLoop() {
+  setInterval(updateSystemMap, 250);
+}
+
+const originalBootPhase7 = bootSequence;
+bootSequence = function () {
+  originalBootPhase7();
+  setTimeout(() => {
+    createSystemMap();
+    wireSystemMapToggle();
+    startSystemMapLoop();
+    dockMessage('SYSTEM MAP ONLINE');
+  }, 3600);
+};
     
 // 18. Init
 function initBeyondOS() {
