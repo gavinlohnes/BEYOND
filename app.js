@@ -1066,6 +1066,119 @@ bootSequence = function () {
     SoundEngine.play('BOOT');
   }, 300);
 };
+
+    // ===============================
+//  HUD PHASE 4 — BOOT ANIMATION
+// ===============================
+
+// Create boot overlay
+function createBootOverlay() {
+  const boot = document.createElement('div');
+  boot.id = 'boot-overlay';
+  boot.style.position = 'fixed';
+  boot.style.top = '0';
+  boot.style.left = '0';
+  boot.style.width = '100%';
+  boot.style.height = '100%';
+  boot.style.background = 'black';
+  boot.style.display = 'flex';
+  boot.style.flexDirection = 'column';
+  boot.style.alignItems = 'center';
+  boot.style.justifyContent = 'center';
+  boot.style.zIndex = '10000';
+  boot.style.color = '#ff1744';
+  boot.style.fontFamily = 'monospace';
+  boot.style.userSelect = 'none';
+  boot.style.opacity = '1';
+  boot.style.transition = 'opacity 1.2s ease';
+
+  boot.innerHTML = `
+    <div id="boot-glyph" style="width:120px;height:120px;margin-bottom:24px;opacity:0;">
+      ${GlyphSVG.BOOT_START}
+    </div>
+
+    <div id="boot-text" style="font-size:18px;opacity:0;">
+      INITIALIZING BEYOND.OS
+    </div>
+
+    <div id="boot-progress" style="margin-top:18px;font-size:14px;opacity:0;">
+      [ ■□□□□□□□□□ ]
+    </div>
+  `;
+
+  document.body.appendChild(boot);
+}
+
+// Boot animation sequence
+function startBootAnimation() {
+  const boot = document.getElementById('boot-overlay');
+  const glyph = document.getElementById('boot-glyph');
+  const text = document.getElementById('boot-text');
+  const progress = document.getElementById('boot-progress');
+
+  if (!boot) return;
+
+  // Step 1: Fade in glyph
+  setTimeout(() => {
+    glyph.style.opacity = '1';
+  }, 300);
+
+  // Step 2: Swap glyph to mid
+  setTimeout(() => {
+    glyph.innerHTML = GlyphSVG.BOOT_MID;
+  }, 900);
+
+  // Step 3: Show text
+  setTimeout(() => {
+    text.style.opacity = '1';
+  }, 1200);
+
+  // Step 4: Progress bar animation
+  const frames = [
+    '[ ■□□□□□□□□□ ]',
+    '[ ■■□□□□□□□□ ]',
+    '[ ■■■□□□□□□□ ]',
+    '[ ■■■■□□□□□□ ]',
+    '[ ■■■■■□□□□□ ]',
+    '[ ■■■■■■□□□□ ]',
+    '[ ■■■■■■■□□□ ]',
+    '[ ■■■■■■■■□□ ]',
+    '[ ■■■■■■■■■□ ]',
+    '[ ■■■■■■■■■■ ]'
+  ];
+
+  frames.forEach((f, i) => {
+    setTimeout(() => {
+      progress.style.opacity = '1';
+      progress.textContent = f;
+    }, 1400 + i * 120);
+  });
+
+  // Step 5: Final glyph
+  setTimeout(() => {
+    glyph.innerHTML = GlyphSVG.BOOT_END;
+  }, 3000);
+
+  // Step 6: Fade out boot overlay
+  setTimeout(() => {
+    boot.style.opacity = '0';
+  }, 3600);
+
+  // Step 7: Remove from DOM
+  setTimeout(() => {
+    boot.remove();
+  }, 5000);
+}
+
+// Inject boot animation before everything else
+const originalBootPhase4 = bootSequence;
+bootSequence = function () {
+  createBootOverlay();
+  startBootAnimation();
+
+  // Continue normal boot
+  originalBootPhase4();
+};
     
 // 18. Init
 function initBeyondOS() {
