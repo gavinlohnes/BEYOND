@@ -841,6 +841,140 @@ function startHUDExpansionLoop() {
     const vitalHB = document.getElementById('vital-hb');
     const vitalInactive = document.getElement
 
+    // ===============================
+//  HUD PHASE 3 — DYNAMIC THEMES
+// ===============================
+
+// Theme definitions
+const HUDThemes = {
+  IDLE: {
+    glow: 0.25,
+    opacity: 0.65,
+    pulseSpeed: 1200,
+    color: '#ff1744',
+  },
+  ACTIVE: {
+    glow: 0.45,
+    opacity: 0.85,
+    pulseSpeed: 600,
+    color: '#ff1744',
+  },
+  COMBAT: {
+    glow: 0.9,
+    opacity: 1.0,
+    pulseSpeed: 250,
+    color: '#ff0022',
+  },
+  STEALTH: {
+    glow: 0.15,
+    opacity: 0.35,
+    pulseSpeed: 1400,
+    color: '#ff1744',
+  },
+  DRIFT: {
+    glow: 0.75,
+    opacity: 0.9,
+    pulseSpeed: 400,
+    color: '#ff1744',
+  },
+  ADVISOR: {
+    glow: 0.55,
+    opacity: 0.95,
+    pulseSpeed: 500,
+    color: '#ff1744',
+  }
+};
+
+// Apply theme to HUD
+function applyHUDTheme() {
+  const hud = document.getElementById('hud-overlay');
+  if (!hud) return;
+
+  const theme = HUDThemes[currentState] || HUDThemes.IDLE;
+
+  // Opacity
+  hud.style.background = `rgba(0,0,0,${theme.opacity})`;
+
+  // Glow
+  hud.style.borderBottom = `1px solid rgba(255,23,68,${theme.glow})`;
+
+  // Color
+  hud.style.color = theme.color;
+
+  // Mini glyph color override
+  const mini = document.getElementById('hud-mini-glyph');
+  if (mini) {
+    mini.style.filter = `drop-shadow(0 0 ${theme.glow * 12}px ${theme.color})`;
+  }
+
+  // Advisor pulse intensity
+  const pulse = document.getElementById('hud-advisor-pulse');
+  if (pulse) {
+    pulse.style.opacity = currentState === 'ADVISOR' ? theme.glow : 0;
+  }
+
+  // Drift distortion intensity
+  const drift = document.getElementById('hud-drift-distortion');
+  if (drift) {
+    drift.style.opacity = currentState === 'DRIFT' ? theme.glow * 0.5 : 0;
+  }
+}
+
+// HUD pulse animation
+function startHUDPulse() {
+  setInterval(() => {
+    const hud = document.getElementById('hud-overlay');
+    if (!hud) return;
+
+    const theme = HUDThemes[currentState] || HUDThemes.IDLE;
+
+    hud.animate(
+      [
+        { borderBottomColor: `rgba(255,23,68,${theme.glow})` },
+        { borderBottomColor: `rgba(255,23,68,${theme.glow * 0.4})` },
+        { borderBottomColor: `rgba(255,23,68,${theme.glow})` }
+      ],
+      {
+        duration: theme.pulseSpeed,
+        iterations: 1,
+        easing: 'ease-in-out'
+      }
+    );
+  }, 300);
+}
+
+// Visor auto‑dimming
+function updateVisorHUD() {
+  const hud = document.getElementById('hud-overlay');
+  if (!hud) return;
+
+  if (visorLocked) {
+    hud.style.opacity = '0.35';
+  } else {
+    const theme = HUDThemes[currentState] || HUDThemes.IDLE;
+    hud.style.opacity = theme.opacity;
+  }
+}
+
+// Phase 3 loop
+function startHUDThemeLoop() {
+  setInterval(() => {
+    applyHUDTheme();
+    updateVisorHUD();
+  }, 200);
+}
+
+// Inject Phase 3 after Phase 2
+const originalBoot3 = bootSequence;
+bootSequence = function() {
+  originalBoot3();
+  setTimeout(() => {
+    startHUDPulse();
+    startHUDThemeLoop();
+    dockMessage('HUD THEME ENGINE ONLINE');
+  }, 2400);
+};
+
 // 18. Init
 function initBeyondOS() {
   logInfo('BEYOND.OS core loaded.');
